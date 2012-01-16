@@ -16,6 +16,7 @@ Module       = require 'module'
 fs           = require 'fs'
 path         = require 'path'
 spawn        = require('child_process').spawn
+{flatten, starts, del, ends, last, count, merge, compact, extend} = require('coffee-script').helpers
 blockingProc = no
 
 # Load built-in shell commands
@@ -116,6 +117,20 @@ completeVariable = (text) ->
 getCompletions = (prefix, candidates) ->
 	(el for el in candidates when el.indexOf(prefix) is 0)
 
+# Helper function for gathering quoted goods
+get_piece = (piece, stack, oldpieces, pieces) ->
+	oldpieces.push (piece)
+	for i,char of piece
+		if char is '\\' and char[i+1]? in ["'", '"'] then i++
+		else if char in ["'", '"']
+			if char is last(stack)
+				stack.pop()
+				return if stack.length is 0
+			else stack.push char
+	if stack.length isnt 0 
+		get_piece pieces.shift(), stack, oldpieces, pieces
+
+
 # Create the shell by listening to **stdin**.
 if readline.createInterface.length < 3
 	shell = readline.createInterface stdin, autocomplete
@@ -152,9 +167,7 @@ shell.on 'close', ->
 	shell.output.write '\n'
 	shell.input.destroy()
 
-# The main SHELL function. **run** is called every time a line of code is entered.
-# Attempt to evaluate the command. If there's an exception, print it out instead
-# of exiting.
+
 shell.on 'line', (buffer) ->
 	if !buffer.toString().trim() and !backlog
 		shell.prompt()
@@ -170,6 +183,13 @@ shell.on 'line', (buffer) ->
 	pieces = code.split ' '
 	 
 	while piece = pieces.shift()
+		if -1 in [piece.indexOf('"'), piece.indexOf("'")]
+			stack = []
+			oldpieces=[]
+			get_piece piece, stack, oldpieces, pieces
+			piece = oldpieces.join " "
+		
+		# TODO: see if if() works
 		if piece in CoffeeScript.RESERVED
 			if cmd isnt ''
 				output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
@@ -187,13 +207,14 @@ shell.on 'line', (buffer) ->
 				else output.push piece
 			else
 				output.push piece
-		else if global[piece]
-			args.push "#{piece}"
-		else
+		else if piece[0] is '-' or (path.existsSync(piece)) or not global[piece]?
 			args.push "'#{piece}'"
-	
+		else
+			args.push piece
+	builtin.echo output
 	if cmd isnt '' then output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
 	code = output.join ' '
+	builtin.echo code
 	try
 		_ = global._
 		returnValue = CoffeeScript.eval "_=(#{code}\n)" #, filename: __filename, modulename: 'shell'
