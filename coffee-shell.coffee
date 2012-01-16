@@ -8,7 +8,7 @@ stdin = process.openStdin()
 stdout = process.stdout
 
 # Require the **coffee-script** module to get access to the compiler.
-CoffeeScript = require 'coffee-script'
+global.CoffeeScript = require 'coffee-script'
 readline     = require 'readline'
 {inspect}    = require 'util'
 {Script}     = require 'vm'
@@ -26,13 +26,14 @@ global.echo  = (val, showhidden = no, depth = 3, colors = yes) ->
 global.kill  = (pid, signal = "SIGTERM") -> process.kill pid, signal
 global.which = ->
 global.cd    = (dir) -> process.chdir(dir)
+global.binaries = []
 
 # Load all executables from PATH
 for pathname in process.env.PATH.split ':'
   if path.existsSync pathname then do (pathname) ->
     for file in fs.readdirSync pathname
       do (file) ->
-        global[file] ?= (args...) ->
+        global.binaries[file] ?= (args...) ->
           #args = (arg for arg in args when arg isnt 'BLANKEND')
           blockingProc = yes
           proc = spawn pathname + "/" + file, args, {
@@ -54,7 +55,6 @@ for key,val of process.env
 
 # Config
 SHELL_PROMPT = -> "#{process.cwd()}$ "
-SHELL_PROMPT_MULTILINE = '------> '
 SHELL_PROMPT_CONTINUATION = '......> '
 SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
 
@@ -165,15 +165,52 @@ shell.on 'line', (buffer) ->
     shell.prompt()
     return
   backlog = ''
+  output = []
+  cmd = ''
+  args = []
+  pieces = code.split ' '
+  while piece = pieces.shift()
+    if piece in CoffeeScript.RESERVED
+      #echo "reserved piece: " + piece
+      if cmd isnt ''
+        eval_line = "binaries." + cmd + " " + args.join ', '
+        #echo eval_line
+        eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
+        #echo eval_output
+        output.push eval_output
+        cmd = ''
+        args = ''
+      output.push piece
+      continue
+    if cmd is ''
+      if global.binaries[piece]?
+        cmd = "#{piece}"
+        #echo "cmd=" + cmd
+      else
+        output.push piece
+      continue
+    else if "#{piece}"[0] is '-' or path.existsSync "#{piece}"
+        args.push "'#{piece}'" 
+        #echo ["pushing arg = #{piece}. args now = ", args]
+    else args.push piece
+    
+  if cmd isnt ''
+    eval_line = "binaries." + cmd + " " + args.join ', '
+    #echo "eval_line:" + eval_line
+    eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
+    #echo ["eval_output", eval_output]
+    output.push eval_output
+  #echo ["output",output]
+  code = output.join ' '
+  #echo "code is: #{code}"
   try
     _ = global._
-    #code += ' "BLANKEND"'
     returnValue = CoffeeScript.eval "_=(#{code}\n)", {
       filename: __filename
       modulename: 'shell'
     }
-    if returnValue is undefined
-      global._ = _
+    if typeof returnValue is 'function' then returnValue()
+    global._ = _ if returnValue is undefined
     #if returnValue? then echo returnValue
     fs.write history_fd, code + '\n'
   catch err
