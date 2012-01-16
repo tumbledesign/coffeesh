@@ -14,6 +14,7 @@ readline     = require 'readline'
 {Script}     = require 'vm'
 Module       = require 'module'
 fs           = require 'fs'
+path         = require 'path'
 spawn        = require('child_process').spawn
 blockingProc = no
 
@@ -27,13 +28,13 @@ global.which = ->
 global.cd    = (dir) -> process.chdir(dir)
 
 # Load all executables from PATH
-for path in process.env.PATH.split ':'
-  do (path) ->
-    for file in fs.readdirSync path
+for pathname in process.env.PATH.split ':'
+  if path.existsSync pathname then do (pathname) ->
+    for file in fs.readdirSync pathname
       do (file) ->
         global[file] ?= (args...) ->
           blockingProc = yes
-          proc = spawn path + "/" + file, args, {
+          proc = spawn pathname + "/" + file, args, {
             cwd: process.cwd()
             env: process.env
             setsid: false
@@ -178,7 +179,7 @@ repl.on 'line', (buffer) ->
     }
     if returnValue is undefined
       global._ = _
-    if returnValue? then echo returnValue
+    #if returnValue? then echo returnValue
     fs.write history_fd, code + '\n'
   catch err
     error err
