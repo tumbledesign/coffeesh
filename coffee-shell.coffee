@@ -186,5 +186,6 @@ repl.on 'line', (buffer) ->
     repl.setPrompt REPL_PROMPT()
     repl.prompt()
 
-repl.setPrompt REPL_PROMPT()
-repl.prompt()
+exports.run = ->
+  repl.setPrompt REPL_PROMPT()
+  repl.prompt()
