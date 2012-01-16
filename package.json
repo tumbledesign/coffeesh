@@ -1,25 +1,29 @@
 {
-  "name":         "coffee-shell",
-  "description":  "CoffeeScript Shell",
+  "name": "coffee-shell",
+  "description": "CoffeeScript Shell",
   "preferGlobal": "true",
-  "keywords":     ["coffeescript", "shell"],
-  "author":       "Mark Dube",
-  "version":      "0.1.0",
-  "license":     "MIT",
-  "engines":      {
-    "node":       ">=0.4.0"
+  "keywords": [
+    "coffeescript",
+    "shell"
+  ],
+  "author": "Mark Dube",
+  "version": "0.1.1",
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.4.0"
   },
-  "main" : "./coffee-shell",
-  "bin":          {
-    "coffee-shell":     "./bin/coffee-shell"
+  "main": "./coffee-shell",
+  "bin": {
+    "coffee-shell": "./bin/coffee-shell"
   },
-  "homepage":     "http://coffeescript.org",
-  "repository":   {
+  "homepage": "http://coffeescript.org",
+  "repository": {
     "type": "git",
     "url": "http://git@tnrepo.tmbl.us:coffeeshell"
   },
   "dependencies": {
-    "coffee-script":  ">=1.2.0",
-    "colors":      "*"
-  }
+    "coffee-script": ">=1.2.0",
+    "colors": "*"
+  },
+  "devDependencies": {}
 }
