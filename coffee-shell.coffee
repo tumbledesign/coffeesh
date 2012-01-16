@@ -49,9 +49,7 @@ for pathname in process.env.PATH.split ':'
             shell.prompt()
 
 # Export environment vars to the global namespace
-for key,val of process.env
-  if global[key]? then global["$"+key] = val else global[key] = val
-
+global.env = process.env
 
 # Config
 SHELL_PROMPT = -> "#{process.cwd()}$ "
@@ -170,27 +168,29 @@ shell.on 'line', (buffer) ->
   while piece = pieces.shift()
     if piece in CoffeeScript.RESERVED
       if cmd isnt ''
-        eval_line = "binaries." + cmd + " " + args.join ', '
-        eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
+        eval_line = cmd + " " + args.join ', '
+        eval_output = "CoffeeScript.eval \"#{eval_line}\"" #, {filename: '#{__filename}', modulename: 'shell'}"
         output.push eval_output
         cmd = '' ; args = []
       output.push piece
       continue
     if cmd is ''
-      if global.binaries[piece]?
-        cmd = "#{piece}"
+      if global[piece]?
+        if typeof piece is 'function' then cmd = "#{piece}"
+        else output.push piece
+      else if global.binaries[piece]?
+        cmd = "binaries.#{piece}"
       else
-        output.push piece
+        args.push "'#{piece}'" 
       continue
     else if "#{piece}"[0] is '-' or path.existsSync "#{piece}"
         args.push "'#{piece}'" 
-    else args.push piece
+    else args.push "'#{piece}'" 
     
   if cmd isnt ''
-    eval_line = "binaries." + cmd + " " + args.join ', '
-    eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
+    eval_line = cmd + " " + args.join ', '
+    eval_output = "CoffeeScript.eval \"#{eval_line}\"" #, {filename: '#{__filename}', modulename: 'shell'}"
     output.push eval_output
-  echo code
   code = output.join ' '
   try
     _ = global._
@@ -200,7 +200,9 @@ shell.on 'line', (buffer) ->
     }
     if typeof returnValue is 'function' then returnValue()
     global._ = _ if returnValue is undefined
-    #if returnValue? then echo returnValue
+    ACCESSOR  = /^([\w\.]+)(?:\.(\w*))$/
+    SIMPLEVAR = /^(\w+)$/i
+    if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? then echo returnValue
     fs.write history_fd, code + '\n'
   catch err
     error err
