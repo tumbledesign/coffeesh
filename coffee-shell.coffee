@@ -165,44 +165,33 @@ shell.on 'line', (buffer) ->
     shell.prompt()
     return
   backlog = ''
-  output = []
-  cmd = ''
-  args = []
+  output = [] ; args = [] ; cmd = ''
   pieces = code.split ' '
   while piece = pieces.shift()
     if piece in CoffeeScript.RESERVED
-      #echo "reserved piece: " + piece
       if cmd isnt ''
         eval_line = "binaries." + cmd + " " + args.join ', '
-        #echo eval_line
         eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
-        #echo eval_output
         output.push eval_output
-        cmd = ''
-        args = ''
+        cmd = '' ; args = []
       output.push piece
       continue
     if cmd is ''
       if global.binaries[piece]?
         cmd = "#{piece}"
-        #echo "cmd=" + cmd
       else
         output.push piece
       continue
     else if "#{piece}"[0] is '-' or path.existsSync "#{piece}"
         args.push "'#{piece}'" 
-        #echo ["pushing arg = #{piece}. args now = ", args]
     else args.push piece
     
   if cmd isnt ''
     eval_line = "binaries." + cmd + " " + args.join ', '
-    #echo "eval_line:" + eval_line
     eval_output = "CoffeeScript.eval \"#{eval_line}\", {filename: '#{__filename}', modulename: 'shell'}"
-    #echo ["eval_output", eval_output]
     output.push eval_output
-  #echo ["output",output]
+  echo code
   code = output.join ' '
-  #echo "code is: #{code}"
   try
     _ = global._
     returnValue = CoffeeScript.eval "_=(#{code}\n)", {
