@@ -207,14 +207,12 @@ shell.on 'line', (buffer) ->
 				else output.push piece
 			else
 				output.push piece
-		else if piece[0] is '-' or (path.existsSync(piece)) or not global[piece]?
+		else if piece[0] is '-' or (path.existsSync(piece)) or not CoffeeScript.eval("#{piece}?")
 			args.push "'#{piece}'"
 		else
 			args.push piece
-	builtin.echo output
 	if cmd isnt '' then output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
 	code = output.join ' '
-	builtin.echo code
 	try
 		_ = global._
 		returnValue = CoffeeScript.eval "_=(#{code}\n)" #, filename: __filename, modulename: 'shell'
