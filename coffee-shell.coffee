@@ -52,6 +52,7 @@ for pathname in process.env.PATH.split ':'
 					blockingProc = no
 					shell.setPrompt SHELL_PROMPT()
 					shell.prompt()
+					shell.output.cursorTo(shelllength)
 
 # Export environment vars to the global namespace
 global.env = process.env
@@ -171,6 +172,7 @@ shell.on 'SIGINT', ->
 	shell.line = ''
 	shell.setPrompt SHELL_PROMPT()
 	shell.prompt()
+	shell.output.cursorTo(shelllength)
 
 shell.on 'close', ->
 	fs.closeSync history_fd
