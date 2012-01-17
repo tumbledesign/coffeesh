@@ -157,7 +157,9 @@ shell.historyIndex = -1
 history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
 
 # Make sure that uncaught exceptions don't kill the shell.
-process.on 'uncaughtException', error
+process.on 'uncaughtException', ->
+	error
+	shell.output.cursorTo(shelllength)
 
 # The current backlog of multi-line code.
 backlog = ''
@@ -178,6 +180,9 @@ shell.on 'close', ->
 	fs.closeSync history_fd
 	shell.output.write '\n'
 	shell.input.destroy()
+
+shell.on 'keypress', ->
+	shell.output.cursorTo(shelllength + shell.line)
 
 
 shell.on 'line', (buffer) ->
