@@ -1,0 +1,433 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"index",
+				"index_started"
+			],
+			[
+				"to",
+				"tokens"
+			],
+			[
+				"bu",
+				"builtin"
+			],
+			[
+				"Coff",
+				"CoffeeScript"
+			],
+			[
+				"Ultimate",
+				"ultimateshell"
+			],
+			[
+				"ultimatesh",
+				"ultimateshell"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "Packages/CoffeeScript/Commands/CoffeeScript.sublime-build",
+	"command_palette":
+	{
+		"height": 53.0,
+		"selected_items":
+		[
+			[
+				"coffee",
+				"Set Syntax: CoffeeScript"
+			],
+			[
+				"",
+				"File: Clone"
+			]
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 129.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/cobells/Work/node/coffeeshell/coffee-shell.coffee",
+		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-project",
+		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-workspace",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Global.sublime-settings",
+		"/home/cobells/Work/node/coffeeshell/coffee-shell.js",
+		"/home/cobells/Work/node/coffeeshell/lexer.js",
+		"/home/cobells/Work/node/node_modules/coffee-shell/grammar.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/parser.js",
+		"/home/cobells/Work/node/node_modules/coffee-shell/helpers.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/rewriter.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/package.json",
+		"/home/cobells/Work/node/node_modules/coffee-shell/repl.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/bin/coffee-shell",
+		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-shell.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/lexer.coffee",
+		"/home/cobells/Work/node/coffeeshell/bin/coffee-shell",
+		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-script.coffee",
+		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-script.js",
+		"/home/cobells/Work/node/coffee-script/src/grammar.coffee",
+		"/home/cobells/.coffee_history",
+		"/home/cobells/Work/node/coffee-script/lib/coffee-script/parser.js",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/install",
+		"/home/cobells/.bash_history",
+		"/home/cobells/Work/node/node_modules/coffee-shell/new.save",
+		"/home/cobells/Work/node/node_modules/coffee-shell/new.save.1",
+		"/home/cobells/Work/node/node_modules/coffee-shell/new.save.2",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/copyright",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/config.log",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/20_ultimateshell.gconf-defaults",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/changelog",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/rules",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/prerm",
+		"/media/Hoard/Work/ubn2/ultimateshell/ultimateshell/debian/control",
+		"/media/Media/System Volume Information/tracking.log",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/zsh/.zshrc",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/gterminal/oneterminal",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/gterminal/tmux-launch",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/zsh/.zlogin",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/vartest.sh",
+		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/tmux/.tmux.conf",
+		"/home/cobells/.config/sublime-text-2/Packages/ShellScript/Shell-Unix-Generic.tmLanguage",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Global.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Distraction Free.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Base File.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Shell-Unix-Generic.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Plain text.sublime-settings",
+		"/home/mark/Projects/unity-2d_5.2-0ubuntu1ppa2_source.build",
+		"/home/mark/.cache/.fr-sGxfdB/DEBIAN/control",
+		"/home/mark/.cache/.fr-SkLf7o/DEBIAN/md5sums",
+		"/home/mark/.cache/.fr-HgiLsb/DEBIAN/control",
+		"/home/mark/Projects/ultimateshell/zsh/.zshrc",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/.cache/DEBS_avail",
+		"/home/mark/Projects/ultimateshell/install.sh",
+		"/home/mark/Projects/ultimateshell/gterminal/oneterminal",
+		"/home/mark/Projects/ultimateshell/test.sh",
+		"/home/mark/Projects/ultimateshell/gterminal/oneterminal.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/themes/ultimateshell.zsh-theme",
+		"/home/mark/Projects/ultimateshell/screenrc",
+		"/home/mark/Projects/ultimateshell/ref/screen/example.screenrc",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/themes/zhann.zsh-theme",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/themes/philips.zsh-theme",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/git.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/themes/robbyrussell.zsh-theme",
+		"/home/mark/Projects/Shell Scripts/mouseclick.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/bootstrap.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/README.textile",
+		"/home/mark/.config/sublime-text-2/Packages/ShellScript/Shell-Unix-Generic.tmLanguage",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/plugins/npm/npm.plugin.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/.gitignore",
+		"/home/mark/Projects/ultimateshell/zsh/zshrc_back",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/install.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/check_for_upgrade.sh",
+		"/home/mark/.oh-my-zsh-backup/templates/zshrc.zsh-template",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/themes/apple.zsh-theme",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/functions.zsh",
+		"/home/mark/.oh-my-zsh-backup/oh-my-zsh.sh",
+		"/home/mark/Projects/ultimateshell/ultimateshell.sublime-project",
+		"/home/mark/.oh-my-zsh/oh-my-zsh.sh",
+		"/home/mark/.oh-my-zsh/README.textile",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/directories.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/edit-command-line.zsh",
+		"/home/mark/Projects/ultimateshell/ref/conf_order.txt",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/theme-and-appearance.zsh",
+		"/home/mark/.oh-my-zsh/lib/theme-and-appearance.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/grep.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/custom/example.zsh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/aliases.zsh",
+		"/home/mark/.oh-my-zsh/tools/install.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/require_tool.sh",
+		"/home/mark/.oh-my-zsh/templates/zshrc.zsh-template",
+		"/home/mark/.ultimateshell/bootstrap.sh",
+		"/home/mark/.oh-my-zsh/tools/require_tool.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/upgrade.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/correction.zsh",
+		"/home/mark/.zshrc",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/completion.zsh",
+		"/home/mark/Projects/ultimateshell/ref/dependencies",
+		"/home/mark/Projects/ultimateshell/zsh/.zlogout",
+		"/home/mark/Projects/ultimateshell/zsh/.zlogin",
+		"/home/mark/Projects/ultimateshell/zsh/.zprofile",
+		"/home/mark/Projects/ultimateshell/zsh/zshrc",
+		"/home/mark/.config/sublime-text-2/Packages/User/Shell-Unix-Generic.sublime-settings",
+		"/home/mark/.zcompdump",
+		"/home/mark/.profile",
+		"/home/mark/Projects/ultimateshell/zsh/zshenv",
+		"/home/mark/Projects/ultimateshell/zsh/zlogin",
+		"/home/mark/Projects/ultimateshell/zsh/zprofile",
+		"/home/mark/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
+		"/home/mark/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
+		"/home/mark/Projects/ultimateshell/zsh/.zshenv",
+		"/home/mark/Projects/ultimateshell/zsh/zlogout",
+		"/home/mark/opgpm.txt",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/log/.placeholder",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/custom/example/example.plugin.zsh",
+		"/home/mark/Projects/ultimateshell/.gitignore",
+		"/home/mark/Projects/ultimateshell/ultimateshell.sublime-workspace",
+		"/home/mark/Projects/ultimateshell/.zshrc",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/uninstall.sh",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/oh-my-zsh.sh",
+		"/home/mark/Projects/ultimateshell/oneterminal.sh",
+		"/home/mark/Projects/ultimateshell/.oh-my-zsh/themes/kardan.zsh-theme",
+		"/home/mark/Projects/ultimateshell/.oh-my-zsh/themes/mdube.zsh-theme",
+		"/home/mark/Projects/ultimateshell/.ultimateshell/log/.easter-egg",
+		"/home/mark/Projects/ultimateshell/.oh-my-zsh/templates/zshrc.zsh-template",
+		"/home/mark/Projects/ultimateshell/.oh-my-zsh/custom/example.zsh",
+		"/home/mark/Projects/ultimateshell/.oh-my-zsh/custom/example/example.plugin.zsh"
+	],
+	"find":
+	{
+		"height": 33.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"console",
+			",",
+			"111111111111111",
+			"output\\+=",
+			"']",
+			"off",
+			"}\\\"]\"",
+			"escape",
+			"makeStr",
+			"make",
+			"tokens\\[i\\]\\[0\\]",
+			"tokens\\[i\\]\\[1\\]",
+			"tokens\\]\\[i\\]\\[1",
+			"tokens[i][1]",
+			"echo",
+			"echo`",
+			"echo",
+			"makestr",
+			"tokens",
+			"coffee",
+			"global",
+			"off",
+			"tokens",
+			")",
+			"(",
+			"operator",
+			",\\.+=%@]|([\\][#~:()[]{}]|(\\\\\\",
+			"pathToken",
+			"jsToken",
+			"pathtoken",
+			"tokeni",
+			"test",
+			"messa",
+			"title",
+			"termca",
+			"terminfo",
+			"termc",
+			"title",
+			"precmd",
+			"fg_bold",
+			"]%}%",
+			"PROMPT_PERCENT",
+			"git_prompt_status",
+			"require_tool.sh",
+			"oh-my-zsh",
+			"oh-my-zsh.sh",
+			"/usr/bin/env zsh",
+			"oh-my",
+			"afind",
+			"awk",
+			"ZSH_CUSTOM=",
+			"fpath",
+			"oh-my",
+			"oh-my-zsh",
+			"shell",
+			" &",
+			":",
+			"\"",
+			"gameo",
+			"points",
+			".time",
+			".finished",
+			"placed",
+			"newmap",
+			"newmaps",
+			"nextprize",
+			"nextma",
+			"nextmap",
+			"times",
+			"placements",
+			"times",
+			"finish",
+			"finished",
+			"view",
+			"coffeeku",
+			"editing",
+			"skull",
+			"@users",
+			"playsound",
+			"playsou",
+			"playso",
+			"playSound",
+			"besttime",
+			"_gameclo",
+			"currenttime",
+			"current",
+			"stat",
+			"results",
+			"timers",
+			"skull",
+			"drawmode",
+			"KEYS",
+			"uid",
+			"keycontro",
+			"initplayer",
+			"editing",
+			"moustip",
+			".idx",
+			"editmode",
+			"1..8",
+			"finished",
+			"([\\.|\\#].*)\\s\\n",
+			"([\\.|\\#].*)\\n",
+			"([\\.|\\#].*\\n)",
+			"-([a-z])",
+			"-t",
+			"-([a-z])",
+			": ",
+			";",
+			"}",
+			"{",
+			"variable",
+			"variable.language",
+			"punc",
+			"punctuation",
+			"punctuation.section",
+			"#",
+			"#\\{",
+			"@",
+			"interp",
+			"inter",
+			"inte\n\ninter",
+			"inter",
+			"#",
+			"inter",
+			"constant.character.escape.coffee",
+			"double"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"output.push ",
+			"val",
+			"=",
+			"'",
+			"drawMode",
+			"\\\"$1\\\":\\n",
+			"\\\"$1\\\":",
+			"\\U$1",
+			"\\u$1",
+			"$1",
+			": \"",
+			"\"",
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 32.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"replace":
+	{
+		"height": 62.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 277.0,
+	"status_bar_visible": true
+}

@@ -16,8 +16,17 @@ fs           = require 'fs'
 path         = require 'path'
 spawn        = require('child_process').spawn
 {flatten, starts, del, ends, last, count, merge, compact, extend} = require('coffee-script').helpers
-#colors       = require 'colors'
+colors       = require 'colors'
 blockingProc = no
+
+#coffee = require './coffee-script'
+{Lexer} = require './lexer'
+#root.Lexer = Lexer
+#{Rewriter} = require './rewriter'
+#{parser} = require './grammar'
+
+
+
 
 # Load built-in shell commands
 global.builtin =
@@ -27,19 +36,22 @@ global.builtin =
 	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
 	which: (val) ->
 		if builtin[val]? then console.log 'built-in shell command'.green ; return
+		###
 		for pathname in process.env.PATH.split ':'
 			if path.existsSync pathname
 				for file in fs.readdirSync pathname
 					if file is val then console.log pathname.white ; return
+		###
 		console.log "command '#{val}'' not found".red
 	cd: (dir) -> process.chdir(dir)
 
 # Load all executables from PATH
 global.binaries = []
+
 for pathname in process.env.PATH.split ':'
 	if path.existsSync pathname then do (pathname) ->
 		for file in fs.readdirSync pathname then do (file) ->
-			global.binaries[file] ?= (args) ->
+			global.binaries[file] ?= (args...) ->
 				blockingProc = yes
 				proc = spawn pathname + "/" + file, args, {
 					cwd: process.cwd()
@@ -63,7 +75,8 @@ SHELL_PROMPT = ->
 	u = process.env.USER
 	d = process.cwd() #.replace('/home/'+u,'~')
 	#shelllength = "#{u}:#{d}$ ".length
-	"#{u}:#{d}$ "
+	("#{u}:#{d}$ ")
+
 SHELL_PROMPT_CONTINUATION = '......> '
 SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
 
@@ -189,6 +202,7 @@ shell.on 'close', ->
 	shell.input.destroy()
 
 shell.on 'line', (buffer) ->
+	
 	if !buffer.toString().trim() and !backlog
 		shell.prompt()
 		return
@@ -198,10 +212,95 @@ shell.on 'line', (buffer) ->
 		shell.setPrompt SHELL_PROMPT_CONTINUATION
 		shell.prompt()
 		return
+	
+
+	tokens = (new Lexer).tokenize(code, {rewrite: on})
+	console.log tokens
+	root.tokens = tokens
+	root.mkstr = Lexer.prototype.makeString
 	backlog = ''
-	output = [] ; args = [] ; cmd = ''
-	pieces = code.split ' '
-	 
+	#output = [] ; args = [] ; cmd = ''
+	#pieces = code.split ' '
+	shell.setPrompt SHELL_PROMPT()
+	shell.prompt()
+
+	output = []
+	tmp = ''
+	call_started = false
+	index_started = false
+	dot_started = false
+	cmd = ''
+	args = []
+	nested = []
+
+	for i in [0...tokens.length]
+		lex = tokens[i][0]
+		val = tokens[i][1]
+		
+
+		builtin.echo [lex, val]
+
+		if lex in ['.']
+			dot_started = true
+			output.push '['
+
+		else if lex in ['INDEX_START', '[']
+			index_started = true
+			output.push '['
+		
+		else if lex in ['INDEX_END', ']']
+			index_started = false
+			output.push ']'
+
+		else if lex in ['CALL_START']
+			if !call_started
+				call_started = true
+				output.push '('
+				tmp = output.join('')
+				output = []
+			#else
+			#	output.push ','
+
+		else if lex in ['CALL_END']
+			if call_started
+				call_started = false
+				tmp2 = output.join(', ')
+				output = [tmp, tmp2, ')']
+				#output.push ')'
+		else
+			if lex in ['IDENTIFIER', 'STRING']
+				if builtin[val]?
+					output.push "builtin[\"#{val}\"]"
+				else if binaries[val]?
+					output.push "binaries[\"#{val}\"]"
+				else if global[val]?
+					output.push "#{val}"
+				else
+					output.push "\"#{val}\""
+
+			else if lex in ['FILEPATH'] and path.existsSync(val)
+				output.push "#{val}"
+
+			else
+				output.push "#{val}"
+
+				
+			#if tokens[i].spaced then output.push ' '
+
+			if index_started 
+				output +=']'
+				index_started = false
+			if dot_started
+				output +=']'
+				dot_started = false
+			##if call_started
+			#	output += ', '
+		
+		builtin.echo output
+
+
+
+	###
 	while piece = pieces.shift()
 		if -1 in [piece.indexOf('"'), piece.indexOf("'")]
 			stack = []
@@ -233,14 +332,21 @@ shell.on 'line', (buffer) ->
 			args.push piece
 	if cmd isnt '' then output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
 	code = output.join ' '
+	###
+
+	code = output.join ''
+	console.log code
 	try
 		_ = global._
 		returnValue = CoffeeScript.eval "_=(#{code}\n)" #, filename: __filename, modulename: 'shell'
+		#console.log returnValue
+
 		if typeof returnValue is 'function' then returnValue()
 		global._ = _ if returnValue is undefined
 		ACCESSOR  = /^([\w\.]+)(?:\.(\w*))$/
 		SIMPLEVAR = /^(\w+)$/i
-		if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? then builtin.echo returnValue
+		if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? 
+			builtin.echo returnValue
 		fs.write history_fd, code + '\n'
 	catch err
 		error err
