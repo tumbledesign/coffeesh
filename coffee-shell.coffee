@@ -52,18 +52,18 @@ for pathname in process.env.PATH.split ':'
 					blockingProc = no
 					shell.setPrompt SHELL_PROMPT()
 					shell.prompt()
-					shell.output.cursorTo(shelllength)
+					#shell.output.cursorTo(shelllength)
 
 # Export environment vars to the global namespace
 global.env = process.env
 
 # Config
-shelllength = 2
+#shelllength = 2
 SHELL_PROMPT = -> 
 	u = process.env.USER
-	d = process.cwd()
-	shelllength = "#{u}:#{d}$ ".length
-	"#{u.white}:#{d.blue}$ "
+	d = process.cwd() #.replace('/home/'+u,'~')
+	#shelllength = "#{u}:#{d}$ ".length
+	"#{u}:#{d}$ "
 SHELL_PROMPT_CONTINUATION = '......> '
 SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
 
@@ -95,8 +95,15 @@ completeFile = (text) ->
 	if path.existsSync dir then listing = fs.readdirSync dir
 	else listing = fs.readdirSync '.'
 	completions = (el for el in listing when el.indexOf(prefix) is 0)
+	#builtin.echo el for el in first
+	#completions = []
+	#for el in first
+	#	if fs.lstatSync(+'/'+el).isDirectory()
+	#		completions.push el+"/"
+	#builtin.echo el for el in completions
+
 	if completions.length > 0
-			[completions, prefix]
+		([completions, prefix])
 
 completeBinaries = (text) ->
 	completions = getCompletions text, binaries
@@ -159,7 +166,7 @@ history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
 # Make sure that uncaught exceptions don't kill the shell.
 process.on 'uncaughtException', ->
 	error
-	shell.output.cursorTo(shelllength)
+	#shell.output.cursorTo(shelllength)
 
 # The current backlog of multi-line code.
 backlog = ''
@@ -174,16 +181,12 @@ shell.on 'SIGINT', ->
 	shell.line = ''
 	shell.setPrompt SHELL_PROMPT()
 	shell.prompt()
-	shell.output.cursorTo(shelllength)
+	#shell.output.cursorTo(shelllength)
 
 shell.on 'close', ->
 	fs.closeSync history_fd
 	shell.output.write '\n'
 	shell.input.destroy()
-
-shell.on 'keypress', ->
-	shell.output.cursorTo(shelllength + shell.line)
-
 
 shell.on 'line', (buffer) ->
 	if !buffer.toString().trim() and !backlog
@@ -244,9 +247,9 @@ shell.on 'line', (buffer) ->
 	if not blockingProc
 		shell.setPrompt SHELL_PROMPT()
 		shell.prompt()
-		shell.output.cursorTo(shelllength)
+		#shell.output.cursorTo(shelllength)
 
 exports.run = ->
 	shell.setPrompt SHELL_PROMPT()
 	shell.prompt()
-	shell.output.cursorTo(shelllength)
+	#shell.output.cursorTo(shell.cursor)
