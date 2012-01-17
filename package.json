@@ -7,7 +7,7 @@
     "shell"
   ],
   "author": "Mark Dube",
-  "version": "0.3.3",
+  "version": "0.3.3-1",
   "license": "MIT",
   "engines": {
     "node": ">=0.4.0"
@@ -19,7 +19,7 @@
   "homepage": "http://coffeescript.org",
   "repository": {
     "type": "git",
-    "url": "http://git@github.com:markdube/coffee-shell.git"
+    "url": "git://github.com:markdube/coffee-shell.git"
   },
   "dependencies": {
     "coffee-script": ">=1.2.0"
