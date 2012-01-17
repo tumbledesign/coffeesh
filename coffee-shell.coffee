@@ -7,7 +7,6 @@
 stdin = process.openStdin()
 stdout = process.stdout
 
-# Require the **coffee-script** module to get access to the compiler.
 global.CoffeeScript = require 'coffee-script'
 readline     = require 'readline'
 {inspect}    = require 'util'
@@ -17,6 +16,7 @@ fs           = require 'fs'
 path         = require 'path'
 spawn        = require('child_process').spawn
 {flatten, starts, del, ends, last, count, merge, compact, extend} = require('coffee-script').helpers
+colors       = require 'colors'
 blockingProc = no
 
 # Load built-in shell commands
@@ -25,34 +25,44 @@ global.builtin =
 	echo: (val, showhidden = no, depth = 3, colors = yes) ->
 		console.log inspect val, showhidden, depth, colors
 	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
-	which: ->
+	which: (val) ->
+		if builtin[val]? then console.log 'built-in shell command'.green ; return
+		for pathname in process.env.PATH.split ':'
+			if path.existsSync pathname
+				for file in fs.readdirSync pathname
+					if file is val then console.log pathname.white ; return
+		console.log "command '#{val}'' not found".red
 	cd: (dir) -> process.chdir(dir)
 
 # Load all executables from PATH
 global.binaries = []
 for pathname in process.env.PATH.split ':'
 	if path.existsSync pathname then do (pathname) ->
-		for file in fs.readdirSync pathname
-			do (file) ->
-				global.binaries[file] ?= (args) ->
-					blockingProc = yes
-					proc = spawn pathname + "/" + file, args, {
-						cwd: process.cwd()
-						env: process.env
-						setsid: false
-					}
-					proc.stdout.on 'data', (data) -> process.stdout.write(data)
-					proc.stderr.on 'data', (data) -> process.stderr.write(data)
-					proc.on 'exit', ->
-						blockingProc = no
-						shell.setPrompt SHELL_PROMPT()
-						shell.prompt()
+		for file in fs.readdirSync pathname then do (file) ->
+			global.binaries[file] ?= (args) ->
+				blockingProc = yes
+				proc = spawn pathname + "/" + file, args, {
+					cwd: process.cwd()
+					env: process.env
+					setsid: false
+				}
+				proc.stdout.on 'data', (data) -> process.stdout.write(data)
+				proc.stderr.on 'data', (data) -> process.stderr.write(data)
+				proc.on 'exit', ->
+					blockingProc = no
+					shell.setPrompt SHELL_PROMPT()
+					shell.prompt()
 
 # Export environment vars to the global namespace
 global.env = process.env
 
 # Config
-SHELL_PROMPT = -> "#{process.cwd()}$ "
+shelllength = 2
+SHELL_PROMPT = -> 
+	u = process.env.USER
+	d = process.cwd()
+	shelllength = "#{u}:#{d}$ ".length
+	"#{u.white}:#{d.blue}$ "
 SHELL_PROMPT_CONTINUATION = '......> '
 SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
 
@@ -227,7 +237,9 @@ shell.on 'line', (buffer) ->
 	if not blockingProc
 		shell.setPrompt SHELL_PROMPT()
 		shell.prompt()
+		shell.output.cursorTo(shelllength)
 
 exports.run = ->
 	shell.setPrompt SHELL_PROMPT()
 	shell.prompt()
+	shell.output.cursorTo(shelllength)
