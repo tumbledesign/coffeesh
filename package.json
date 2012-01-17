@@ -19,7 +19,7 @@
   "homepage": "http://coffeescript.org",
   "repository": {
     "type": "git",
-    "url": "http://git@tnrepo.tmbl.us:coffeeshell"
+    "url": "http://git@github.com:markdube/coffee-shell.git"
   },
   "dependencies": {
     "coffee-script": ">=1.2.0"
