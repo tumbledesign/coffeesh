@@ -16,7 +16,7 @@ fs           = require 'fs'
 path         = require 'path'
 spawn        = require('child_process').spawn
 {flatten, starts, del, ends, last, count, merge, compact, extend} = require('coffee-script').helpers
-colors       = require 'colors'
+#colors       = require 'colors'
 blockingProc = no
 
 # Load built-in shell commands
