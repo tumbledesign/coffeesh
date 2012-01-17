@@ -22,8 +22,7 @@
     "url": "http://git@tnrepo.tmbl.us:coffeeshell"
   },
   "dependencies": {
-    "coffee-script": ">=1.2.0",
-    "colors": "*"
+    "coffee-script": ">=1.2.0"
   },
   "devDependencies": {}
 }
