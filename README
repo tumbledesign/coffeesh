@@ -1,0 +1,7 @@
+Complete shell written in coffeescript. Still buggy.
+
+Installation:
+
+sudo npm install -g coffeescript-shell
+
+It can then be run with coffeescript-shell
