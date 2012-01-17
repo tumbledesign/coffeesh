@@ -7,7 +7,7 @@
     "shell"
   ],
   "author": "Mark Dube",
-  "version": "0.3.3-1",
+  "version": "0.3.4",
   "website": "https://github.com/markdube/coffee-shell",
   "license": "MIT",
   "engines": {
