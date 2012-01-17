@@ -31,11 +31,19 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "coffee-shell.coffee",
+			"settings":
+			{
+				"buffer_size": 9502,
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "Packages/CoffeeScript/Commands/CoffeeScript.sublime-build",
 	"command_palette":
 	{
-		"height": 53.0,
+		"height": 74.0,
 		"selected_items":
 		[
 			[
@@ -51,7 +59,7 @@
 	},
 	"console":
 	{
-		"height": 129.0
+		"height": 582.0
 	},
 	"distraction_free":
 	{
@@ -64,8 +72,19 @@
 	},
 	"file_history":
 	[
+		"/home/cobells/Work/node/coffeeshell/package.json",
+		"/home/cobells/Work/node/coffeeshell/command.coffee",
+		"/home/cobells/.config/sublime-text-2/Packages/CoffeeScript/Commands/Run.tmCommand",
+		"/home/cobells/Work/node/coffeeshell/lexer.coffee",
+		"/home/cobells/Work/node/coffeeshell/README",
 		"/home/cobells/Work/node/coffeeshell/coffee-shell.coffee",
+		"/home/cobells/.config/sublime-text-2/Packages/CoffeeScript/Commands/Run selected text.tmCommand",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
+		"/home/cobells/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-project",
+		"/home/cobells/.config/sublime-text-2/Packages/User/CoffeeScript.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-workspace",
 		"/home/cobells/.config/sublime-text-2/Packages/Default/Global.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffee-shell.js",
@@ -107,10 +126,8 @@
 		"/home/cobells/.config/sublime-text-2/Packages/ShellScript/Shell-Unix-Generic.tmLanguage",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Global.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Distraction Free.sublime-settings",
-		"/home/cobells/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Base File.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Shell-Unix-Generic.sublime-settings",
-		"/home/cobells/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Plain text.sublime-settings",
 		"/home/mark/Projects/unity-2d_5.2-0ubuntu1ppa2_source.build",
 		"/home/mark/.cache/.fr-sGxfdB/DEBIAN/control",
@@ -182,16 +199,7 @@
 		"/home/mark/Projects/ultimateshell/.ultimateshell/custom/example/example.plugin.zsh",
 		"/home/mark/Projects/ultimateshell/.gitignore",
 		"/home/mark/Projects/ultimateshell/ultimateshell.sublime-workspace",
-		"/home/mark/Projects/ultimateshell/.zshrc",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/uninstall.sh",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/oh-my-zsh.sh",
-		"/home/mark/Projects/ultimateshell/oneterminal.sh",
-		"/home/mark/Projects/ultimateshell/.oh-my-zsh/themes/kardan.zsh-theme",
-		"/home/mark/Projects/ultimateshell/.oh-my-zsh/themes/mdube.zsh-theme",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/log/.easter-egg",
-		"/home/mark/Projects/ultimateshell/.oh-my-zsh/templates/zshrc.zsh-template",
-		"/home/mark/Projects/ultimateshell/.oh-my-zsh/custom/example.zsh",
-		"/home/mark/Projects/ultimateshell/.oh-my-zsh/custom/example/example.plugin.zsh"
+		"/home/mark/Projects/ultimateshell/.zshrc"
 	],
 	"find":
 	{
@@ -210,6 +218,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"run",
 			"console",
 			",",
 			"111111111111111",
@@ -367,8 +376,36 @@
 	"groups":
 	[
 		{
+			"selected": 0,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "coffee-shell.coffee",
+					"settings":
+					{
+						"buffer_size": 9502,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
 			]
 		}
 	],
@@ -403,6 +440,10 @@
 		]
 	},
 	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 106.0
+	},
 	"replace":
 	{
 		"height": 62.0
@@ -425,7 +466,7 @@
 		"width": 0.0
 	},
 	"show_minimap": true,
-	"show_open_files": false,
+	"show_open_files": true,
 	"show_tabs": true,
 	"side_bar_visible": true,
 	"side_bar_width": 277.0,
