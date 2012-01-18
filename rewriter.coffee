@@ -10,7 +10,7 @@
 class exports.Rewriter
 
   # Helpful snippet for debugging:
-  #     console.log (t[0] + '/' + t[1] for t in @tokens).join ' '
+  
 
   # Rewrite the token stream in multiple passes, one logical filter at
   # a time. This could certainly be changed into a single pass through the
@@ -18,6 +18,7 @@ class exports.Rewriter
   # like this. The order of these passes matters -- indentation must be
   # corrected before implicit parentheses can be wrapped around blocks of code.
   rewrite: (@tokens) ->
+    builtin.echo (t[0]+'/'+t[1] for t in @tokens).join '  '
     @removeLeadingNewlines()
     @removeMidExpressionNewlines()
     @closeOpenCalls()
@@ -28,6 +29,7 @@ class exports.Rewriter
     @addImplicitParentheses()
     @ensureBalance BALANCED_PAIRS
     @rewriteClosingParens()
+    console.log (t[0]+'/'+t[1] for t in @tokens).join '  '
     @tokens
 
   # Rewrite the token stream, looking one token ahead and behind.
@@ -307,7 +309,7 @@ for [left, rite] in BALANCED_PAIRS
 EXPRESSION_CLOSE = ['CATCH', 'WHEN', 'ELSE', 'FINALLY'].concat EXPRESSION_END
 
 # Tokens that, if followed by an `IMPLICIT_CALL`, indicate a function invocation.
-IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS']
+IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'FILEPATH']
 
 # If preceded by an `IMPLICIT_FUNC`, indicates a function invocation.
 IMPLICIT_CALL    = [

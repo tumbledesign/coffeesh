@@ -1,73 +1,22 @@
+
+#!/usr/bin/env coffee
 # Coffeescript Shell
-#
-#
-#
-
-# Start by opening up `stdin` and `stdout`.
-stdin = process.openStdin()
-stdout = process.stdout
-
-global.CoffeeScript = require 'coffee-script'
-readline     = require 'readline'
-{inspect}    = require 'util'
-{Script}     = require 'vm'
-Module       = require 'module'
-fs           = require 'fs'
-path         = require 'path'
-spawn        = require('child_process').spawn
-{flatten, starts, del, ends, last, count, merge, compact, extend} = require('coffee-script').helpers
-colors       = require 'colors'
-blockingProc = no
-
-#coffee = require './coffee-script'
+{@run,@eval,helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
+{inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
+{EventEmitter} = require('events')
+{dirname,basename,extname,exists,existsSync} = path = require('path')
+{spawn,fork,exec,execFile} = require('child_process')
 {Lexer} = require './lexer'
-#root.Lexer = Lexer
-#{Rewriter} = require './rewriter'
-#{parser} = require './grammar'
+[tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
+sandbox = root.sandbox = null
+shell = root.shell = null
 
+keymode = off
 
-
-# Load built-in shell commands
-global.builtin =
-	pwd: process.cwd
-	echo: (val, showhidden = no, depth = 3, colors = yes) ->
-		console.log inspect val, showhidden, depth, colors
-	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
-	which: (val) ->
-		if builtin[val]? then console.log 'built-in shell command'.green ; return
-		###
-		for pathname in process.env.PATH.split ':'
-			if path.existsSync pathname
-				for file in fs.readdirSync pathname
-					if file is val then console.log pathname.white ; return
-		###
-		console.log "command '#{val}'' not found".red
-	cd: (dir) -> process.chdir(dir)
-
-# Load all executables from PATH
-global.binaries = []
-
-for pathname in process.env.PATH.split ':'
-	if path.existsSync pathname then do (pathname) ->
-		for file in fs.readdirSync pathname then do (file) ->
-			global.binaries[file] ?= (args...) ->
-				blockingProc = yes
-				proc = spawn pathname + "/" + file, args, {
-					cwd: process.cwd()
-					env: process.env
-					setsid: false
-				}
-				proc.stdout.on 'data', (data) -> process.stdout.write(data)
-				proc.stderr.on 'data', (data) -> process.stderr.write(data)
-				proc.on 'exit', ->
-					blockingProc = no
-					shell.setPrompt SHELL_PROMPT()
-					shell.prompt()
-					#shell.output.cursorTo(shelllength)
-
-# Export environment vars to the global namespace
-global.env = process.env
+stdin = process.stdin
+stdout = process.stdout
+stderr = process.stderr
 
 # Config
 #shelllength = 2
@@ -75,18 +24,182 @@ SHELL_PROMPT = ->
 	u = process.env.USER
 	d = process.cwd() #.replace('/home/'+u,'~')
 	#shelllength = "#{u}:#{d}$ ".length
-	("#{u}:#{d}$ ")
+	("#{u}:#{d}$ ".green)
 
-SHELL_PROMPT_CONTINUATION = '......> '
+SHELL_PROMPT_CONTINUATION = '......> '.green
+
 SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
-
-enableColours = no
-unless process.platform is 'win32'
-	enableColours = not process.env.NODE_DISABLE_COLORS
+enableColours = yes
 
 # Log an error.
-error = (err) ->
-	stdout.write (err.stack or err.toString()) + '\n'
+error = (err) -> process.stdout.write (err.stack or err.toString()) + '\n'
+process.on 'uncaughtException', -> error
+
+
+# load history
+history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
+history.shift()
+historyIndex = -1
+history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
+
+
+exports.run = ->
+	prompt()
+
+prompt = ->
+	buf = ''
+	tty.setRawMode true
+	stdin.setEncoding('utf8')
+	stdout.write SHELL_PROMPT()
+
+	stdin.on('keypress', (c,key) ->
+		buf += c
+
+		if c is '\r'
+			console.log()
+			stdout.write SHELL_PROMPT_CONTINUATION
+
+		else if c is '\n'
+			#console.log([buf])
+			console.log()
+			stdin.removeAllListeners 'keypress'
+			tty.setRawMode false
+			runline(buf)
+			buf = ''
+			return
+
+		else if key?.ctrl and key.name is 'n'
+			buf = ''
+			stdin.removeAllListeners 'keypress'
+			tty.setRawMode false
+			nanoprompt()
+			return
+
+		else if key?.ctrl and key.name is 'c'
+			buf = ''
+			stdin.removeAllListeners 'keypress'
+			tty.setRawMode false
+			console.log()
+			prompt()
+			return
+
+		else if key?.ctrl and key.name is 'd'
+			stdin.removeAllListeners 'keypress'
+			tty.setRawMode false
+			stdin.destroy()
+			return
+		
+		else if key?.meta and key.name is 'k'
+			keymode = not keymode
+
+
+		else if key.name is 'backspace'
+			stdout.moveCursor(0)
+			stdout.clearLine(1)
+
+		else
+			if keymode
+				console.log key
+			else
+				stdout.write c
+
+	).resume()
+
+
+
+
+
+
+runline = (buffer) ->
+	#return if shell.blockingProc
+
+	if !buffer.toString().trim() #and !shell.backlog
+		prompt()
+		return
+
+	#code = shell.backlog += buffer
+	
+	#if code[code.length - 1] is '\\'
+	#	shell.backlog = "#{shell.backlog[...-1]}\n"
+	#	shell.setPrompt SHELL_PROMPT_CONTINUATION
+	#	prompt()
+	#	return
+	
+	#shell.backlog = ''
+
+	code = buffer
+
+	try
+		
+		#recode = tokenparse code
+		#console.log code, recode
+
+		_ = sandbox._
+		
+		returnValue = coffee.eval "_=(#{code}\n)",
+			sandbox,
+			filename: __filename
+			modulename: module.id
+
+		if returnValue is undefined
+			sandbox._ = _
+		else
+			process.stdout.write inspect(returnValue, no, 2, enableColours) + '\n'
+		
+		fs.write history_fd, code + '\n'
+
+	catch err
+		error err
+	
+	prompt()
+
+		#if not shell.blockingProc
+		#	shell.setPrompt prompt()
+		
+
+
+		#if typeof returnValue is 'function' then returnValue()
+		#ACCESSOR  = /^([\w\.]+)(?:\.(\w*))$/
+		#SIMPLEVAR = /^(\w+)$/i
+		#if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? 
+		#	builtin.echo returnValue
+
+
+
+#Load binaries and built-in shell commands
+binaries = {}
+for pathname in (process.env.PATH.split ':')
+	if path.existsSync(pathname) 
+		binaries[file] = pathname for file in fs.readdirSync(pathname)
+
+builtin = 
+	pwd: -> process.cwd.apply(this,arguments)
+	cd: -> process.chdir.apply(this,arguments)
+	echo: (vals...) ->
+		for v in vals
+			console.log inspect v, true, 5, enableColours
+	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
+	which: (val) ->
+		if builtin[val]? then console.log 'built-in shell command'.green 
+		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
+		else console.log "command '#{val}'' not found".red
+
+
+nanoprompt = ->
+	proc = spawn 'nano', '',
+		cwd: process.cwd()
+		env: process.env
+		setsid: false
+		customFds:[0,1,2]
+
+	proc.on 'exit', ->
+		prompt()
+
+	process.stdin.pause()
+	proc.stdin.resume()
+
+
+
 
 ## Autocompletion
 
@@ -127,7 +240,7 @@ completeAttribute = (text) ->
 	if match = text.match ACCESSOR
 		[all, obj, prefix] = match
 		try
-			val = Script.runInThisContext obj
+			val = vm.runInContext obj, sandbox
 		catch error
 			return
 		completions = getCompletions prefix, Object.getOwnPropertyNames Object val
@@ -138,8 +251,8 @@ completeVariable = (text) ->
 	free = text.match(SIMPLEVAR)?[1]
 	free = "" if text is ""
 	if free?
-		vars = Script.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
-		keywords = (r for r in CoffeeScript.RESERVED when r[..1] isnt '__')
+		vars = vm.runInContext 'Object.getOwnPropertyNames(Object(this))', sandbox
+		keywords = (r for r in coffee.RESERVED when r[..1] isnt '__')
 		possibilities = vars.concat keywords
 		completions = getCompletions free, possibilities
 		[completions, free]
@@ -148,214 +261,110 @@ completeVariable = (text) ->
 getCompletions = (prefix, candidates) ->
 	(el for el in candidates when el.indexOf(prefix) is 0)
 
-# Helper function for gathering quoted goods
-get_piece = (piece, stack, oldpieces, pieces) ->
-	oldpieces.push (piece)
-	for i,char of piece
-		if char is '\\' and char[i+1]? in ["'", '"'] then i++
-		else if char in ["'", '"']
-			if char is last(stack)
-				stack.pop()
-				return if stack.length is 0
-			else stack.push char
-	if stack.length isnt 0 
-		get_piece pieces.shift(), stack, oldpieces, pieces
 
 
-# Create the shell by listening to **stdin**.
-if readline.createInterface.length < 3
-	shell = readline.createInterface stdin, autocomplete
-	stdin.on 'data', (buffer) -> shell.write buffer
-else
-	shell = readline.createInterface stdin, stdout, autocomplete
 
-
-# load history
-shell.history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
-shell.history.shift()
-shell.historyIndex = -1
-history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
-
-# Make sure that uncaught exceptions don't kill the shell.
-process.on 'uncaughtException', ->
-	error
-	#shell.output.cursorTo(shelllength)
-
-# The current backlog of multi-line code.
-backlog = ''
-
-multilineMode = off
-
-shell.on 'SIGINT', ->
-	backlog = ''
-	multilineMode = off
-	shell.historyIndex = -1
-	shell.output.write '\n'
-	shell.line = ''
-	shell.setPrompt SHELL_PROMPT()
-	shell.prompt()
-	#shell.output.cursorTo(shelllength)
-
-shell.on 'close', ->
-	fs.closeSync history_fd
-	shell.output.write '\n'
-	shell.input.destroy()
-
-shell.on 'line', (buffer) ->
+camelcase = (flag) ->
+	flag.split('-').reduce (str, word) ->
+		str + word[0].toUpperCase() + word.slice(1) 
 	
-	if !buffer.toString().trim() and !backlog
-		shell.prompt()
-		return
-	code = backlog += buffer
-	if code[code.length - 1] is '\\'
-		backlog = "#{backlog[...-1]}\n"
-		shell.setPrompt SHELL_PROMPT_CONTINUATION
-		shell.prompt()
-		return
+parseBool = (str) ->
+	/^y|yes|ok|true$/i.test str
+
+padstring = (str, width) ->
+	len = Math.max(0, width - str.length)
+	str + [len + 1].join(' ')
+
+
+root.sandbox = sandbox = vm.createContext(root)
+[sandbox.require, sandbox.module] = [require, module]
+[sandbox.coffee, sandbox.inspect, sandbox.fs, sandbox.path, sandbox.spawn, sandbox.colors, sandbox.Lexer] = [coffee, inspect, fs, path, spawn, colors, Lexer]
+[sandbox.builtin, sandbox.binaries, sandbox.shell] = [builtin, binaries, shell]
+sandbox.global = sandbox.GLOBAL = sandbox.root = sandbox
+
+
+
+
+
+#nonContextGlobals = [
+#	'Buffer', 'console', 'process'
+#	'setInterval', 'clearInterval'
+#	'setTimeout', 'clearTimeout'
+#]
+#	'inspect', 'fs', 'path', 'require']
+#	'coffee', 'helpers',, #
+#	'Script','Module','fs','path',
+##'spawn','colors','Lexer'
+
+#sandbox[g] = global[g] for g in nonContextGlobals
+
+
+
+#process.stdin.resume()
+
+	# # Create the shell by listening to **stdin**.
+	# shell = readline.createInterface process.stdin, process.stdout, autocomplete	
 	
 
-	tokens = (new Lexer).tokenize(code, {rewrite: on})
-	console.log tokens
-	root.tokens = tokens
-	root.mkstr = Lexer.prototype.makeString
-	backlog = ''
-	#output = [] ; args = [] ; cmd = ''
-	#pieces = code.split ' '
-	shell.setPrompt SHELL_PROMPT()
-	shell.prompt()
+			
+	# binaries['nano'] = (args...) ->
+	# 	shell.input.pause()
+	# 	shell.pause()
+	# 	shell.blockingProc = true
+	# 	#shell.removeAllListeners()
+	# 	#process.stdin.removeAllListeners()
 
-	output = []
-	tmp = ''
-	call_started = false
-	index_started = false
-	dot_started = false
-	cmd = ''
-	args = []
-	nested = []
-
-	for i in [0...tokens.length]
-		lex = tokens[i][0]
-		val = tokens[i][1]
+		
+		
 		
 
-		builtin.echo [lex, val]
-
-		if lex in ['.']
-			dot_started = true
-			output.push '['
-
-		else if lex in ['INDEX_START', '[']
-			index_started = true
-			output.push '['
-		
-		else if lex in ['INDEX_END', ']']
-			index_started = false
-			output.push ']'
-
-		else if lex in ['CALL_START']
-			if !call_started
-				call_started = true
-				output.push '('
-				tmp = output.join('')
-				output = []
-			#else
-			#	output.push ','
-
-		else if lex in ['CALL_END']
-			if call_started
-				call_started = false
-				tmp2 = output.join(', ')
-				output = [tmp, tmp2, ')']
-				#output.push ')'
-		else
-			if lex in ['IDENTIFIER', 'STRING']
-				if builtin[val]?
-					output.push "builtin[\"#{val}\"]"
-				else if binaries[val]?
-					output.push "binaries[\"#{val}\"]"
-				else if global[val]?
-					output.push "#{val}"
-				else
-					output.push "\"#{val}\""
-
-			else if lex in ['FILEPATH'] and path.existsSync(val)
-				output.push "#{val}"
-
-			else
-				output.push "#{val}"
-
-				
-			#if tokens[i].spaced then output.push ' '
-
-			if index_started 
-				output +=']'
-				index_started = false
-			if dot_started
-				output +=']'
-				dot_started = false
-			##if call_started
-			#	output += ', '
-		
-		builtin.echo output
+	
+	
+	# 		#binaries[file] = (args...) ->
+	# 				#shell.blockingProc = yes
+	# 				# proc = spawn pathname + "/" + file, args, {
+	# 				# 	cwd: process.cwd()
+	# 				# 	env: process.env
+	# 				# 	setsid: false
+	# 				# }
+	# # 				proc.stdout.on 'data', (data) -> process.stdout.write(data)
+	# # 				proc.stderr.on 'data', (data) -> process.stderr.write(data)
+	# # 				
+	# #shell.output.cursorTo(shelllength)
+	# #root.binaries = binaries
 
 
 
-	###
-	while piece = pieces.shift()
-		if -1 in [piece.indexOf('"'), piece.indexOf("'")]
-			stack = []
-			oldpieces=[]
-			get_piece piece, stack, oldpieces, pieces
-			piece = oldpieces.join " "
-		
-		# TODO: see if if() works
-		if piece in CoffeeScript.RESERVED
-			if cmd isnt ''
-				output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
-				cmd = '' ; args = []
-			output.push piece
-			continue
-		if cmd is ''
-			if builtin[piece]?
-				cmd = "builtin['#{piece}'].apply this,"
-			else if binaries[piece]?
-				cmd = "binaries['#{piece}']"
-			else if global[piece]?
-				if typeof piece is 'function'
-					cmd = "#{piece}.apply this,"
-				else output.push piece
-			else
-				output.push piece
-		else if piece[0] is '-' or (path.existsSync(piece)) or not CoffeeScript.eval("#{piece}?")
-			args.push "'#{piece}'"
-		else
-			args.push piece
-	if cmd isnt '' then output.push "#{cmd} [#{args}]" #"CoffeeScript.eval \"#{eval_line}\""
-	code = output.join ' '
-	###
+	# shell.backlog = ''
+	# shell.multilineMode = off
+	# shell.blockingProc = off
 
-	code = output.join ''
-	console.log code
-	try
-		_ = global._
-		returnValue = CoffeeScript.eval "_=(#{code}\n)" #, filename: __filename, modulename: 'shell'
-		#console.log returnValue
+	# shell.on 'SIGINT', ->
+	# 	return if shell.blockingProc
+	# 	shell.backlog = ''
+	# 	shell.multilineMode = off
+	# 	shell.historyIndex = -1
+	# 	shell.output.write '\n'
+	# 	shell.line = ''
+	# 	shell.setPrompt prompt()
+	# 	prompt()
+	# 	#shell.output.cursorTo(shelllength)
 
-		if typeof returnValue is 'function' then returnValue()
-		global._ = _ if returnValue is undefined
-		ACCESSOR  = /^([\w\.]+)(?:\.(\w*))$/
-		SIMPLEVAR = /^(\w+)$/i
-		if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? 
-			builtin.echo returnValue
-		fs.write history_fd, code + '\n'
-	catch err
-		error err
-	if not blockingProc
-		shell.setPrompt SHELL_PROMPT()
-		shell.prompt()
-		#shell.output.cursorTo(shelllength)
+	# shell.on 'attemptClose', ->
+	# 	if shell.backlog
+	# 		shell.backlog = ''
+	# 		process.stdout.write '\n'
+	# 		shell.setPrompt prompt
+	# 		prompt()
+	# 	else
+	# 		shell.close()
 
-exports.run = ->
-	shell.setPrompt SHELL_PROMPT()
-	shell.prompt()
-	#shell.output.cursorTo(shell.cursor)
+	# shell.on 'close', ->
+	# 	fs.closeSync shell.history_fd
+	# 	shell.output.write '\n'
+	# 	shell.input.destroy()
+
+	# shell.on 'line', runline
+
+	# shell.setPrompt prompt()
+	# prompt()

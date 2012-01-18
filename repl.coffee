@@ -103,7 +103,7 @@ getCompletions = (prefix, candidates) ->
   (el for el in candidates when el.indexOf(prefix) is 0)
 
 # Make sure that uncaught exceptions don't kill the REPL.
-process.on 'uncaughtException', error
+eess.on 'uncaughtException', error
 
 # Create the REPL by listening to **stdin**.
 if readline.createInterface.length < 3
@@ -115,7 +115,7 @@ else
 repl.on 'attemptClose', ->
   if backlog
     backlog = ''
-    process.stdout.write '\n'
+    eess.stdout.write '\n'
     repl.setPrompt REPL_PROMPT
     repl.prompt()
   else

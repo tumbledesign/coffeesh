@@ -4,6 +4,38 @@
 		"selected_items":
 		[
 			[
+				"proc",
+				"process"
+			],
+			[
+				"exis",
+				"existsSync"
+			],
+			[
+				"bin",
+				"binaries"
+			],
+			[
+				"req",
+				"require"
+			],
+			[
+				"co",
+				"coffee-shell"
+			],
+			[
+				"liter",
+				"literalToken"
+			],
+			[
+				"here",
+				"heredoc"
+			],
+			[
+				"Make",
+				"makeString"
+			],
+			[
 				"index",
 				"index_started"
 			],
@@ -31,28 +63,20 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "coffee-shell.coffee",
-			"settings":
-			{
-				"buffer_size": 9502,
-				"line_ending": "Unix"
-			}
-		}
 	],
-	"build_system": "Packages/CoffeeScript/Commands/CoffeeScript.sublime-build",
+	"build_system": "Packages/User/CoffeeShell.sublime-build",
 	"command_palette":
 	{
-		"height": 74.0,
+		"height": 392.0,
 		"selected_items":
 		[
 			[
-				"coffee",
-				"Set Syntax: CoffeeScript"
+				"",
+				"Snippet: #!/usr/bin/env"
 			],
 			[
-				"",
-				"File: Clone"
+				"coffee",
+				"Set Syntax: CoffeeScript"
 			]
 		],
 		"width": 392.0
@@ -72,21 +96,48 @@
 	},
 	"file_history":
 	[
-		"/home/cobells/Work/node/coffeeshell/package.json",
-		"/home/cobells/Work/node/coffeeshell/command.coffee",
-		"/home/cobells/.config/sublime-text-2/Packages/CoffeeScript/Commands/Run.tmCommand",
 		"/home/cobells/Work/node/coffeeshell/lexer.coffee",
-		"/home/cobells/Work/node/coffeeshell/README",
+		"/home/cobells/Work/node/coffeeshell/rewriter.coffee",
+		"/home/cobells/Work/node/coffeeshell/grammar.coffee",
+		"/home/cobells/Work/node/coffeeshell/parser.js",
+		"/home/cobells/Work/node/coffeeshell/repl.coffee",
+		"/home/cobells/Work/node/coffeeshell/node_modules/commander/commander.js/lib/commander.js",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffee-shell.coffee",
+		"/home/cobells/Store2",
+		"/home/cobells/Work/node/coffeeshell/nano.save.2",
+		"/home/cobells/Work/node/coffeeshell/node_modules/commander/commander.js/index.js",
+		"/home/cobells/Work/node/coffeeshell/nano.save.1",
+		"/home/cobells/Work/node/coffeeshell/nano.save",
+		"/home/cobells/Work/node/coffeeshell/aoeu",
+		"/home/cobells/Work/node/coffeeshell/nano.save.9",
+		"/home/cobells/Work/node/coffeeshell/node_modules/commander/commander.js/Makefile",
+		"/home/cobells/Work/node/coffeeshell/nodes.coffee",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Global.sublime-settings",
+		"/home/cobells/Work/node/coffeeshell/bin/coffee-shell",
+		"/home/cobells/Work/node/coffeeshell/README",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Global.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/CoffeeShell.sublime-build",
+		"/home/cobells/Work/node/coffeeshell/command.js",
+		"/home/cobells/Work/node/coffeeshell/command.coffee",
+		"/home/cobells/.config/sublime-text-2/Packages/User/CoffeeScript.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/Base File.sublime-settings",
+		"/home/cobells/.config/sublime-text-2/Packages/User/CoffeeShell.js",
+		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-project",
+		"/home/cobells/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
+		"/home/cobells/Work/node/coffeeshell/bin/coffee-shell.js",
+		"/home/cobells/Work/node/coffeeshell/oldtokenizer",
+		"/home/cobells/Work/node/coffeeshell/notes",
+		"/home/cobells/Work/node/coffee-script/src/lexer.coffee",
+		"/home/cobells/Work/node/coffeeshell/coffee-script.coffee",
+		"/home/cobells/Work/node/coffeeshell/utf",
+		"/home/cobells/Work/node/coffeeshell/node_modules/coffee-script/lib/coffee-script/lexer.js",
+		"/home/cobells/Work/node/coffeeshell/package.json",
+		"/home/cobells/.config/sublime-text-2/Packages/CoffeeScript/Commands/Run.tmCommand",
 		"/home/cobells/.config/sublime-text-2/Packages/CoffeeScript/Commands/Run selected text.tmCommand",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
-		"/home/cobells/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
 		"/home/cobells/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
-		"/home/cobells/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
-		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-project",
-		"/home/cobells/.config/sublime-text-2/Packages/User/CoffeeScript.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffeeshell.sublime-workspace",
-		"/home/cobells/.config/sublime-text-2/Packages/Default/Global.sublime-settings",
 		"/home/cobells/Work/node/coffeeshell/coffee-shell.js",
 		"/home/cobells/Work/node/coffeeshell/lexer.js",
 		"/home/cobells/Work/node/node_modules/coffee-shell/grammar.coffee",
@@ -98,7 +149,6 @@
 		"/home/cobells/Work/node/node_modules/coffee-shell/bin/coffee-shell",
 		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-shell.coffee",
 		"/home/cobells/Work/node/node_modules/coffee-shell/lexer.coffee",
-		"/home/cobells/Work/node/coffeeshell/bin/coffee-shell",
 		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-script.coffee",
 		"/home/cobells/Work/node/node_modules/coffee-shell/coffee-script.js",
 		"/home/cobells/Work/node/coffee-script/src/grammar.coffee",
@@ -124,9 +174,7 @@
 		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/vartest.sh",
 		"/home/cobells/.gvfs/SFTP for mark on doob-un4/home/mark/Projects/ultimateshell/tmux/.tmux.conf",
 		"/home/cobells/.config/sublime-text-2/Packages/ShellScript/Shell-Unix-Generic.tmLanguage",
-		"/home/cobells/.config/sublime-text-2/Packages/User/Global.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Distraction Free.sublime-settings",
-		"/home/cobells/.config/sublime-text-2/Packages/User/Base File.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Shell-Unix-Generic.sublime-settings",
 		"/home/cobells/.config/sublime-text-2/Packages/User/Plain text.sublime-settings",
 		"/home/mark/Projects/unity-2d_5.2-0ubuntu1ppa2_source.build",
@@ -175,31 +223,7 @@
 		"/home/mark/.oh-my-zsh/templates/zshrc.zsh-template",
 		"/home/mark/.ultimateshell/bootstrap.sh",
 		"/home/mark/.oh-my-zsh/tools/require_tool.sh",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/upgrade.sh",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/correction.zsh",
-		"/home/mark/.zshrc",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/lib/completion.zsh",
-		"/home/mark/Projects/ultimateshell/ref/dependencies",
-		"/home/mark/Projects/ultimateshell/zsh/.zlogout",
-		"/home/mark/Projects/ultimateshell/zsh/.zlogin",
-		"/home/mark/Projects/ultimateshell/zsh/.zprofile",
-		"/home/mark/Projects/ultimateshell/zsh/zshrc",
-		"/home/mark/.config/sublime-text-2/Packages/User/Shell-Unix-Generic.sublime-settings",
-		"/home/mark/.zcompdump",
-		"/home/mark/.profile",
-		"/home/mark/Projects/ultimateshell/zsh/zshenv",
-		"/home/mark/Projects/ultimateshell/zsh/zlogin",
-		"/home/mark/Projects/ultimateshell/zsh/zprofile",
-		"/home/mark/.config/sublime-text-2/Packages/Default/Base File.sublime-settings",
-		"/home/mark/.config/sublime-text-2/Packages/User/JSON.sublime-settings",
-		"/home/mark/Projects/ultimateshell/zsh/.zshenv",
-		"/home/mark/Projects/ultimateshell/zsh/zlogout",
-		"/home/mark/opgpm.txt",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/log/.placeholder",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/custom/example/example.plugin.zsh",
-		"/home/mark/Projects/ultimateshell/.gitignore",
-		"/home/mark/Projects/ultimateshell/ultimateshell.sublime-workspace",
-		"/home/mark/Projects/ultimateshell/.zshrc"
+		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/upgrade.sh"
 	],
 	"find":
 	{
@@ -218,6 +242,123 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"process",
+			"val",
+			"return",
+			"non",
+			"fn",
+			"prompt",
+			"spawn",
+			"tty",
+			"promptsin",
+			"process.stdin",
+			"mask",
+			"process",
+			"?\", -> ",
+			"enableC",
+			"shell",
+			"stdout",
+			"createInter",
+			"root.shell",
+			"env",
+			"proc",
+			"block",
+			"colors",
+			"console.log",
+			"		}",
+			"binaries",
+			"root",
+			"] = ->",
+			"		",
+			"existsSync",
+			"			",
+			"isDirectory",
+			") -> ",
+			"1",
+			"root",
+			"			# 		",
+			"#(",
+			" #?= (",
+			"for",
+			"for file in fs.readdirSync pathname then do (file) ->\n			# 	root.binaries[file] ?= (args...) ->\n			",
+			"proc = spawn pathname + \"/\" + file, args, {\n					# 	cwd: process.cwd()\n					# 	env: process.env\n					# 	setsid: false\n					# }",
+			"for pathname in process.env.PATH.split ':'\n		if path.existsSync pathname then do (pathname) ->\n			for file in fs.readdirSync pathname then do (file) ->\n				root.binaries[file] ?= (args...) ->\n					shell.blockingProc = yes\n					proc = spawn pathname + \"/\" + file, args, {\n						cwd: process.cwd()\n						env: process.env\n						setsid: false\n					}",
+			"sandbox",
+			"root",
+			"null",
+			"sandbox",
+			"\n	# 				proc.stderr.on 'data', (data) -> process.stderr.write(data)",
+			"id",
+			"Script.",
+			"Script",
+			"runInContext",
+			"completevar",
+			"__filename",
+			"inspect",
+			"this",
+			"indexof",
+			"sandbox",
+			"#]",
+			"inspect",
+			"autoc",
+			"builtin",
+			"indexof",
+			"history",
+			"global",
+			"root",
+			"shell",
+			"back",
+			"builtin",
+			"backlog",
+			"built",
+			"gdm",
+			"globa",
+			"sand",
+			"\n	# Export environment vars to the sandbox namespace\n	sandbox.env = process.env\n\n	# Create the shell by listening to **stdin**.\n	if readline.createInterface.length < 3\n		shell = readline.createInterface process.stdin, autocomplete\n		process.stdin.on 'data', (buffer) -> shell.write buffer\n\n	else\n		shell = readline.createInterface process.stdin, process.stdout, autocomplete\n\n	# load history\n	shell.history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\\n').reverse()\n	shell.history.shift()\n	shell.historyIndex = -1\n	shell.history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'\n\n	# Make sure that uncaught exceptions don't kill the shell.\n	process.on 'uncaughtException', -> error\n\n	# The current shell.backlog of multi-line code.\n	shell.backlog = ''\n	shell.multilineMode = off\n\n	shell.on 'SIGINT', ->\n		shell.backlog = ''\n		shell.multilineMode = off\n		shell.historyIndex = -1\n		shell.output.write '\\n'\n		shell.line = ''\n		shell.setPrompt SHELL_PROMPT()\n		shell.prompt()\n		#shell.output.cursorTo(shelllength)\n\n	shell.on 'attemptClose', ->\n		if shell.backlog\n			shell.backlog = ''\n			process.stdout.write '\\n'\n			shell.setPrompt SHELL_PROMPT\n			shell.prompt()\n		else\n			shell.close()\n\n	shell.on 'close', ->\n		fs.closeSync shell.history_fd\n		shell.output.write '\\n'\n		shell.input.destroy()\n\n	shell.on 'line', runline\n",
+			"context",
+			"sand",
+			"blockingProc",
+			"block",
+			"blocking",
+			"tab",
+			"echo",
+			"log",
+			"sandbox",
+			"this",
+			"conso",
+			"\", \"",
+			"build",
+			"launch",
+			"run",
+			"exec",
+			"build",
+			"run",
+			"build",
+			"builtin",
+			"shell",
+			"global",
+			"Buffer",
+			"std",
+			"multilineMode",
+			"backlog",
+			"histo",
+			"CoffeScri",
+			"stdin",
+			"createcont",
+			"context",
+			"error",
+			"multi",
+			"?=",
+			"join",
+			"return",
+			"tmp",
+			",",
+			"path",
+			"string",
+			"STRING",
+			"string",
+			"@",
+			"makestr",
 			"run",
 			"console",
 			",",
@@ -228,124 +369,7 @@
 			"}\\\"]\"",
 			"escape",
 			"makeStr",
-			"make",
-			"tokens\\[i\\]\\[0\\]",
-			"tokens\\[i\\]\\[1\\]",
-			"tokens\\]\\[i\\]\\[1",
-			"tokens[i][1]",
-			"echo",
-			"echo`",
-			"echo",
-			"makestr",
-			"tokens",
-			"coffee",
-			"global",
-			"off",
-			"tokens",
-			")",
-			"(",
-			"operator",
-			",\\.+=%@]|([\\][#~:()[]{}]|(\\\\\\",
-			"pathToken",
-			"jsToken",
-			"pathtoken",
-			"tokeni",
-			"test",
-			"messa",
-			"title",
-			"termca",
-			"terminfo",
-			"termc",
-			"title",
-			"precmd",
-			"fg_bold",
-			"]%}%",
-			"PROMPT_PERCENT",
-			"git_prompt_status",
-			"require_tool.sh",
-			"oh-my-zsh",
-			"oh-my-zsh.sh",
-			"/usr/bin/env zsh",
-			"oh-my",
-			"afind",
-			"awk",
-			"ZSH_CUSTOM=",
-			"fpath",
-			"oh-my",
-			"oh-my-zsh",
-			"shell",
-			" &",
-			":",
-			"\"",
-			"gameo",
-			"points",
-			".time",
-			".finished",
-			"placed",
-			"newmap",
-			"newmaps",
-			"nextprize",
-			"nextma",
-			"nextmap",
-			"times",
-			"placements",
-			"times",
-			"finish",
-			"finished",
-			"view",
-			"coffeeku",
-			"editing",
-			"skull",
-			"@users",
-			"playsound",
-			"playsou",
-			"playso",
-			"playSound",
-			"besttime",
-			"_gameclo",
-			"currenttime",
-			"current",
-			"stat",
-			"results",
-			"timers",
-			"skull",
-			"drawmode",
-			"KEYS",
-			"uid",
-			"keycontro",
-			"initplayer",
-			"editing",
-			"moustip",
-			".idx",
-			"editmode",
-			"1..8",
-			"finished",
-			"([\\.|\\#].*)\\s\\n",
-			"([\\.|\\#].*)\\n",
-			"([\\.|\\#].*\\n)",
-			"-([a-z])",
-			"-t",
-			"-([a-z])",
-			": ",
-			";",
-			"}",
-			"{",
-			"variable",
-			"variable.language",
-			"punc",
-			"punctuation",
-			"punctuation.section",
-			"#",
-			"#\\{",
-			"@",
-			"interp",
-			"inter",
-			"inte\n\ninter",
-			"inter",
-			"#",
-			"inter",
-			"constant.character.escape.coffee",
-			"double"
+			"make"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -353,6 +377,14 @@
 		"regex": true,
 		"replace_history":
 		[
+			"stdin",
+			"\n\n\nroot",
+			"\n\n\nvm.",
+			"vm",
+			"shell.blockingProc",
+			"sandbox",
+			"shell.multilineMode",
+			"shell.backlog",
 			"output.push ",
 			"val",
 			"=",
@@ -376,42 +408,14 @@
 	"groups":
 	[
 		{
-			"selected": 0,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "coffee-shell.coffee",
-					"settings":
-					{
-						"buffer_size": 9502,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				}
 			]
 		}
 	],
 	"incremental_find":
 	{
-		"height": 0.0
+		"height": 34.0
 	},
 	"input":
 	{
@@ -440,10 +444,6 @@
 		]
 	},
 	"menu_visible": true,
-	"output.exec":
-	{
-		"height": 106.0
-	},
 	"replace":
 	{
 		"height": 62.0
@@ -454,6 +454,14 @@
 		"height": 0.0,
 		"selected_items":
 		[
+			[
+				"",
+				"bin/coffee-shell"
+			],
+			[
+				"exec",
+				"lexer.coffee"
+			]
 		],
 		"width": 0.0
 	},
