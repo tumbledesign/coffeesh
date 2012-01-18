@@ -8,11 +8,6 @@
 {Lexer} = require './lexer'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
-sandbox = root.sandbox = null
-
-
-keymode = off
-
 stdin = process.stdin
 stdout = process.stdout
 stderr = process.stderr
@@ -110,6 +105,7 @@ class Shell
 	detach: ->
 		@input.removeAllListeners 'keypress'
 		tty.setRawMode false
+		return 
 
 	close = (d) ->
 		@input.removeAllListeners 'keypress'
@@ -200,10 +196,8 @@ class Shell
 	_tabComplete: ->
 		self = this
 		tty.setRawMode false
-		self.completer self.line.slice(0, @cursor), (err, rv) ->
+		self.completer self.line.slice(0, self.cursor), (err, rv) ->
 			tty.setRawMode true
-			#console.log err,rv
-			#@input.resume()
 			return  if err
 
 			completions = rv[0]
@@ -240,7 +234,7 @@ class Shell
 					width = completions.reduce((a, b) ->
 						(if a.length > b.length then a else b)
 					).length + 2
-					maxColumns = Math.floor(@columns / width) or 1
+					maxColumns = Math.floor(self.columns / width) or 1
 					group = []
 					c = undefined
 					i = 0
@@ -339,11 +333,25 @@ class Shell
 
 
 	_ttyWrite: (s, key) ->
-		
-
 		key ?= {}
 		
-		#console.log s,key
+		# 	if s is '\r'
+		# 		console.log()
+		# 		stdout.write SHELL_PROMPT_CONTINUATION
+		# 		return
+
+		# 	else if s is '\n'
+		# 		#console.log([buf])
+				
+		# 		#writeline()
+		# 		console.log()
+		# 		stdin.removeAllListeners 'keypress'
+		# 		tty.setRawMode false
+		# 		runline(buf)
+		# 		buf = ''
+		# 		return
+
+
 		if key.ctrl and key.shift
 			switch key.name
 				when "backspace"
@@ -354,6 +362,7 @@ class Shell
 			switch key.name
 				when "c"
 					@detach()
+					console.log()
 					@prompt()
 				when "h"
 					@_deleteLeft()
@@ -409,6 +418,8 @@ class Shell
 					@_deleteWordRight()
 				when "backspace"
 					@_deleteWordLeft()
+# 			when "n"
+# 				nanoprompt()
 		else
 			switch key.name
 				when "enter"
@@ -442,7 +453,7 @@ class Shell
 				else
 					s = s.toString("utf-8")  if Buffer.isBuffer(s)
 					if s
-						lines = s.split('/\n/') # s.split(/\r\n|\n|\r/)
+						lines = s.split(/\r\n|\n|\r/)
 						i = 0
 						len = lines.length
 
@@ -450,451 +461,6 @@ class Shell
 							@_line()  if i > 0
 							@_insertString lines[i]
 							i++
-
-root.shl = {}
-exports.run = ->
-	root.shl = new Shell(autocomplete)
-	
-
-
-	# shl.input.on("keypress", (s, key) ->
-	# 	shl._ttyWrite(s, key)
-	# ).resume()
-		
-
-	#shl.prompt()
-
-# prompt = ->
-	#buf = ''
-
-	#tty.setRawMode true
-	#shl.input.setEncoding('utf8')
-	
-#	shl.setPrompt SHELL_PROMPT()
-	#output.write SHELL_PROMPT()
-
-	#shl.input.on("keypress", (s, key) ->
-	#	shl.write s, key
-	#).resume()
-
-
-
-# #inherits = require("util").inherits
-# #EventEmitter = require("events").EventEmitter
-
-
-
-
-# # otherjunk = ->
-# # 	#EventEmitter.call this
-# completer = [autocomplete]
-# # 		[]
-
-# # 	#throw new TypeError("Argument 'completer' must be a function")  if typeof completer isnt "function"
-
-	
-
-# completer = (if completer.length is 2 then completer else (v, callback) ->
-# 	callback null, completer(v)
-# )
-
-
-
-# 	winSize = output.getWindowSize()
-# 	exports.columns = winSize[0]
-# 	if process.listeners("SIGWINCH").length is 0
-# 		process.on "SIGWINCH", ->
-# 			winSize = output.getWindowSize()
-# 			exports.columns = winSize[0]
-
-
-
-# write = (s, key) ->
-	
-# 	#return  if closed
-# 	buf += s
-# 	key ?= {}
-
-# 	#console.log d, key
-
-# 	if s is '\r'
-# 		console.log()
-# 		stdout.write SHELL_PROMPT_CONTINUATION
-# 		return
-
-# 	else if s is '\n'
-# 		#console.log([buf])
-		
-# 		#writeline()
-# 		console.log()
-# 		stdin.removeAllListeners 'keypress'
-# 		tty.setRawMode false
-# 		runline(buf)
-# 		buf = ''
-# 		return
-
-
-# 	if key.ctrl and key.shift
-# 		switch key.name
-# 			when "backspace"
-# 				deleteLineLeft()
-# 			when "delete"
-# 				deleteLineRight()
-
-# 	else if key.ctrl
-# 		switch key.name
-# 			when "c"
-# 				detach()
-# 				console.log()
-# 				prompt()
-# 				#f listeners("SIGINT").length
-# 				#emit "SIGINT"
-# 				#lse
-# 				#close()
-# 			when "h"
-# 				deleteLeft()
-# 			when "d"
-# 				if cursor is 0 and line.length is 0
-# 					close()
-# 				else deleteRight()  if cursor < line.length
-# 			when "u"
-# 				cursor = 0
-# 				line = ""
-# 				refreshLine()
-# 			when "k"
-# 				deleteLineRight()
-# 			when "a"
-# 				cursor = 0
-# 				refreshLine()
-# 			when "e"
-# 				cursor = line.length
-# 				refreshLine()
-# 			when "b"
-# 				if cursor > 0
-# 					cursor--
-# 					refreshLine()
-# 			when "f"
-# 				unless cursor is line.length
-# 					cursor++
-# 					refreshLine()
-# 			when "n"
-# 				historyNext()
-# 			when "p"
-# 				historyPrev()
-# 			when "z"
-# 				process.kill process.pid, "SIGTSTP"
-# 				return
-# 			when "w", "backspace"
-# 				deleteWordLeft()
-# 			when "delete"
-# 				deleteWordRight()
-# 			when "backspace"
-# 				deleteWordLeft()
-# 			when "left"
-# 				wordLeft()
-# 			when "right"
-# 				wordRight()
-
-# 	else if key.meta
-# 		switch key.name
-# 			when "b"
-# 				wordLeft()
-# 			when "f"
-# 				wordRight()
-# 			when "d", "delete"
-# 				deleteWordRight()
-# 			when "backspace"
-# 				deleteWordLeft()
-# 			when "n"
-# 				nanoprompt()
-
-# 	else
-# 		switch key.name
-# 			when "enter"
-# 				writeline()
-# 			when "backspace"
-# 				deleteLeft()
-# 			when "delete"
-# 				deleteRight()
-# 			when "tab"
-# 				tabComplete()
-# 			when "left"
-# 				if cursor > 0
-# 					cursor--
-# 					output.moveCursor -1, 0
-# 			when "right"
-# 				unless cursor is line.length
-# 					cursor++
-# 					output.moveCursor 1, 0
-# 			when "home"
-# 				cursor = 0
-# 				refreshLine()
-# 			when "end"
-# 				cursor = line.length
-# 				refreshLine()
-# 			when "up"
-# 				historyPrev()
-# 			when "down"
-# 				historyNext()
-# 			else
-# 				writeLine()
-# 				s = s.toString("utf-8")  if Buffer.isBuffer(s)
-# 				if s
-# 					lines = s.split('/\n/') # (/\r\n|\n|\r/)
-# 					i = 0
-# 					len = lines.length
-
-# 					while i < len
-# 						writeline()  if i > 0
-# 						insertString lines[i]
-# 						i++
-
-
-
-# detach = ->
-# 	input.removeAllListeners 'keypress'
-# 	tty.setRawMode false
-
-
-# close = (d) ->
-# 	input.removeAllListeners 'keypress'
-# 	tty.setRawMode false
-# 	closed = true
-# 	input.destroy()
-# 	return
-
-# commonPrefix = (strings) ->
-# 	return ""  if not strings or strings.length is 0
-# 	sorted = strings.slice().sort()
-# 	min = sorted[0]
-# 	max = sorted[sorted.length - 1]
-# 	i = 0
-# 	len = min.length
-
-# 	while i < len
-# 		return min.slice(0, i)  unless min[i] is max[i]
-# 		i++
-# 	min
-
-
-
-# setPrompt = (p, length) ->
-# 	pp = p
-# 	if length
-# 		promptLength = length
-# 	else
-# 		lines = pp.split(/[\r\n]/)
-# 		lastLine = lines[lines.length - 1]
-# 		promptLength = Buffer.byteLength(lastLine)
-# 	console.log promptLength
-
-
-
-# question = (query, cb) ->
-# 	if cb
-# 		tty.setRawMode true
-# 		if questionCallback
-# 			output.write "\n"
-# 			prompt()
-# 		else
-# 			oldPrompt = prompt
-# 			setPrompt query
-# 			questionCallback = cb
-# 			output.write "\n"
-# 			prompt()
-
-# onLine = (l) ->
-# 	if questionCallback
-# 		cb = questionCallback
-# 		questionCallback = null
-# 		setPrompt oldPrompt
-# 		cb l
-
-
-# addHistory = ->
-# 	return ""  if line.length is 0
-# 	history.unshift line
-# 	line = ""
-# 	historyIndex = -1
-# 	cursor = 0
-# 	history.pop()  if history.length > kHistorySize
-# 	history[0]
-
-# refreshLine = ->
-# 	return  if closed
-# 	output.cursorTo 0
-# 	output.write prompt
-# 	output.write line
-# 	output.clearLine 1
-# 	output.cursorTo promptLength + cursor
-
-
-
-# insertString = (c) ->
-# 	if cursor < line.length
-# 		beg = line.slice(0, cursor)
-# 		end = line.slice(cursor, line.length)
-# 		line = beg + c + end
-# 		cursor += c.length
-# 		refreshLine()
-# 	else
-# 		line += c
-# 		cursor += c.length
-# 		output.write c
-
-
-# wordLeft = ->
-# 	if cursor > 0
-# 		leading = line.slice(0, cursor)
-# 		match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-# 		cursor -= match[0].length
-# 		refreshLine()
-
-# wordRight = ->
-# 	if cursor < line.length
-# 		trailing = line.slice(cursor)
-# 		match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-# 		cursor += match[0].length
-# 		refreshLine()
-
-# deleteLeft = ->
-# 	if cursor > 0 and line.length > 0
-# 		line = line.slice(0, cursor - 1) + line.slice(cursor, line.length)
-# 		cursor--
-# 		refreshLine()
-
-# deleteRight = ->
-# 	line = line.slice(0, cursor) + line.slice(cursor + 1, line.length)
-# 	refreshLine()
-
-# deleteWordLeft = ->
-# 	if cursor > 0
-# 		leading = line.slice(0, cursor)
-# 		match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-# 		leading = leading.slice(0, leading.length - match[0].length)
-# 		line = leading + line.slice(cursor, line.length)
-# 		cursor = leading.length
-# 		refreshLine()
-
-# deleteWordRight = ->
-# 	if cursor < line.length
-# 		trailing = line.slice(cursor)
-# 		match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-# 		line = line.slice(0, cursor) + trailing.slice(match[0].length)
-# 		refreshLine()
-
-# deleteLineLeft = ->
-# 	line = line.slice(cursor)
-# 	cursor = 0
-# 	refreshLine()
-
-# deleteLineRight = ->
-# 	line = line.slice(0, cursor)
-# 	refreshLine()
-
-# writeline = ->
-# 	ln = addHistory()
-# 	output.write "\n"
-# 	onLine ln
-
-# historyNext = ->
-# 	if historyIndex > 0
-# 		historyIndex--
-# 		line = history[historyIndex]
-# 		cursor = line.length
-# 		refreshLine()
-# 	else if historyIndex is 0
-# 		historyIndex = -1
-# 		cursor = 0
-# 		line = ""
-# 		refreshLine()
-
-# historyPrev = ->
-# 	if historyIndex + 1 < history.length
-# 		historyIndex++
-# 		line = history[historyIndex]
-# 		cursor = line.length
-# 		refreshLine()
-
-
-
-
-
-
-# # tabComplete = ->
-# # 	console.log line
-
-# # 	#tty.setRawMode false
-# # 	autocomplete line.slice(0, cursor), (err, rv) ->
-
-# # 		#tty.setRawMode true
-# # 		return  if err
-# # 		completions = rv[0]
-# # 		completeOn = rv[1]
-# # 		if completions and completions.length
-# # 			if completions.length is 1
-# # 				insertString completions[0].slice(completeOn.length)
-# # 			else
-# # 				handleGroup = (group) ->
-# # 					return  if group.length is 0
-# # 					minRows = Math.ceil(group.length / maxColumns)
-# # 					row = 0
-
-# # 					while row < minRows
-# # 						col = 0
-
-# # 						while col < maxColumns
-# # 							idx = row * maxColumns + col
-# # 							break  if idx >= group.length
-# # 							item = group[idx]
-# # 							output.write item
-# # 							if col < maxColumns - 1
-# # 								s = 0
-# # 								itemLen = item.length
-
-# # 								while s < width - itemLen
-# # 									output.write " "
-# # 									s++
-# # 							col++
-# # 						output.write "\r\n"
-# # 						row++
-# # 					output.write "\r\n"
-# # 				output.write "\r\n"
-# # 				width = completions.reduce((a, b) ->
-# # 					(if a.length > b.length then a else b)
-# # 				).length + 2
-# # 				maxColumns = Math.floor(columns / width) or 1
-# # 				group = []
-# # 				c = undefined
-# # 				i = 0
-# # 				compLen = completions.length
-
-# # 				while i < compLen
-# # 					c = completions[i]
-# # 					if c is ""
-# # 						handleGroup group
-# # 						group = []
-# # 					else
-# # 						group.push c
-# # 					i++
-# # 				handleGroup group
-# # 				f = completions.filter((e) ->
-# # 					e  if e
-# # 				)
-# # 				prefix = commonPrefix(f)
-# # 				insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
-# # 			refreshLine()
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -910,15 +476,12 @@ runline = (buffer) ->
 		#recode = tokenparse code
 		#console.log code, recode
 
-		_ = sandbox._
+		_ = global._
 		
-		returnValue = coffee.eval "_=(#{code}\n)",
-			sandbox,
-			filename: __filename
-			modulename: module.id
-
+		returnValue = coffee.eval "_=(#{code}\n)"
+	
 		if returnValue is undefined
-			sandbox._ = _
+			global._ = _
 		else
 			process.stdout.write inspect(returnValue, no, 2, enableColours) + '\n'
 		
@@ -951,7 +514,7 @@ builtin =
 
 
 nanoprompt = ->
-	detach()
+	shl.detach()
 
 	proc = spawn 'nano', '',
 		cwd: process.cwd()
@@ -960,7 +523,7 @@ nanoprompt = ->
 		customFds:[0,1,2]
 
 	proc.on 'exit', ->
-		prompt()
+		shl.prompt()
 
 	process.stdin.pause()
 	proc.stdin.resume()
@@ -978,7 +541,7 @@ SIMPLEVAR = /(\w+)$/i
 autocomplete = (text) ->
 	text = text.substr 0, shl.cursor
 	text = text.split(' ').pop()
-	completeFile(text) or completeAttribute(text) or completeAttribute(text) or completeVariable(text) or [[], text]
+	completeFile(text) or completeVariable(text)  or completeAttribute(text) or  [[], text]
 
 # Attempt to autocomplete a valid file or directory
 completeFile = (text) ->
@@ -1007,7 +570,7 @@ completeAttribute = (text) ->
 	if match = text.match ACCESSOR
 		[all, obj, prefix] = match
 		try
-			val = vm.runInContext obj, sandbox
+			val = vm.runInThisContext obj
 		catch error
 			return
 		completions = getCompletions prefix, Object.getOwnPropertyNames Object val
@@ -1018,7 +581,7 @@ completeVariable = (text) ->
 	free = text.match(SIMPLEVAR)?[1]
 	free = "" if text is ""
 	if free?
-		vars = vm.runInContext 'Object.getOwnPropertyNames(Object(this))', sandbox
+		vars = vm.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
 		keywords = (r for r in coffee.RESERVED when r[..1] isnt '__')
 		possibilities = vars.concat keywords
 		completions = getCompletions free, possibilities
@@ -1030,24 +593,8 @@ getCompletions = (prefix, candidates) ->
 
 
 
-
-camelcase = (flag) ->
-	flag.split('-').reduce (str, word) ->
-		str + word[0].toUpperCase() + word.slice(1) 
-	
-parseBool = (str) ->
-	/^y|yes|ok|true$/i.test str
-
-padstring = (str, width) ->
-	len = Math.max(0, width - str.length)
-	str + [len + 1].join(' ')
+root.shl = {}
 
 
-root.sandbox = sandbox = vm.createContext(root)
-[sandbox.require, sandbox.module] = [require, module]
-[sandbox.coffee, sandbox.inspect, sandbox.fs, sandbox.path, sandbox.spawn, sandbox.colors, sandbox.Lexer] = [coffee, inspect, fs, path, spawn, colors, Lexer]
-[sandbox.builtin, sandbox.binaries, sandbox.shl] = [builtin, binaries, shl]
-sandbox.global = sandbox.GLOBAL = sandbox.root = sandbox
-
-
-
+exports.run = ->
+	root.shl = new Shell(autocomplete)

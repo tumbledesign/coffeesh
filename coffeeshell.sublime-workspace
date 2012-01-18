@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"his",
+				"historyIndex"
+			],
+			[
+				"pro",
+				"prompt"
+			],
+			[
+				"_",
+				"_line"
+			],
+			[
+				"prompt",
+				"promptLength"
+			],
+			[
 				"proc",
 				"process"
 			],
@@ -67,7 +83,7 @@
 			"file": "coffee-shell.coffee",
 			"settings":
 			{
-				"buffer_size": 8763,
+				"buffer_size": 13340,
 				"line_ending": "Unix"
 			}
 		},
@@ -83,7 +99,15 @@
 			"file": "readline.coffee",
 			"settings":
 			{
-				"buffer_size": 10097,
+				"buffer_size": 10115,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "class Shell\n	constructor: ->\n		@setPrompt = \">\"\n		@input = process.stdin\n		@output = process.stdout\n		@enabled = true\n		@cursor = 0\n		@closed = false\n		@line = ''\n		@completer = (if completer.length is 2 then completer else (v, callback) ->\n			callback null, completer(v)\n		)\n		@history = []\n		@historyIndex = -1\n\n		@\n		@\n\n		winSize = output.getWindowSize()\n		exports.columns = winSize[0]\n		if process.listeners(\"SIGWINCH\").length is 0\n			process.on \"SIGWINCH\", ->\n				winSize = output.getWindowSize()\n				exports.columns = winSize[0]\n\n	commonPrefix = (strings) ->\n	  return \"\"  if not strings or strings.length is 0\n	  sorted = strings.slice().sort()\n	  min = sorted[0]\n	  max = sorted[sorted.length - 1]\n	  i = 0\n	  len = min.length\n\n	  while i < len\n	    return min.slice(0, i)  unless min[i] is max[i]\n	    i++\n	  min\n\n\n	setPrompt: (prompt, length) ->\n		@_prompt = prompt\n		if length\n			@_promptLength = length\n		else\n			lines = prompt.split(/[\\r\\n]/)\n			lastLine = lines[lines.length - 1]\n			@_promptLength = Buffer.byteLength(lastLine)\n\n	prompt: (preserveCursor) ->\n		if @enabled\n			@cursor = 0  unless preserveCursor\n			@_refreshLine()\n		else\n			@output.write @_prompt\n\n	question: (query, cb) ->\n		if cb\n			@resume()\n			if @_questionCallback\n				@output.write \"\\n\"\n				@prompt()\n			else\n				@_oldPrompt = @_prompt\n				@setPrompt query\n				@_questionCallback = cb\n				@output.write \"\\n\"\n				@prompt()\n\n	_onLine: (line) ->\n		if @_questionCallback\n			cb = @_questionCallback\n			@_questionCallback = null\n			@setPrompt @_oldPrompt\n			cb line\n		else\n			@emit \"line\", line\n\n\n\n\n	_addHistory: ->\n		return \"\"  if @line.length is 0\n		@history.unshift @line\n		@line = \"\"\n		@historyIndex = -1\n		@cursor = 0\n		@history.pop()  if @history.length > kHistorySize\n		@history[0]\n\n	_refreshLine: ->\n		return  if @_closed\n		@output.cursorTo 0\n		@output.write @_prompt\n		@output.write @line\n		@output.clearLine 1\n\n\n	write: (d, key) ->\n		return  if @_closed\n		@_ttyWrite(d, key)\n\n	_insertString: (c) ->\n		if @cursor < @line.length\n			beg = @line.slice(0, @cursor)\n			end = @line.slice(@cursor, @line.length)\n			@line = beg + c + end\n			@cursor += c.length\n			@_refreshLine()\n		else\n			@line += c\n			@cursor += c.length\n			@output.write c\n\n	_tabComplete: ->\n		self = this\n		tty.setRawMode false\n		self.completer self.line.slice(0, self.cursor), (err, rv) ->\n			tty.setRawMode true\n			return  if err\n\n			completions = rv[0]\n			completeOn = rv[1]\n			if completions and completions.length\n				if completions.length is 1\n					self._insertString completions[0].slice(completeOn.length)\n				else\n					handleGroup = (group) ->\n						return  if group.length is 0\n						minRows = Math.ceil(group.length / maxColumns)\n						row = 0\n\n						while row < minRows\n							col = 0\n\n							while col < maxColumns\n								idx = row * maxColumns + col\n								break  if idx >= group.length\n								item = group[idx]\n								self.output.write item\n								if col < maxColumns - 1\n									s = 0\n									itemLen = item.length\n\n									while s < width - itemLen\n										self.output.write \" \"\n										s++\n								col++\n							self.output.write \"\\r\\n\"\n							row++\n						self.output.write \"\\r\\n\"\n					self.output.write \"\\r\\n\"\n					width = completions.reduce((a, b) ->\n						(if a.length > b.length then a else b)\n					).length + 2\n					maxColumns = Math.floor(self.columns / width) or 1\n					group = []\n					c = undefined\n					i = 0\n					compLen = completions.length\n\n					while i < compLen\n						c = completions[i]\n						if c is \"\"\n							handleGroup group\n							group = []\n						else\n							group.push c\n						i++\n					handleGroup group\n					f = completions.filter((e) ->\n						e  if e\n					)\n					prefix = commonPrefix(f)\n					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length\n				self._refreshLine()\n\n	_wordLeft: ->\n		if @cursor > 0\n			leading = @line.slice(0, @cursor)\n			match = leading.match(/([^\\w\\s]+|\\w+|)\\s*$/)\n			@cursor -= match[0].length\n			@_refreshLine()\n\n	_wordRight: ->\n		if @cursor < @line.length\n			trailing = @line.slice(@cursor)\n			match = trailing.match(/^(\\s+|\\W+|\\w+)\\s*/)\n			@cursor += match[0].length\n			@_refreshLine()\n\n	_deleteLeft: ->\n		if @cursor > 0 and @line.length > 0\n			@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)\n			@cursor--\n			@_refreshLine()\n\n	_deleteRight: ->\n		@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)\n		@_refreshLine()\n\n	_deleteWordLeft: ->\n		if @cursor > 0\n			leading = @line.slice(0, @cursor)\n			match = leading.match(/([^\\w\\s]+|\\w+|)\\s*$/)\n			leading = leading.slice(0, leading.length - match[0].length)\n			@line = leading + @line.slice(@cursor, @line.length)\n			@cursor = leading.length\n			@_refreshLine()\n\n	_deleteWordRight: ->\n		if @cursor < @line.length\n			trailing = @line.slice(@cursor)\n			match = trailing.match(/^(\\s+|\\W+|\\w+)\\s*/)\n			@line = @line.slice(0, @cursor) + trailing.slice(match[0].length)\n			@_refreshLine()\n\n	_deleteLineLeft: ->\n		@line = @line.slice(@cursor)\n		@cursor = 0\n		@_refreshLine()\n\n	_deleteLineRight: ->\n		@line = @line.slice(0, @cursor)\n		@_refreshLine()\n\n	_line: ->\n		line = @_addHistory()\n		@output.write \"\\r\\n\"\n		@_onLine line\n\n	_historyNext: ->\n		if @historyIndex > 0\n			@historyIndex--\n			@line = @history[@historyIndex]\n			@cursor = @line.length\n			@_refreshLine()\n		else if @historyIndex is 0\n			@historyIndex: -1\n			@cursor = 0\n			@line = \"\"\n			@_refreshLine()\n\n	_historyPrev: ->\n		if @historyIndex + 1 < @history.length\n			@historyIndex++\n			@line = @history[@historyIndex]\n			@cursor = @line.length\n			@_refreshLine()\n\n\n\n\n	_ttyWrite: (s, key) ->\n		key = key or {}\n		if key.ctrl and key.shift\n			switch key.name\n				when \"backspace\"\n					@_deleteLineLeft()\n				when \"delete\"\n					@_deleteLineRight()\n		else if key.ctrl\n			switch key.name\n				#when \"c\"\n					#if @listeners(\"SIGINT\").length\n					#	@emit \"SIGINT\"\n					#else\n					#	@_attemptClose()\n				when \"h\"\n					@_deleteLeft()\n				#when \"d\"\n					#if @cursor is 0 and @line.length is 0\n					#	@_attemptClose()\n					#else @_deleteRight()  if @cursor < @line.length\n				when \"u\"\n					@cursor = 0\n					@line = \"\"\n					@_refreshLine()\n				when \"k\"\n					@_deleteLineRight()\n				when \"a\"\n					@cursor = 0\n					@_refreshLine()\n				when \"e\"\n					@cursor = @line.length\n					@_refreshLine()\n				when \"b\"\n					if @cursor > 0\n						@cursor--\n						@_refreshLine()\n				when \"f\"\n					unless @cursor is @line.length\n						@cursor++\n						@_refreshLine()\n				when \"n\"\n					@_historyNext()\n				when \"p\"\n					@_historyPrev()\n				when \"z\"\n					process.kill process.pid, \"SIGTSTP\"\n					return\n				when \"w\", \"backspace\"\n					@_deleteWordLeft()\n				when \"delete\"\n					@_deleteWordRight()\n				when \"backspace\"\n					@_deleteWordLeft()\n				when \"left\"\n					@_wordLeft()\n				when \"right\"\n					@_wordRight()\n		else if key.meta\n			switch key.name\n				when \"b\"\n					@_wordLeft()\n				when \"f\"\n					@_wordRight()\n				when \"d\", \"delete\"\n					@_deleteWordRight()\n				when \"backspace\"\n					@_deleteWordLeft()\n		else\n			switch key.name\n				when \"enter\"\n					@_line()\n				when \"backspace\"\n					@_deleteLeft()\n				when \"delete\"\n					@_deleteRight()\n				when \"tab\"\n					@_tabComplete()\n				when \"left\"\n					if @cursor > 0\n						@cursor--\n						@output.moveCursor -1, 0\n				when \"right\"\n					unless @cursor is @line.length\n						@cursor++\n						@output.moveCursor 1, 0\n				when \"home\"\n					@cursor = 0\n					@_refreshLine()\n				when \"end\"\n					@cursor = @line.length\n					@_refreshLine()\n				when \"up\"\n					@_historyPrev()\n				when \"down\"\n					@_historyNext()\n				else\n					s = s.toString(\"utf-8\")  if Buffer.isBuffer(s)\n					if s\n						lines = s.split('/\\n/') # s.split(/\\r\\n|\\n|\\r/)\n						i = 0\n						len = lines.length\n\n						while i < len\n							@_line()  if i > 0\n							@_insertString lines[i]\n							i++",
+			"settings":
+			{
+				"buffer_size": 7776,
 				"line_ending": "Unix"
 			}
 		}
@@ -120,6 +144,7 @@
 	},
 	"file_history":
 	[
+		"/home/cobells/Work/node/coffeeshell/readline.coffee",
 		"/home/cobells/Work/node/coffeeshell/lexer.coffee",
 		"/home/cobells/Work/node/coffeeshell/rewriter.coffee",
 		"/home/cobells/Work/node/coffeeshell/grammar.coffee",
@@ -246,8 +271,7 @@
 		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/require_tool.sh",
 		"/home/mark/.oh-my-zsh/templates/zshrc.zsh-template",
 		"/home/mark/.ultimateshell/bootstrap.sh",
-		"/home/mark/.oh-my-zsh/tools/require_tool.sh",
-		"/home/mark/Projects/ultimateshell/.ultimateshell/tools/upgrade.sh"
+		"/home/mark/.oh-my-zsh/tools/require_tool.sh"
 	],
 	"find":
 	{
@@ -266,134 +290,134 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"stdout",
-			"\\.",
-			"'\\.'",
-			".",
-			"period",
-			".",
 			"write",
-			"refreshLine",
-			"_deleteLineLeft",
-			"@_deleteLineLeft()",
-			"rawmode",
-			"utf",
-			"write",
-			"_tty",
-			"prompt",
-			"helpers",
-			"SHELL",
-			"file",
-			"histor",
-			"shell.",
-			"shell",
-			"histor",
-			"sprompt",
-			"shell.prompt",
-			"shell",
-			"process",
-			"val",
-			"return",
-			"non",
-			"fn",
-			"prompt",
-			"spawn",
-			"tty",
-			"promptsin",
-			"process.stdin",
-			"mask",
-			"process",
-			"?\", -> ",
-			"enableC",
-			"shell",
-			"stdout",
-			"createInter",
-			"root.shell",
-			"env",
-			"proc",
-			"block",
-			"colors",
-			"console.log",
-			"		}",
-			"binaries",
-			"root",
-			"] = ->",
-			"		",
-			"existsSync",
-			"			",
-			"isDirectory",
-			") -> ",
-			"1",
-			"root",
-			"			# 		",
-			"#(",
-			" #?= (",
-			"for",
-			"for file in fs.readdirSync pathname then do (file) ->\n			# 	root.binaries[file] ?= (args...) ->\n			",
-			"proc = spawn pathname + \"/\" + file, args, {\n					# 	cwd: process.cwd()\n					# 	env: process.env\n					# 	setsid: false\n					# }",
-			"for pathname in process.env.PATH.split ':'\n		if path.existsSync pathname then do (pathname) ->\n			for file in fs.readdirSync pathname then do (file) ->\n				root.binaries[file] ?= (args...) ->\n					shell.blockingProc = yes\n					proc = spawn pathname + \"/\" + file, args, {\n						cwd: process.cwd()\n						env: process.env\n						setsid: false\n					}",
 			"sandbox",
-			"root",
-			"null",
-			"sandbox",
-			"\n	# 				proc.stderr.on 'data', (data) -> process.stderr.write(data)",
-			"id",
-			"Script.",
-			"Script",
-			"runInContext",
-			"completevar",
-			"__filename",
-			"inspect",
-			"this",
-			"indexof",
-			"sandbox",
-			"#]",
-			"inspect",
-			"autoc",
-			"builtin",
-			"indexof",
-			"history",
-			"global",
-			"root",
-			"shell",
-			"back",
-			"builtin",
-			"backlog",
-			"built",
-			"gdm",
-			"globa",
-			"sand",
-			"\n	# Export environment vars to the sandbox namespace\n	sandbox.env = process.env\n\n	# Create the shell by listening to **stdin**.\n	if readline.createInterface.length < 3\n		shell = readline.createInterface process.stdin, autocomplete\n		process.stdin.on 'data', (buffer) -> shell.write buffer\n\n	else\n		shell = readline.createInterface process.stdin, process.stdout, autocomplete\n\n	# load history\n	shell.history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\\n').reverse()\n	shell.history.shift()\n	shell.historyIndex = -1\n	shell.history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'\n\n	# Make sure that uncaught exceptions don't kill the shell.\n	process.on 'uncaughtException', -> error\n\n	# The current shell.backlog of multi-line code.\n	shell.backlog = ''\n	shell.multilineMode = off\n\n	shell.on 'SIGINT', ->\n		shell.backlog = ''\n		shell.multilineMode = off\n		shell.historyIndex = -1\n		shell.output.write '\\n'\n		shell.line = ''\n		shell.setPrompt SHELL_PROMPT()\n		shell.prompt()\n		#shell.output.cursorTo(shelllength)\n\n	shell.on 'attemptClose', ->\n		if shell.backlog\n			shell.backlog = ''\n			process.stdout.write '\\n'\n			shell.setPrompt SHELL_PROMPT\n			shell.prompt()\n		else\n			shell.close()\n\n	shell.on 'close', ->\n		fs.closeSync shell.history_fd\n		shell.output.write '\\n'\n		shell.input.destroy()\n\n	shell.on 'line', runline\n",
+			"sandbo",
+			"vm",
 			"context",
-			"sand",
-			"blockingProc",
-			"block",
-			"blocking",
-			"tab",
-			"echo",
-			"log",
 			"sandbox",
-			"this",
-			"conso",
-			"\", \"",
-			"build",
-			"launch",
-			"run",
-			"exec",
-			"build",
-			"run",
-			"build",
-			"builtin",
+			"prompt",
+			"write",
+			"history",
+			"write",
+			"complete",
 			"shell",
-			"global",
-			"Buffer",
-			"std",
-			"multilineMode",
-			"backlog",
-			"histo",
-			"CoffeScri",
+			"emit",
+			"coffee",
+			"simplev",
+			"auto",
+			"shell",
+			"shl",
+			"self",
+			"text",
+			"refresh",
+			"prompt",
+			"console",
+			"history",
+			"history_",
+			"history_fg",
+			"histor",
+			"pause",
+			"resume",
+			"prompt",
+			"question",
+			"@_questionCallback",
+			"online",
+			"pause",
+			"raw",
+			"prompt",
+			"_line()",
+			"@_line()",
+			"prompt",
+			"setraw",
+			"khist",
+			"console.log",
+			"write",
+			"eval",
+			"insert",
+			"input",
+			"write",
+			"output",
+			"historyin",
+			"1",
+			"historyindex",
+			"histor",
+			"setprom",
+			"line",
+			"lose",
+			"_clo",
+			" = -",
+			" = \\(",
+			" =",
+			"Interface::",
+			"write",
+			"ttywrite",
+			"insert",
+			"refres",
+			"setpro",
+			"commonpre",
+			"online",
+			"line",
+			"addhis",
+			"_line",
+			"writeline",
+			"line",
+			"@line",
+			"line",
+			"_line",
+			"@_line",
+			"line",
+			"autocomp",
+			"histor",
+			"history",
+			"history\n\n\n\n\n\n\n\n\n\n\n",
+			"history",
+			"line",
+			"complete\n\n\n\n\n\n\n",
+			"complete",
+			"auto",
+			"line",
+			"historyIndex",
+			"line",
+			"auto",
+			"autocompleter",
+			"completer",
+			"tabc",
 			"stdin",
-			"createcont"
+			"\\\\r",
+			"line\\(",
+			"line\\(\\)",
+			"line()",
+			"line",
+			"s",
+			"insertString",
+			"write",
+			"s",
+			"buffer",
+			"Buffer",
+			"setprom",
+			"@",
+			"@_",
+			"setPrompt",
+			"setprompt",
+			"prompt",
+			"inherits",
+			"close",
+			"_attemptClose",
+			"close",
+			"\\",
+			"close",
+			"emit",
+			"prompt",
+			"emit",
+			"close",
+			"buffer",
+			"_prompt",
+			"rite",
+			"write",
+			"enable",
+			"setPrompt",
+			"resume"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -401,6 +425,13 @@
 		"regex": true,
 		"replace_history":
 		[
+			": -",
+			": (",
+			":",
+			"",
+			"close",
+			"@",
+			"",
 			"prompt",
 			"stdin",
 			"\n\n\nroot",
@@ -441,15 +472,15 @@
 					"file": "coffee-shell.coffee",
 					"settings":
 					{
-						"buffer_size": 8763,
+						"buffer_size": 13340,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2274,
-								2274
+								0,
+								0
 							]
 						],
 						"settings":
@@ -458,7 +489,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 883.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -494,15 +525,15 @@
 					"file": "readline.coffee",
 					"settings":
 					{
-						"buffer_size": 10097,
+						"buffer_size": 10115,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8545,
-								8545
+								10115,
+								10115
 							]
 						],
 						"settings":
@@ -512,7 +543,34 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4583.0,
+						"translation.y": 5511.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"settings":
+					{
+						"buffer_size": 7776,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
