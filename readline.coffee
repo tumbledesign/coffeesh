@@ -15,6 +15,7 @@ Interface = (input, output, completer) ->
   @setPrompt "> "
   @enabled = output.isTTY
   @enabled = false  if parseInt(process.env["NODE_NO_READLINE"], 10)
+  
   unless @enabled
     input.on "data", (data) ->
       self._normalWrite data
@@ -390,7 +391,7 @@ Interface::_ttyWrite = (s, key) ->
       else
         s = s.toString("utf-8")  if Buffer.isBuffer(s)
         if s
-          lines = s.split(/\r\n|\n|\r/)
+          lines = s.split('/\n/') # s.split(/\r\n|\n|\r/)
           i = 0
           len = lines.length
 

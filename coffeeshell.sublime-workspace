@@ -63,6 +63,30 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "coffee-shell.coffee",
+			"settings":
+			{
+				"buffer_size": 8763,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/cobells/.config/sublime-text-2/Packages/User/CoffeeShell.sublime-build",
+			"settings":
+			{
+				"buffer_size": 128,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "readline.coffee",
+			"settings":
+			{
+				"buffer_size": 10097,
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "Packages/User/CoffeeShell.sublime-build",
 	"command_palette":
@@ -242,6 +266,31 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"stdout",
+			"\\.",
+			"'\\.'",
+			".",
+			"period",
+			".",
+			"write",
+			"refreshLine",
+			"_deleteLineLeft",
+			"@_deleteLineLeft()",
+			"rawmode",
+			"utf",
+			"write",
+			"_tty",
+			"prompt",
+			"helpers",
+			"SHELL",
+			"file",
+			"histor",
+			"shell.",
+			"shell",
+			"histor",
+			"sprompt",
+			"shell.prompt",
+			"shell",
 			"process",
 			"val",
 			"return",
@@ -344,32 +393,7 @@
 			"histo",
 			"CoffeScri",
 			"stdin",
-			"createcont",
-			"context",
-			"error",
-			"multi",
-			"?=",
-			"join",
-			"return",
-			"tmp",
-			",",
-			"path",
-			"string",
-			"STRING",
-			"string",
-			"@",
-			"makestr",
-			"run",
-			"console",
-			",",
-			"111111111111111",
-			"output\\+=",
-			"']",
-			"off",
-			"}\\\"]\"",
-			"escape",
-			"makeStr",
-			"make"
+			"createcont"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -377,6 +401,7 @@
 		"regex": true,
 		"replace_history":
 		[
+			"prompt",
 			"stdin",
 			"\n\n\nroot",
 			"\n\n\nvm.",
@@ -408,8 +433,90 @@
 	"groups":
 	[
 		{
+			"selected": 0,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "coffee-shell.coffee",
+					"settings":
+					{
+						"buffer_size": 8763,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2274,
+								2274
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 883.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/home/cobells/.config/sublime-text-2/Packages/User/CoffeeShell.sublime-build",
+					"settings":
+					{
+						"buffer_size": 128,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "readline.coffee",
+					"settings":
+					{
+						"buffer_size": 10097,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8545,
+								8545
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4583.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
 			]
 		}
 	],
@@ -444,6 +551,10 @@
 		]
 	},
 	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 106.0
+	},
 	"replace":
 	{
 		"height": 62.0
