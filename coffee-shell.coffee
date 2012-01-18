@@ -73,75 +73,10 @@ prompt = ->
 
 	).resume()
 
-# 	buf = ''
-# 	tty.setRawMode true
-# 	stdin.setEncoding('utf8')
-# 	stdout.write SHELL_PROMPT()
-
-# 	stdin.on('keypress', (c,key) ->
-# 		buf += c
-
-# 		if not key?
-# 				stdout.write c
-
-# 		else if c is '\r'
-# 			console.log()
-# 			stdout.write SHELL_PROMPT_CONTINUATION
-
-# 		else if c is '\n'
-# 			#console.log([buf])
-# 			console.log()
-# 			stdin.removeAllListeners 'keypress'
-# 			tty.setRawMode false
-# 			runline(buf)
-# 			buf = ''
-# 			return
-
-# 		else if key?.ctrl and key.name is 'n'
-# 			buf = ''
-# 			stdin.removeAllListeners 'keypress'
-# 			tty.setRawMode false
-# 			nanoprompt()
-# 			return
-
-# 		else if key?.ctrl and key.name is 'c'
-# 			buf = ''
-# 			stdin.removeAllListeners 'keypress'
-# 			tty.setRawMode false
-# 			console.log()
-# 			prompt()
-# 			return
-
-# 		else if key?.ctrl and key.name is 'd'
-# 			stdin.removeAllListeners 'keypress'
-# 			tty.setRawMode false
-# 			stdin.destroy()
-# 			return
-		
-# 		else if key?.meta and key.name is 'k'
-# 			keymode = not keymode
 
 
-# 		else if key?.name is 'backspace'
-# 			stdout.moveCursor(0)
-# 			stdout.clearLine(1)
-
-# 		else
-# 			if keymode
-# 				console.log key
-# 			else
-# 				stdout.write c
-
-# 	).resume()
-
-
-
-
-
-#util = require("util")
 #inherits = require("util").inherits
 #EventEmitter = require("events").EventEmitter
-#tty = require("tty")
 
 
 
@@ -263,6 +198,8 @@ write = (s, key) ->
 				deleteWordRight()
 			when "backspace"
 				deleteWordLeft()
+			when "n"
+				nanoprompt()
 
 	else
 		switch key.name
@@ -337,12 +274,6 @@ setPrompt = (prompt, length) ->
 		lastLine = lines[lines.length - 1]
 		promptLength = Buffer.byteLength(lastLine)
 
-#prompt = (preserveCursor) ->
-#	if enabled
-#		cursor = 0  unless preserveCursor
-#		refreshLine()
-#	else
-#		output.write prompt
 
 question = (query, cb) ->
 	if cb
@@ -551,21 +482,9 @@ historyPrev = ->
 
 
 runline = (buffer) ->
-	#return if shell.blockingProc
-
-	if !buffer.toString().trim() #and !shell.backlog
+	if !buffer.toString().trim() 
 		prompt()
 		return
-
-	#code = shell.backlog += buffer
-	
-	#if code[code.length - 1] is '\\'
-	#	shell.backlog = "#{shell.backlog[...-1]}\n"
-	#	shell.setPrompt SHELL_PROMPT_CONTINUATION
-	#	prompt()
-	#	return
-	
-	#shell.backlog = ''
 
 	code = buffer
 
@@ -593,17 +512,6 @@ runline = (buffer) ->
 	
 	prompt()
 
-		#if not shell.blockingProc
-		#	shell.setPrompt prompt()
-		
-
-
-		#if typeof returnValue is 'function' then returnValue()
-		#ACCESSOR  = /^([\w\.]+)(?:\.(\w*))$/
-		#SIMPLEVAR = /^(\w+)$/i
-		#if code.match(ACCESSOR)? or code.match(SIMPLEVAR)? 
-		#	builtin.echo returnValue
-
 
 
 #Load binaries and built-in shell commands
@@ -626,6 +534,8 @@ builtin =
 
 
 nanoprompt = ->
+	detach()
+
 	proc = spawn 'nano', '',
 		cwd: process.cwd()
 		env: process.env
@@ -721,90 +631,3 @@ root.sandbox = sandbox = vm.createContext(root)
 [sandbox.coffee, sandbox.inspect, sandbox.fs, sandbox.path, sandbox.spawn, sandbox.colors, sandbox.Lexer] = [coffee, inspect, fs, path, spawn, colors, Lexer]
 [sandbox.builtin, sandbox.binaries, sandbox.shell] = [builtin, binaries, shell]
 sandbox.global = sandbox.GLOBAL = sandbox.root = sandbox
-
-
-
-
-
-#nonContextGlobals = [
-#	'Buffer', 'console', 'process'
-#	'setInterval', 'clearInterval'
-#	'setTimeout', 'clearTimeout'
-#]
-#	'inspect', 'fs', 'path', 'require']
-#	'coffee', 'helpers',, #
-#	'Script','Module','fs','path',
-##'spawn','colors','Lexer'
-
-#sandbox[g] = global[g] for g in nonContextGlobals
-
-
-
-#process.stdin.resume()
-
-	# # Create the shell by listening to **stdin**.
-	# shell = readline.createInterface process.stdin, process.stdout, autocomplete	
-	
-
-			
-	# binaries['nano'] = (args...) ->
-	# 	shell.input.pause()
-	# 	shell.pause()
-	# 	shell.blockingProc = true
-	# 	#shell.removeAllListeners()
-	# 	#process.stdin.removeAllListeners()
-
-		
-		
-		
-
-	
-	
-	# 		#binaries[file] = (args...) ->
-	# 				#shell.blockingProc = yes
-	# 				# proc = spawn pathname + "/" + file, args, {
-	# 				# 	cwd: process.cwd()
-	# 				# 	env: process.env
-	# 				# 	setsid: false
-	# 				# }
-	# # 				proc.stdout.on 'data', (data) -> process.stdout.write(data)
-	# # 				proc.stderr.on 'data', (data) -> process.stderr.write(data)
-	# # 				
-	# #shell.output.cursorTo(shelllength)
-	# #root.binaries = binaries
-
-
-
-	# shell.backlog = ''
-	# shell.multilineMode = off
-	# shell.blockingProc = off
-
-	# shell.on 'SIGINT', ->
-	# 	return if shell.blockingProc
-	# 	shell.backlog = ''
-	# 	shell.multilineMode = off
-	# 	shell.historyIndex = -1
-	# 	shell.output.write '\n'
-	# 	shell.line = ''
-	# 	shell.setPrompt prompt()
-	# 	prompt()
-	# 	#shell.output.cursorTo(shelllength)
-
-	# shell.on 'attemptClose', ->
-	# 	if shell.backlog
-	# 		shell.backlog = ''
-	# 		process.stdout.write '\n'
-	# 		shell.setPrompt prompt
-	# 		prompt()
-	# 	else
-	# 		shell.close()
-
-	# shell.on 'close', ->
-	# 	fs.closeSync shell.history_fd
-	# 	shell.output.write '\n'
-	# 	shell.input.destroy()
-
-	# shell.on 'line', runline
-
-	# shell.setPrompt prompt()
-	# prompt()
