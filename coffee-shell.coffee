@@ -27,7 +27,9 @@ SHELL_PROMPT = ->
 	u = process.env.USER
 	d = process.cwd() #.replace('/home/'+u,'~')
 	#shelllength = "#{u}:#{d}$ ".length
-	("#{u}:#{d}$ ".green)
+	p="#{u}:#{d}$ "
+	
+	([p.green, p.length])
 
 SHELL_PROMPT_CONTINUATION = '......> '.green
 
@@ -52,8 +54,6 @@ class Shell
 		@input = process.stdin
 		@output = process.stdout
 		
-		#@setPrompt SHELL_PROMPT()
-
 		@completer = (if completer.length is 2 then completer else (v, callback) ->
 			callback null, completer(v)
 		)
@@ -70,8 +70,8 @@ class Shell
 		tty.setRawMode true
 		@input.setEncoding('utf8')
 		
-
-		@setPrompt ">"
+		@setPrompt.apply this,SHELL_PROMPT()
+		#@setPrompt ">"
 		
 		#@prompt()
 		@input.on("keypress", (s, key) =>
@@ -83,23 +83,18 @@ class Shell
 
 
 		@winSize = @output.getWindowSize()
-		exports.columns = @winSize[0]
+		@columns = @winSize[0]
 		if process.listeners("SIGWINCH").length is 0
 			process.on "SIGWINCH", =>
 				@winSize = @output.getWindowSize()
-				exports.columns = @winSize[0]
+				@columns = @winSize[0]
 
 	commonPrefix: (strings) ->
 		return ""  if not strings or strings.length is 0
 		sorted = strings.slice().sort()
 		min = sorted[0]
 		max = sorted[sorted.length - 1]
-		i = 0
-		len = min.length
-
-		while i < len
-			return min.slice(0, i)  unless min[i] is max[i]
-			i++
+		return min.slice(0, i) for i in [0...min.length] when min[i] isnt max[i]
 		min
 
 	detach: ->
@@ -107,7 +102,7 @@ class Shell
 		tty.setRawMode false
 		return 
 
-	close = (d) ->
+	close: ->
 		@input.removeAllListeners 'keypress'
 		tty.setRawMode false
 		@closed = true
@@ -174,6 +169,7 @@ class Shell
 		@output.write @_prompt
 		@output.write @line
 		@output.clearLine 1
+		@output.cursorTo @_promptLength + @cursor
 
 
 	write: (d, key) ->
@@ -195,45 +191,42 @@ class Shell
 
 	_tabComplete: ->
 		self = this
-		tty.setRawMode false
+		#tty.setRawMode false
 		self.completer self.line.slice(0, self.cursor), (err, rv) ->
-			tty.setRawMode true
+			#tty.setRawMode true
 			return  if err
 
 			completions = rv[0]
 			completeOn = rv[1]
 			if completions and completions.length
+
 				if completions.length is 1
 					self._insertString completions[0].slice(completeOn.length)
 				else
 					handleGroup = (group) ->
 						return  if group.length is 0
+
 						minRows = Math.ceil(group.length / maxColumns)
-						row = 0
-
-						while row < minRows
-							col = 0
-
-							while col < maxColumns
+												
+						for row in [0...minRows]
+							for col in [0...maxColumns]
 								idx = row * maxColumns + col
 								break  if idx >= group.length
-								item = group[idx]
-								self.output.write item
-								if col < maxColumns - 1
-									s = 0
-									itemLen = item.length
 
-									while s < width - itemLen
-										self.output.write " "
-										s++
-								col++
+								self.output.write group[idx]
+								
+								self.output.write " " for s in [0...(width-group[idx].length)] when (col < maxColumns - 1)
+
 							self.output.write "\r\n"
-							row++
+
 						self.output.write "\r\n"
+					
 					self.output.write "\r\n"
+					
 					width = completions.reduce((a, b) ->
 						(if a.length > b.length then a else b)
 					).length + 2
+					
 					maxColumns = Math.floor(self.columns / width) or 1
 					group = []
 					c = undefined
@@ -249,11 +242,13 @@ class Shell
 							group.push c
 						i++
 					handleGroup group
-					f = completions.filter((e) ->
-						e  if e
-					)
-					prefix = commonPrefix(f)
+					f = completions.filter (e) ->
+						e if e
+					
+					prefix = self.commonPrefix(f)
+
 					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
+				
 				self._refreshLine()
 
 	_wordLeft: ->
@@ -364,6 +359,8 @@ class Shell
 					@detach()
 					console.log()
 					@prompt()
+					root.shl = new Shell(autocomplete)
+					return
 				when "h"
 					@_deleteLeft()
 				when "d"
@@ -523,7 +520,7 @@ nanoprompt = ->
 		customFds:[0,1,2]
 
 	proc.on 'exit', ->
-		shl.prompt()
+		root.shl.prompt()
 
 	process.stdin.pause()
 	proc.stdin.resume()
@@ -534,12 +531,12 @@ nanoprompt = ->
 ## Autocompletion
 
 # Regexes to match complete-able bits of text.
-ACCESSOR  = /.*([\w\.]+)(?:\.(\w*))$/
+ACCESSOR  = /([\w\.]+)(?:\.(\w*))$/
 SIMPLEVAR = /(\w+)$/i
 
 # Returns a list of completions, and the completed text.
 autocomplete = (text) ->
-	text = text.substr 0, shl.cursor
+	text = text.substr 0, root.shl.cursor
 	text = text.split(' ').pop()
 	completeFile(text) or completeVariable(text)  or completeAttribute(text) or  [[], text]
 
