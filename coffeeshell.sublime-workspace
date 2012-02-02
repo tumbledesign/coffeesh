@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"item",
+				"itemLen"
+			],
+			[
+				"mi",
+				"minRows"
+			],
+			[
 				"his",
 				"historyIndex"
 			],
@@ -83,7 +91,15 @@
 			"file": "coffee-shell.coffee",
 			"settings":
 			{
-				"buffer_size": 13340,
+				"buffer_size": 13999,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/media/11FA-BF32/README.diskdefines",
+			"settings":
+			{
+				"buffer_size": 228,
 				"line_ending": "Unix"
 			}
 		},
@@ -290,6 +306,29 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"setpr",
+			"green",
+			"prompt",
+			"promptleng",
+			"prompt",
+			"ctrl",
+			"c",
+			"common",
+			"item",
+			"'",
+			"columns",
+			"_insertString",
+			"line",
+			"write",
+			"console",
+			"question",
+			"refresh",
+			"_promptLength",
+			"refresh",
+			"prompt",
+			"cursor",
+			"simple",
+			"substrt",
 			"write",
 			"sandbox",
 			"sandbo",
@@ -394,30 +433,7 @@
 			"write",
 			"s",
 			"buffer",
-			"Buffer",
-			"setprom",
-			"@",
-			"@_",
-			"setPrompt",
-			"setprompt",
-			"prompt",
-			"inherits",
-			"close",
-			"_attemptClose",
-			"close",
-			"\\",
-			"close",
-			"emit",
-			"prompt",
-			"emit",
-			"close",
-			"buffer",
-			"_prompt",
-			"rite",
-			"write",
-			"enable",
-			"setPrompt",
-			"resume"
+			"Buffer"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -464,7 +480,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -472,7 +488,7 @@
 					"file": "coffee-shell.coffee",
 					"settings":
 					{
-						"buffer_size": 13340,
+						"buffer_size": 13999,
 						"regions":
 						{
 						},
@@ -489,13 +505,39 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 704.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 1,
+					"file": "/media/11FA-BF32/README.diskdefines",
+					"settings":
+					{
+						"buffer_size": 228,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
 					"file": "/home/cobells/.config/sublime-text-2/Packages/User/CoffeeShell.sublime-build",
 					"settings":
 					{
@@ -521,38 +563,11 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 3,
 					"file": "readline.coffee",
 					"settings":
 					{
 						"buffer_size": 10115,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								10115,
-								10115
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 5511.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"settings":
-					{
-						"buffer_size": 7776,
 						"regions":
 						{
 						},
@@ -567,10 +582,37 @@
 						{
 							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
 							"tab_size": 2,
-							"translate_tabs_to_spaces": false
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"settings":
+					{
+						"buffer_size": 7776,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7776,
+								7776
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/Syntaxes/CoffeeScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 5325.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -609,10 +651,6 @@
 		]
 	},
 	"menu_visible": true,
-	"output.exec":
-	{
-		"height": 106.0
-	},
 	"replace":
 	{
 		"height": 62.0
