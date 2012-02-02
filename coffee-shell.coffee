@@ -8,46 +8,6 @@
 {Lexer} = require './lexer'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
-#stdin = process.stdin
-#stdout = process.stdout
-#stderr = process.stderr
-## output = process.stdout
-## input = process.stdin
-## line = ""
-## cursor = 0
-## history = []
-## historyIndex = -1
-#kHistorySize = 30
-#kBufSize = 10 * 1024
-#buf = ''
-#
-## Config
-##shelllength = 2
-#SHELL_PROMPT = -> 
-#	u = process.env.USER
-#	d = process.cwd() #.replace('/home/'+u,'~')
-#	#shelllength = "#{u}:#{d}$ ".length
-#	p="#{u}:#{d}$ "
-#	
-#	([p.green, p.length])
-#
-#SHELL_PROMPT_CONTINUATION = '......> '.green
-#
-#SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
-#enableColours = yes
-#
-## Log an error.
-#error = (err) -> process.stdout.write (err.stack or err.toString()) + '\n'
-#process.on 'uncaughtException', -> error
-#
-#
-## load history
-#history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
-#history.shift()
-#historyIndex = -1
-#history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
-
-
 class Shell
 	constructor: ->
 	
