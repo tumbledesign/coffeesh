@@ -47,21 +47,23 @@ exports.Lexer = class Lexer
 		# short-circuiting if any of them succeed. Their order determines precedence:
 		# `@literalToken` is the fallback catch-all.
 		i = 0
-		i += @identifierToken() or
-			@commentToken()    or
-			@whitespaceToken() or
-			@lineToken()       or
-			@heredocToken()    or
-			@stringToken()     or
-			@numberToken()     or
-			@pathToken()       or
-			@literalToken()
-			#@regexToken()      or
-			#@jsToken()         or
-			#@literalToken()
+		while @chunk = code.slice i
+			i += @identifierToken() or
+				@commentToken()    or
+				@whitespaceToken() or
+				@lineToken()       or
+				@heredocToken()    or
+				@stringToken()     or
+				@numberToken()     or
+				@pathToken()       or
+				@literalToken()
+				#@regexToken()      or
+				#@jsToken()         or
+				#@literalToken()
 
 		@closeIndentation()
-		return @tokens if opts.rewrite is off
+		#return @tokens
+		#return @tokens if opts.rewrite is off
 		(new Rewriter).rewrite @tokens
 
 	# Tokenizers
@@ -576,23 +578,27 @@ IDENTIFIER = /// ^
   ( [^\n\S]* : (?!:) )?  # Is this a property name?
 ///
 
-URI = /// ^
-	(?:	[\w\-.+=%]		# letter, digit, _
-		| [\x7f-\uffff]	# utf8
-		| \\[\s\S]			# any escaped char
-		| [:@/~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
-	)+
-///
+#URI = /// ^
+#	(?:	[\w\-.+=%]		# letter, digit, _
+#		| [\x7f-\uffff]	# utf8
+#		| \\[\s\S]			# any escaped char
+#		| [:@/~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+#	)+
+#///
 
-IDENTIFIER = /// ^
-	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
-	( [^\n\S]* : (?!:) )?  # Is this a property name?
-///
+#IDENTIFIER = /// ^
+#	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
+#	( [^\n\S]* : (?!:) )?  # Is this a property name?
+#///
 
-NUMBER     = ///
-	^ 0x[\da-f]+ |                              # hex
-	^ [^\.]\d*\.?\d+ (?:e[+-]?\d+)?  # decimal
-///i
+#NUMBER     = ///
+#	^ 0x[\da-f]+ |                              # hex
+#	^ [^\.]\d*\.?\d+ (?:e[+-]?\d+)?  # decimal
+#///i
+
+NUMBER  = ///
+	^ [0-9]+
+///
 
 HEREDOC    = /// ^ ("""|''') ([\s\S]*?) (?:\n[^\n\S]*)? \1 ///
 
@@ -656,11 +662,9 @@ LINE_CONTINUER  = /// ^ \s* (?: , | \??\.(?![.\d]) | :: ) ///
 TRAILING_SPACES = /\s+$/
 
 # Compound assignment tokens.
-COMPOUND_ASSIGN = [
-	'-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|='
-]
+COMPOUND_ASSIGN = [ '-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|=' ]
 
-['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
+#['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
 # Unary tokens.
 UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']

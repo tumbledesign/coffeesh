@@ -8,12 +8,33 @@
 {Lexer} = require './lexer'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
+#Load binaries and built-in shell commands
+binaries = {}
+for pathname in (process.env.PATH.split ':')
+	if path.existsSync(pathname) 
+		binaries[file] = pathname for file in fs.readdirSync(pathname)
+
+builtin = 
+	pwd: -> process.cwd.apply(this,arguments)
+	cd: -> process.chdir.apply(this,arguments)
+	echo: (vals...) ->
+		for v in vals
+			print inspect(v, true, 5, true) + "\n"
+		return
+	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
+	which: (val) ->
+		if builtin[val]? then console.log 'built-in shell command'.green 
+		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
+		else console.log "command '#{val}'' not found".red
+
+root.binaries = binaries
+root.builtin = builtin
+root.echo = builtin.echo
+
 class Shell
 	constructor: ->
 	
 		## Config
-		@enableColours = yes
-		
 		# STDIO
 		@input = process.stdin
 		@output = process.stdout
@@ -40,43 +61,6 @@ class Shell
 		@completer = (v, callback) ->
 			callback null, @autocomplete(v)
 		
-		#Load binaries and built-in shell commands
-		@binaries = {}
-		for pathname in (process.env.PATH.split ':')
-			if path.existsSync(pathname) 
-				@binaries[file] = pathname for file in fs.readdirSync(pathname)
-
-		@builtin = 
-			pwd: -> process.cwd.apply(this,arguments)
-			cd: -> process.chdir.apply(this,arguments)
-			echo: (vals...) ->
-				for v in vals
-					console.log inspect v, true, 5, enableColours
-			kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
-			which: (val) ->
-				if @builtin[val]? then console.log 'built-in shell command'.green 
-				else if @binaries[val]? then console.log "#{@binaries[val]}/#{val}".white
-				else console.log "command '#{val}'' not found".red
-
-
-		@line = ''
-		tty.setRawMode true
-		@input.setEncoding('utf8')
-		@enabled = true
-		@cursor = 0
-		@closed = false
-		
-		@setPrompt()
-		
-		#@prompt()
-		@input.on("keypress", (s, key) =>
-			@_ttyWrite(s, key)
-		).resume()
-		
-		@prompt()
-		
-
-
 		@winSize = @output.getWindowSize()
 		@columns = @winSize[0]
 		if process.listeners("SIGWINCH").length is 0
@@ -84,9 +68,11 @@ class Shell
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
 
+		@resume()
+
 	setPrompt: (prompt) ->
 		prompt ?= "#{process.env.USER}:#{process.cwd()}$ "
-		@_prompt = prompt.green
+		@_prompt = prompt.blue
 		@_promptLength = prompt.length
 		
 	error: (err) -> 
@@ -100,24 +86,40 @@ class Shell
 		return min.slice(0, i) for i in [0...min.length] when min[i] isnt max[i]
 		min
 
-	detach: ->
+	pause: ->
+		@cursor = 0
+		@line = ''
+		@setPrompt ''
+		@prompt()
+		
+		
 		@input.removeAllListeners 'keypress'
+		@input.pause()
 		tty.setRawMode false
 		return 
+	
+	resume: ->
+		@input.setEncoding('utf8')
+		@input.on("keypress", (s, key) =>
+			@_ttyWrite(s, key)
+		).resume()
+		tty.setRawMode true
+		
+		@cursor = 0
+		@line = ''
+		@setPrompt()
+		@prompt()
+		return
 
 	close: ->
 		@input.removeAllListeners 'keypress'
 		tty.setRawMode false
-		@closed = true
 		@input.destroy()
 		return
 
 	prompt: (preserveCursor) ->
-		#if @enabled
 		@cursor = 0  unless preserveCursor
 		@_refreshLine()
-		#else
-		#@output.write @_prompt
 
 	question: (query, cb) ->
 		if cb
@@ -139,13 +141,7 @@ class Shell
 			@setPrompt @_oldPrompt
 			cb line
 		else
-			#@detach()
 			@runline line
-
-		#	@emit "line", line
-
-
-
 
 	_addHistory: ->
 		return ""  if @line.length is 0
@@ -157,7 +153,6 @@ class Shell
 		@history[0]
 
 	_refreshLine: ->
-		#return  if @_closed
 		@output.cursorTo 0
 		@output.write @_prompt
 		@output.write @line
@@ -166,7 +161,6 @@ class Shell
 
 
 	write: (d, key) ->
-		#return  if @_closed
 		@_ttyWrite(d, key)
 
 	_insertString: (c) ->
@@ -355,17 +349,8 @@ class Shell
 						env: process.env
 						setsid: false
 						customFds:[0,1,2]
-					#proc.on 'exit', ->
-						#@prompt()
 					process.stdin.pause()
 					proc.stdin.resume()
-					#@detach()
-					#console.log()
-					
-					#return @prompt()
-					#@detach()
-					#root.shl = new Shell()
-					
 				when "h"
 					@_deleteLeft()
 				when "d"
@@ -469,39 +454,78 @@ class Shell
 			return @prompt()
 			
 		code = buffer
+		recode = @tokenparse code
+		echo recode
 		try
-			#recode = tokenparse code
-			#console.log code, recode
 			_ = global._
-			returnValue = coffee.eval "_=(#{code}\n)"
+			returnValue = coffee.eval "_=(#{recode}\n)"
 			if returnValue is undefined
 				global._ = _
 			else
-				process.stdout.write inspect(returnValue, no, 2, @enableColours) + '\n'
+				print inspect(returnValue, no, 2, true) + '\n'
 			fs.write @history_fd, code + '\n'
 		catch err
 			@error err
 		@prompt()
 
+	tokenparse: (code) ->
+
+		tokens = (new Lexer).tokenize code
+		output = []
+		tmp = ''
+		call_started = false
+		index_started = false
+		dot_started = false
+		
+		for i in [0...tokens.length]
+			[lex,val] = tokens[i]
+			echo tokens[i]
+			switch lex
+				when 'IDENTIFIER'
+					if builtin.hasOwnProperty val
+						output.push "builtin.#{val}"
+					else if binaries.hasOwnProperty val
+						cmd = Lexer.prototype.makeString "#{binaries[val]}/#{val}", '"', yes
+						output.push "shl.execute.bind(shl,#{cmd})"
+						if tokens[i+1]?[0] is 'TERMINATOR'
+							output.push '()'
+					else
+						output.push val
+				when 'STRING'
+					output.push val
+				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
+					output.push lex
+				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END'
+					output.push val
+				when 'TERMINATOR'
+					output.push ';'
+				when 'FILEPATH'
+					output.push val
+				when 'NUMBER'
+					output.push val
+			#output.push ' ' if tokens[i].spaced?
+			
+		(output.join(''))
 	
-	nanoprompt: ->
-		@detach()
-		proc = spawn 'nano', '',
+	
+	execute: (cmd, args...) ->
+		@pause()
+		proc = spawn cmd, args,
 			cwd: process.cwd()
 			env: process.env
 			setsid: false
 			customFds:[0,1,2]
-		proc.on 'exit', ->
-			@prompt()
-		process.stdin.pause()
-		proc.stdin.resume()
+		proc.on 'exit', =>
+			@resume()
+			
+		
 
 	## Autocompletion
 
 	# Returns a list of completions, and the completed text.
 	autocomplete: (text) ->
-		filePrefix = binaryPrefix = accessorPrefix = varPrefix = null
-		fileCompletions = binaryCompletions = accessorCompletions = varCompletions = []
+		prefix = filePrefix = builtinPrefix = binaryPrefix = accessorPrefix = varPrefix = null
+		completions = fileCompletions = builtinCompletions = binaryCompletions = accessorCompletions = varCompletions = []
 		
 		text = text.substr 0, @cursor
 		text = text.split(' ').pop()
@@ -514,8 +538,13 @@ class Shell
 		else listing = fs.readdirSync '.'
 		fileCompletions = (el for el in listing when el.indexOf(filePrefix) is 0)
 		
+		# Attempt to autocomplete a builtin cmd
+		builtinPrefix = text
+		builtinCompletions = (cmd for cmd in Object.getOwnPropertyNames(builtin) when cmd.indexOf(builtinPrefix) is 0)
+		
 		# Attempt to autocomplete a valid executable
-		binaryCompletions = (el for el in @binaries when el.indexOf(text) is 0)
+		binaryPrefix = text
+		binaryCompletions = (cmd for cmd in Object.getOwnPropertyNames(binaries) when cmd.indexOf(binaryPrefix) is 0)
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match @ACCESSOR
@@ -539,16 +568,12 @@ class Shell
 			varCompletions = (el for el in possibilities when el.indexOf(varPrefix) is 0)
 		else varPrefix = null
 
-		#console.log '|', filePrefix, fileCompletions, '|', binaryPrefix, binaryCompletions, '|', accessorPrefix, accessorCompletions, '|', varPrefix, varCompletions
-		completions = []
+		# Combine the various types of completions
 		prefix = text
-		for [c,p] in [[varCompletions, varPrefix], [accessorCompletions, accessorPrefix], [fileCompletions, filePrefix], [binaryCompletions, binaryPrefix]]
+		for [c,p] in [[varCompletions, varPrefix], [accessorCompletions, accessorPrefix], [fileCompletions, filePrefix], [binaryCompletions, binaryPrefix], [builtinCompletions, builtinPrefix]]
 			if c.length
 				completions = completions.concat c
 				prefix = p
-		#prefix = accessorPrefix or varPrefix or binaryPrefix or filePrefix or text
-		#completions = fileCompletions.concat(fileCompletions).concat(binaryCompletions).concat(varCompletions)
-		#console.log prefix, completions
 		([completions, prefix])
 		
 exports.Shell = Shell
