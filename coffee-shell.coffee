@@ -343,7 +343,7 @@ class Shell
 		else if key.ctrl
 			switch key.name
 				when "c"
-					#console.log()
+					console.log()
 					#proc = spawn './bin/coffee-shell', '',
 					#	cwd: process.cwd()
 					#	env: process.env
