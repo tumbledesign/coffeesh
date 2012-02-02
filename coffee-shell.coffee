@@ -8,56 +8,97 @@
 {Lexer} = require './lexer'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
-stdin = process.stdin
-stdout = process.stdout
-stderr = process.stderr
-# output = process.stdout
-# input = process.stdin
-# line = ""
-# cursor = 0
-# history = []
-# historyIndex = -1
-kHistorySize = 30
-kBufSize = 10 * 1024
-buf = ''
-
-# Config
-#shelllength = 2
-SHELL_PROMPT = -> 
-	u = process.env.USER
-	d = process.cwd() #.replace('/home/'+u,'~')
-	#shelllength = "#{u}:#{d}$ ".length
-	p="#{u}:#{d}$ "
-	
-	([p.green, p.length])
-
-SHELL_PROMPT_CONTINUATION = '......> '.green
-
-SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
-enableColours = yes
-
-# Log an error.
-error = (err) -> process.stdout.write (err.stack or err.toString()) + '\n'
-process.on 'uncaughtException', -> error
-
-
-# load history
-history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
-history.shift()
-historyIndex = -1
-history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
+#stdin = process.stdin
+#stdout = process.stdout
+#stderr = process.stderr
+## output = process.stdout
+## input = process.stdin
+## line = ""
+## cursor = 0
+## history = []
+## historyIndex = -1
+#kHistorySize = 30
+#kBufSize = 10 * 1024
+#buf = ''
+#
+## Config
+##shelllength = 2
+#SHELL_PROMPT = -> 
+#	u = process.env.USER
+#	d = process.cwd() #.replace('/home/'+u,'~')
+#	#shelllength = "#{u}:#{d}$ ".length
+#	p="#{u}:#{d}$ "
+#	
+#	([p.green, p.length])
+#
+#SHELL_PROMPT_CONTINUATION = '......> '.green
+#
+#SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
+#enableColours = yes
+#
+## Log an error.
+#error = (err) -> process.stdout.write (err.stack or err.toString()) + '\n'
+#process.on 'uncaughtException', -> error
+#
+#
+## load history
+#history = fs.readFileSync(SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
+#history.shift()
+#historyIndex = -1
+#history_fd = fs.openSync SHELL_HISTORY_FILE, 'a+', '644'
 
 
 class Shell
-	constructor: (completer)->
+	constructor: ->
 	
+		## Config
+		@enableColours = yes
+		
+		# STDIO
 		@input = process.stdin
 		@output = process.stdout
+		@stderr = process.stderr
+		process.on 'uncaughtException', -> @error
 		
-		@completer = (if completer.length is 2 then completer else (v, callback) ->
-			callback null, completer(v)
-		)
+		# load history
+		@SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
+		@kHistorySize = 30
+		@kBufSize = 10 * 1024
+		@history = fs.readFileSync(@SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
+		@history.shift()
+		@historyIndex = -1
+		@history_fd = fs.openSync @SHELL_HISTORY_FILE, 'a+', '644'
 		
+		# Shell Prompt		
+		@SHELL_PROMPT_CONTINUATION = '......> '.green
+		
+		
+		# Autocomplete
+		# Regexes to match complete-able bits of text.
+		@ACCESSOR  = /([\w\.]+)(?:\.(\w*))$/
+		@SIMPLEVAR = /^(?![\/\.])(\w+)$/i
+		@completer = (v, callback) ->
+			callback null, @autocomplete(v)
+		
+		#Load binaries and built-in shell commands
+		@binaries = {}
+		for pathname in (process.env.PATH.split ':')
+			if path.existsSync(pathname) 
+				@binaries[file] = pathname for file in fs.readdirSync(pathname)
+
+		@builtin = 
+			pwd: -> process.cwd.apply(this,arguments)
+			cd: -> process.chdir.apply(this,arguments)
+			echo: (vals...) ->
+				for v in vals
+					console.log inspect v, true, 5, enableColours
+			kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
+			which: (val) ->
+				if @builtin[val]? then console.log 'built-in shell command'.green 
+				else if @binaries[val]? then console.log "#{@binaries[val]}/#{val}".white
+				else console.log "command '#{val}'' not found".red
+
+
 		@line = ''
 		tty.setRawMode true
 		@input.setEncoding('utf8')
@@ -65,13 +106,7 @@ class Shell
 		@cursor = 0
 		@closed = false
 		
-		@history = history
-		@historyIndex = historyIndex
-		tty.setRawMode true
-		@input.setEncoding('utf8')
-		
-		@setPrompt.apply this,SHELL_PROMPT()
-		#@setPrompt ">"
+		@setPrompt()
 		
 		#@prompt()
 		@input.on("keypress", (s, key) =>
@@ -88,6 +123,14 @@ class Shell
 			process.on "SIGWINCH", =>
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
+
+	setPrompt: (prompt) ->
+		prompt ?= "#{process.env.USER}:#{process.cwd()}$ "
+		@_prompt = prompt.green
+		@_promptLength = prompt.length
+		
+	error: (err) -> 
+		process.stdout.write (err.stack or err.toString()) + '\n'
 
 	commonPrefix: (strings) ->
 		return ""  if not strings or strings.length is 0
@@ -110,14 +153,14 @@ class Shell
 		return
 
 
-	setPrompt: (prompt, length) ->
-		@_prompt = prompt
-		if length
-			@_promptLength = length
-		else
-			lines = prompt.split(/[\r\n]/)
-			lastLine = lines[lines.length - 1]
-			@_promptLength = Buffer.byteLength(lastLine)
+#	setPrompt: (prompt, length) ->
+#		@_prompt = prompt
+#		if length
+#			@_promptLength = length
+#		else
+#			lines = prompt.split(/[\r\n]/)
+#			lastLine = lines[lines.length - 1]
+#			@_promptLength = Buffer.byteLength(lastLine)
 
 	prompt: (preserveCursor) ->
 		#if @enabled
@@ -147,7 +190,7 @@ class Shell
 			cb line
 		else
 			#@detach()
-			runline line
+			@runline line
 
 		#	@emit "line", line
 
@@ -160,7 +203,7 @@ class Shell
 		@line = ""
 		@historyIndex = -1
 		@cursor = 0
-		@history.pop()  if @history.length > kHistorySize
+		@history.pop()  if @history.length > @kHistorySize
 		@history[0]
 
 	_refreshLine: ->
@@ -356,11 +399,23 @@ class Shell
 		else if key.ctrl
 			switch key.name
 				when "c"
-					@detach()
 					console.log()
-					@prompt()
-					root.shl = new Shell(autocomplete)
-					return
+					proc = spawn './bin/coffee-shell', '',
+						cwd: process.cwd()
+						env: process.env
+						setsid: false
+						customFds:[0,1,2]
+					#proc.on 'exit', ->
+						#@prompt()
+					process.stdin.pause()
+					proc.stdin.resume()
+					#@detach()
+					#console.log()
+					
+					#return @prompt()
+					#@detach()
+					#root.shl = new Shell()
+					
 				when "h"
 					@_deleteLeft()
 				when "d"
@@ -393,8 +448,7 @@ class Shell
 				when "p"
 					@_historyPrev()
 				when "z"
-					process.kill process.pid, "SIGTSTP"
-					return
+					return process.kill process.pid, "SIGTSTP"
 				when "w", "backspace"
 					@_deleteWordLeft()
 				when "delete"
@@ -458,140 +512,93 @@ class Shell
 							@_line()  if i > 0
 							@_insertString lines[i]
 							i++
-
-
-
-runline = (buffer) ->
-	if !buffer.toString().trim() 
-		root.shl.prompt()
-		return
-
-	code = buffer
-
-	try
-		
-		#recode = tokenparse code
-		#console.log code, recode
-
-		_ = global._
-		
-		returnValue = coffee.eval "_=(#{code}\n)"
-	
-		if returnValue is undefined
-			global._ = _
-		else
-			process.stdout.write inspect(returnValue, no, 2, enableColours) + '\n'
-		
-		fs.write history_fd, code + '\n'
-
-	catch err
-		error err
-	
-	root.shl.prompt()
-
-
-
-#Load binaries and built-in shell commands
-binaries = {}
-for pathname in (process.env.PATH.split ':')
-	if path.existsSync(pathname) 
-		binaries[file] = pathname for file in fs.readdirSync(pathname)
-
-builtin = 
-	pwd: -> process.cwd.apply(this,arguments)
-	cd: -> process.chdir.apply(this,arguments)
-	echo: (vals...) ->
-		for v in vals
-			console.log inspect v, true, 5, enableColours
-	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
-	which: (val) ->
-		if builtin[val]? then console.log 'built-in shell command'.green 
-		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
-		else console.log "command '#{val}'' not found".red
-
-
-nanoprompt = ->
-	shl.detach()
-
-	proc = spawn 'nano', '',
-		cwd: process.cwd()
-		env: process.env
-		setsid: false
-		customFds:[0,1,2]
-
-	proc.on 'exit', ->
-		root.shl.prompt()
-
-	process.stdin.pause()
-	proc.stdin.resume()
-
-
-
-
-## Autocompletion
-
-# Regexes to match complete-able bits of text.
-ACCESSOR  = /([\w\.]+)(?:\.(\w*))$/
-SIMPLEVAR = /(\w+)$/i
-
-# Returns a list of completions, and the completed text.
-autocomplete = (text) ->
-	text = text.substr 0, root.shl.cursor
-	text = text.split(' ').pop()
-	completeFile(text) or completeVariable(text)  or completeAttribute(text) or  [[], text]
-
-# Attempt to autocomplete a valid file or directory
-completeFile = (text) ->
-	isdir = text is "" or text[text.length-1] is '/'
-	dir = path.resolve text, (if isdir then '.' else '..')
-	prefix = if isdir then '' else path.basename text
-	if path.existsSync dir then listing = fs.readdirSync dir
-	else listing = fs.readdirSync '.'
-	completions = (el for el in listing when el.indexOf(prefix) is 0)
-	#builtin.echo el for el in first
-	#completions = []
-	#for el in first
-	#	if fs.lstatSync(+'/'+el).isDirectory()
-	#		completions.push el+"/"
-	#builtin.echo el for el in completions
-
-	if completions.length > 0
-		([completions, prefix])
-
-completeBinaries = (text) ->
-	completions = getCompletions text, binaries
-	[completions, text]
-
-# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
-completeAttribute = (text) ->
-	if match = text.match ACCESSOR
-		[all, obj, prefix] = match
+							
+	runline: (buffer) ->
+		#return @prompt()
+		if !buffer.toString().trim() 
+			return @prompt()
+			
+		code = buffer
 		try
-			val = vm.runInThisContext obj
-		catch error
-			return
-		completions = getCompletions prefix, Object.getOwnPropertyNames Object val
-		[completions, prefix]
+			#recode = tokenparse code
+			#console.log code, recode
+			_ = global._
+			returnValue = coffee.eval "_=(#{code}\n)"
+			if returnValue is undefined
+				global._ = _
+			else
+				process.stdout.write inspect(returnValue, no, 2, @enableColours) + '\n'
+			fs.write @history_fd, code + '\n'
+		catch err
+			@error err
+		@prompt()
 
-# Attempt to autocomplete an in-scope free variable: `one`.
-completeVariable = (text) ->
-	free = text.match(SIMPLEVAR)?[1]
-	free = "" if text is ""
-	if free?
-		vars = vm.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
-		keywords = (r for r in coffee.RESERVED when r[..1] isnt '__')
-		possibilities = vars.concat keywords
-		completions = getCompletions free, possibilities
-		[completions, free]
+	
+	nanoprompt: ->
+		@detach()
+		proc = spawn 'nano', '',
+			cwd: process.cwd()
+			env: process.env
+			setsid: false
+			customFds:[0,1,2]
+		proc.on 'exit', ->
+			@prompt()
+		process.stdin.pause()
+		proc.stdin.resume()
 
-# Return elements of candidates for which `prefix` is a prefix.
-getCompletions = (prefix, candidates) ->
-	(el for el in candidates when el.indexOf(prefix) is 0)
+	## Autocompletion
 
+	# Returns a list of completions, and the completed text.
+	autocomplete: (text) ->
+		filePrefix = binaryPrefix = accessorPrefix = varPrefix = null
+		fileCompletions = binaryCompletions = accessorCompletions = varCompletions = []
+		
+		text = text.substr 0, @cursor
+		text = text.split(' ').pop()
 
+		# Attempt to autocomplete a valid file or directory
+		isdir = (text is "" or text[text.length-1] is '/')
+		dir = path.resolve text, (if isdir then '.' else '..')
+		filePrefix = (if isdir then	'' else path.basename text)
+		if path.existsSync dir then listing = fs.readdirSync dir
+		else listing = fs.readdirSync '.'
+		fileCompletions = (el for el in listing when el.indexOf(filePrefix) is 0)
+		
+		# Attempt to autocomplete a valid executable
+		binaryCompletions = (el for el in @binaries when el.indexOf(text) is 0)
+		
+		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
+		if match = text.match @ACCESSOR
+		#console.log match
+		#if match?
+			[all, obj, accessorPrefix] = match
+			try
+				val = vm.runInThisContext obj
+				accessorCompletions = (el for el in Object.getOwnPropertyNames(Object(val)) when el.indexOf(accessorPrefix) is 0)
+			catch error
+				accessorCompletions = []
+				accessorPrefix = null
+			
+		# Attempt to autocomplete an in-scope free variable: `one`.
+		varPrefix = text.match(@SIMPLEVAR)?[1]
+		varPrefix = '' if text is ''
+		if varPrefix?
+			vars = vm.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
+			keywords = (r for r in coffee.RESERVED when r[..1] isnt '__')
+			possibilities = vars.concat keywords
+			varCompletions = (el for el in possibilities when el.indexOf(varPrefix) is 0)
+		else varPrefix = null
 
-root.shl = {}
-
-
-exports.run = ->
-	root.shl = new Shell(autocomplete)
+		#console.log '|', filePrefix, fileCompletions, '|', binaryPrefix, binaryCompletions, '|', accessorPrefix, accessorCompletions, '|', varPrefix, varCompletions
+		completions = []
+		prefix = text
+		for [c,p] in [[varCompletions, varPrefix], [accessorCompletions, accessorPrefix], [fileCompletions, filePrefix], [binaryCompletions, binaryPrefix]]
+			if c.length
+				completions = completions.concat c
+				prefix = p
+		#prefix = accessorPrefix or varPrefix or binaryPrefix or filePrefix or text
+		#completions = fileCompletions.concat(fileCompletions).concat(binaryCompletions).concat(varCompletions)
+		#console.log prefix, completions
+		([completions, prefix])
+		
+exports.Shell = Shell
