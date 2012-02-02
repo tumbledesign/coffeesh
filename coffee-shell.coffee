@@ -479,7 +479,7 @@ class Shell
 		
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
-			echo tokens[i]
+			#echo tokens[i]
 			switch lex
 				when 'IDENTIFIER'
 					if builtin.hasOwnProperty val
