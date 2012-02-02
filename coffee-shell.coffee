@@ -343,14 +343,16 @@ class Shell
 		else if key.ctrl
 			switch key.name
 				when "c"
-					console.log()
-					proc = spawn './bin/coffee-shell', '',
-						cwd: process.cwd()
-						env: process.env
-						setsid: false
-						customFds:[0,1,2]
-					process.stdin.pause()
-					proc.stdin.resume()
+					#console.log()
+					#proc = spawn './bin/coffee-shell', '',
+					#	cwd: process.cwd()
+					#	env: process.env
+					#	setsid: false
+					#	customFds:[0,1,2]
+					#process.stdin.pause()
+					#proc.stdin.resume()
+					@pause()
+					@resume()
 				when "h"
 					@_deleteLeft()
 				when "d"
