@@ -112,16 +112,6 @@ class Shell
 		@input.destroy()
 		return
 
-
-#	setPrompt: (prompt, length) ->
-#		@_prompt = prompt
-#		if length
-#			@_promptLength = length
-#		else
-#			lines = prompt.split(/[\r\n]/)
-#			lastLine = lines[lines.length - 1]
-#			@_promptLength = Buffer.byteLength(lastLine)
-
 	prompt: (preserveCursor) ->
 		#if @enabled
 		@cursor = 0  unless preserveCursor
