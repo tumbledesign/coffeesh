@@ -517,6 +517,7 @@ class Shell
 			customFds:[0,1,2]
 		proc.on 'exit', =>
 			@resume()
+		return
 			
 		
 
