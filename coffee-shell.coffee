@@ -455,7 +455,7 @@ class Shell
 			
 		code = buffer
 		recode = @tokenparse code
-		echo recode
+		#echo recode
 		try
 			_ = global._
 			returnValue = coffee.eval "_=(#{recode}\n)"
