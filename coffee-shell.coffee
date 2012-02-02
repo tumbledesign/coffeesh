@@ -24,10 +24,10 @@ class Shell
 		@SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@kHistorySize = 30
 		@kBufSize = 10 * 1024
+		@history_fd = fs.openSync @SHELL_HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
 		@history.shift()
 		@historyIndex = -1
-		@history_fd = fs.openSync @SHELL_HISTORY_FILE, 'a+', '644'
 		
 		# Shell Prompt		
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
