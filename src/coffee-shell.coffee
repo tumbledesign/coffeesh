@@ -5,7 +5,7 @@
 {EventEmitter} = require('events')
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
-{Lexer} = require './lexer'
+{Recode} = require './recode'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
 #Load binaries and built-in shell commands
@@ -61,9 +61,10 @@ class Shell
 			
 		@winSize = @output.getWindowSize()
 		@columns = @winSize[0]
-		process.on "SIGWINCH", =>
-			@winSize = @output.getWindowSize()
-			@columns = @winSize[0]
+		if process.listeners("SIGWINCH").length is 0
+			process.on "SIGWINCH", =>
+				@winSize = @output.getWindowSize()
+				@columns = @winSize[0]
 
 		@resume()
 
@@ -75,7 +76,6 @@ class Shell
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
-	
 
 	pause: ->
 		@cursor = 0
@@ -312,81 +312,6 @@ class Shell
 			)
 		)
 							
-	runline: ->
-		@output.write "\r\n"
-		if !@line.toString().trim() 
-			return @prompt()
-		
-		@history.unshift @line
-		@history.pop() if @history.length > @HISTORY_SIZE
-		recode = @tokenparse @line
-		echo "Recoded: #{recode}"
-		try
-			_ = global._
-			returnValue = coffee.eval "_=(#{recode}\n)"
-			if returnValue is undefined
-				global._ = _
-			else
-				print inspect(returnValue, no, 2, true) + '\n'
-			fs.write @history_fd, @line + '\n'
-		catch err
-			@error err
-		@prompt()
-
-	tokenparse: (code) ->
-
-		tokens = (new Lexer).tokenize code
-		output = []
-		
-		for i in [0...tokens.length]
-			[lex,val] = tokens[i]
-			echo tokens[i]
-			switch lex
-				when 'BINARIES', 'BUILTIN'
-					output.push val
-					if tokens[i+1]?[0] is 'TERMINATOR'
-							output.push '()'
-				when 'ARG'
-					output.push "#{val},"
-					
-				when 'IDENTIFIER'
-					output.push if tokens[i].spaced? then "#{val} " else val
-				when 'STRING'
-					output.push if tokens[i].spaced? then "#{val} " else val
-				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
-					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'OWN'
-					output.push if tokens[i].spaced? then "#{val} " else val
-				when 'TERMINATOR'
-					output.push "\n"
-				when 'FILEPATH'
-					if tokens[i+1]?[0] in ['CALL_START', '(']
-						output.push "shl.execute.bind(shl,#{val})"
-					else if tokens[i+1]?[0] is 'TERMINATOR'
-						output.push "shl.execute(#{val})"
-					else
-						output.push val
-				when 'BOOL', 'NUMBER'
-					output.push val
-				when 'MATH'
-					output.push val
-				when 'INDENT'
-					output.push "then " if tokens[i].fromThen
-			
-			
-		(output.join(''))
-	
-	
-	execute: (cmd, args...) ->
-		@pause()
-		proc = spawn cmd, args,
-			cwd: process.cwd()
-			env: process.env
-			setsid: false
-			customFds:[0,1,2]
-		proc.on 'exit', =>
-			@resume()
-		return
 
 	## Autocompletion
 
@@ -419,7 +344,7 @@ class Shell
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
-				accessorCompletions = (el for el,v of Object(val) when el.indexOf(accessorPrefix) is 0)
+				accessorCompletions = (el for own el,v of Object(val) when el.indexOf(accessorPrefix) is 0)
 			catch error
 				accessorCompletions = []
 				accessorPrefix = null
@@ -440,8 +365,44 @@ class Shell
 			if c.length
 				completions = completions.concat c
 				prefix = p
+
 		#echo [completions, prefix]
 		cb(completions, prefix)
-		
-exports.Shell = Shell
+
+	## Eval and Execute
+	
+	runline: ->
+		@output.write "\r\n"
+		if !@line.toString().trim() 
+			return @prompt()
+
+		@history.unshift @line
+		@history.pop() if @history.length > @HISTORY_SIZE
+		code = Recode @line
+		echo "Recoded: #{code}"
+		try
+			_ = global._
+			returnValue = coffee.eval "_=(#{code}\n)"
+			if returnValue is undefined
+				global._ = _
+			else
+				print inspect(returnValue, no, 2, true) + '\n'
+			fs.write @history_fd, @line + '\n'
+		catch err
+			@error err
+		@prompt()
+	
+	execute: (cmd, args...) ->
+		@pause()
+		proc = spawn cmd, args,
+			cwd: process.cwd()
+			env: process.env
+			setsid: false
+			customFds:[0,1,2]
+		proc.on 'exit', =>
+			@resume()
+		return
+
+# init
+
 root.shl = new Shell()

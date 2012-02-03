@@ -6,12 +6,12 @@
     "coffeescript",
     "shell"
   ],
-	maintainers: [
-		'cobells <cobells@tumbledesign.com>',
-		'dube <dube@tumbledesign.com>' 
-	],
+  "maintainers": [
+    "cobells <cobells@tumbledesign.com>",
+    "dube <dube@tumbledesign.com>"
+  ],
   "author": "Cobells & Dube",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "engines": {
     "node": "0.6.x"
