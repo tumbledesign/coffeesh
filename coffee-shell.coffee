@@ -497,7 +497,7 @@ class Shell
 					output.push if tokens[i].spaced? then "#{val} " else val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
 					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
+				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'OWN'
 					output.push if tokens[i].spaced? then "#{val} " else val
 				when 'TERMINATOR'
 					output.push "\n"
