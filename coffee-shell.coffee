@@ -492,15 +492,7 @@ class Shell
 					output.push "#{val},"
 					
 				when 'IDENTIFIER'
-					if builtin.hasOwnProperty val
-						output.push "builtin.#{val}"
-					else if binaries.hasOwnProperty val
-						cmd = Lexer.prototype.makeString "#{binaries[val]}/#{val}", '"', yes
-						output.push "shl.execute.bind(shl,#{cmd})"
-						if tokens[i+1]?[0] is 'TERMINATOR'
-							output.push '()'
-					else
-						output.push if tokens[i].spaced? then "#{val} " else val
+					output.push if tokens[i].spaced? then "#{val} " else val
 				when 'STRING'
 					output.push if tokens[i].spaced? then "#{val} " else val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
