@@ -80,6 +80,12 @@ exports.Lexer = class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
+		if builtin.hasOwnProperty id
+			@token 'BUILTIN', "builtin.#{id}"
+		else if binaries.hasOwnProperty id
+			cmd = @makeString "#{binaries[id]}/#{id}", '"', yes
+			@token 'BINARIES', "shl.execute.bind(shl,#{cmd})"
+
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length
