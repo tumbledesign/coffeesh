@@ -682,7 +682,7 @@ SHIFT   = ['<<', '>>', '>>>']
 COMPARE = ['==', '!=', '<', '>', '<=', '>=']
 
 # Mathematical tokens.
-MATH    = ['*', '/', '%', '+', '-']
+MATH    = ['*', '/', '%']
 
 # Relational tokens that are negatable with `not` prefix.
 RELATION = ['IN', 'OF', 'INSTANCEOF']
