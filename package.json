@@ -16,10 +16,8 @@
   "engines": {
     "node": "0.6.x"
   },
-  "main": "coffeesh",
-  "bin": {
-    "coffeesh": "./src/coffeesh.coffee"
-  },
+  "main": "./src/coffeesh",
+  "bin": "./bin/coffeesh", 
   "homepage": "https://github.com/markdube/coffee-shell",
   "repository": {
     "type": "git",

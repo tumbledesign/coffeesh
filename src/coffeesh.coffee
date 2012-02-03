@@ -428,5 +428,5 @@ class Shell
 		return
 
 root.shl = new Shell()
-extend(root.shl, require("./coffeeshrc.coffee"))
+extend(root.shl, require("./coffeeshrc"))
 root.shl.init()
