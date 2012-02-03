@@ -1,0 +1,2 @@
+#!/usr/local/env coffee
+require '../lib/coffeesh'
