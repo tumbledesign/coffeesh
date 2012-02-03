@@ -48,14 +48,15 @@ exports.Lexer = class Lexer
 		# `@literalToken` is the fallback catch-all.
 		i = 0
 		while @chunk = code.slice i
-			i += @identifierToken() or
+			i += @pathToken()       or
+				@identifierToken() or
 				@commentToken()    or
 				@whitespaceToken() or
 				@lineToken()       or
 				@heredocToken()    or
 				@stringToken()     or
 				@numberToken()     or
-				@pathToken()       or
+				
 				@literalToken()
 				#@regexToken()      or
 				#@jsToken()         or
@@ -196,7 +197,8 @@ exports.Lexer = class Lexer
 		#  @line += count match[0], '\n'
 		#  return length
 
-		#prev = last @tokens
+		prev = last @tokens
+		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_REGEX))
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
 		@token 'FILEPATH', @makeString new String(filepath), '"', no
@@ -629,7 +631,7 @@ SIMPLESTR  = /^'[^\\']*(?:\\.[^\\']*)*'/
 JSTOKEN    = /^`[^\\`]*(?:\\.[^\\`]*)*`/
 
 
-# Coffee Shell: Matches file and system paths
+# Coffee Shell: Matches fully defined absolute and relative paths
 #FILEPATH = /^\/[^\n\s\])},]*/
 FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
 
@@ -681,7 +683,7 @@ SHIFT   = ['<<', '>>', '>>>']
 COMPARE = ['==', '!=', '<', '>', '<=', '>=']
 
 # Mathematical tokens.
-MATH    = ['*', '/', '%', '+', '-']
+MATH    = ['*', '/', '%']
 
 # Relational tokens that are negatable with `not` prefix.
 RELATION = ['IN', 'OF', 'INSTANCEOF']
@@ -700,6 +702,9 @@ NOT_REGEX = ['NUMBER', 'REGEX', 'BOOL', '++', '--', ']']
 # If the previous token is not spaced, there are more preceding tokens that
 # force a division parse:
 NOT_SPACED_REGEX = NOT_REGEX.concat ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
+
+NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--']
+NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
 
 # Tokens which could legitimately be invoked or indexed. An opening
 # parentheses or bracket following these tokens will be recorded as the start
