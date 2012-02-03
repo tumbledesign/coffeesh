@@ -41,9 +41,7 @@ aliases =
 	egrep: 'egrep --color=auto'
 	fgrep: 'fgrep --color=auto'
 
-# for alias,val of aliases
-# 	builtin[alias] ?= (args...) -> shl.execute.apply(shl, ['/bin/ls', '--color=always'].concat(args))
-
+root.aliases = aliases
 root.binaries = binaries
 root.builtin = builtin
 root.echo = builtin.echo

@@ -92,7 +92,7 @@ class Lexer
 			return @chunk.length
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
-		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
+		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'ALIAS', 'FILEPATH', 'ARG', 'IDENTIFIER']
 			@token 'ARG', @makeString filepath, '"', no
 			return filepath.length
 		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString filepath, '"', no})"
@@ -109,13 +109,13 @@ class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
-		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'ALIAS', 'FILEPATH', 'ARG']
 			arg = @makeString id, '"', yes
 			@token 'ARG', arg
 			return id.length
 		if (prev = last @tokens) and 
 				prev[0] in ['-', '--'] and 
-				@tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+				@tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'ALIAS', 'FILEPATH', 'ARG']
 			arg = @makeString prev[0]+id, '"', yes
 			@tokens.pop()
 			@token 'ARG', arg
@@ -123,6 +123,12 @@ class Lexer
 		if builtin.hasOwnProperty id
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
+			return id.length
+		if aliases.hasOwnProperty id
+			[cmd, args...] = "aliases.#{id}".split(" ")
+			cmdstr = @makeString "#{binaries[cmd]}/#{cmd}", '"', yes
+			@token 'ALIAS', cmd
+			@tokens.push ['ARG', @makeString "#{arg}"] for arg in args
 			return id.length
 		if binaries.hasOwnProperty id			
 			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
