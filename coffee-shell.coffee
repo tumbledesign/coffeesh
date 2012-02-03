@@ -358,8 +358,7 @@ class Shell
 					#proc.stdin.resume()
 					@pause()
 					@resume()
-				when "h"
-					@_deleteLeft()
+				when "h" then @_deleteLeft()
 				when "d"
 					@close()
 					#if @cursor is 0 and @line.length is 0
@@ -369,8 +368,7 @@ class Shell
 					@cursor = 0
 					@line = ""
 					@_refreshLine()
-				when "k"
-					@_deleteLineRight()
+				when "k" then @_deleteLineRight()
 				when "a"
 					@cursor = 0
 					@_refreshLine()
@@ -385,34 +383,20 @@ class Shell
 					unless @cursor is @line.length
 						@cursor++
 						@_refreshLine()
-				when "n"
-					@_historyNext()
-				when "p"
-					@_historyPrev()
-				when "z"
-					return process.kill process.pid, "SIGTSTP"
-				when "w", "backspace"
-					@_deleteWordLeft()
-				when "delete"
-					@_deleteWordRight()
-				when "backspace"
-					@_deleteWordLeft()
-				when "left"
-					@_wordLeft()
-				when "right"
-					@_wordRight()
+				when "n" then @_historyNext()
+				when "p" then @_historyPrev()
+				when "z" then return process.kill process.pid, "SIGTSTP"
+				when "w", "backspace" then @_deleteWordLeft()
+				when "delete" then @_deleteWordRight()
+				when "backspace" then @_deleteWordLeft()
+				when "left" then @_wordLeft()
+				when "right" then @_wordRight()
 		else if key.meta
 			switch key.name
-				when "b"
-					@_wordLeft()
-				when "f"
-					@_wordRight()
-				when "d", "delete"
-					@_deleteWordRight()
-				when "backspace"
-					@_deleteWordLeft()
-# 			when "n"
-# 				nanoprompt()
+				when "b" then @_wordLeft()
+				when "f"then @_wordRight()
+				when "d", "delete" then @_deleteWordRight()
+				when "backspace" then @_deleteWordLeft()
 		else
 			switch key.name
 				when "enter"
