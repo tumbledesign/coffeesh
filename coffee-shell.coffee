@@ -509,7 +509,7 @@ class Shell
 						output.push "shl.execute(#{val})"
 					else
 						output.push val
-				when 'BOOL', 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+				when 'BOOL', 'NUMBER'
 					output.push val
 				when 'MATH'
 					output.push val
