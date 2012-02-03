@@ -85,14 +85,19 @@ exports.Lexer = class Lexer
 			@token 'BUILTIN', cmd
 			return id.length
 			
-		else if binaries.hasOwnProperty id
+		else if binaries.hasOwnProperty id			
 			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
 			cmd = "shl.execute.bind(shl,#{cmdstr})"
 			@token 'BINARIES', cmd
 			return id.length
 			
-		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN']
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'ARG']
 			arg = @makeString id, '"', yes
+			@token 'ARG', arg
+			return id.length
+		
+		if (prev = last @tokens) and prev[0] in ['-', '--']
+			arg = @makeString prev[0]+id, '"', yes
 			@token 'ARG', arg
 			return id.length
 
@@ -591,10 +596,10 @@ JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
 exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
 
 # Token matching regexes.
-IDENTIFIER = /// ^
-  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
-  ( [^\n\S]* : (?!:) )?  # Is this a property name?
-///
+#IDENTIFIER = /// ^
+#  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
+#  ( [^\n\S]* : (?!:) )?  # Is this a property name?
+#///
 
 #FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
 
@@ -609,10 +614,10 @@ FILEPATH = /// ^
 
 SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
-#IDENTIFIER = /// ^
-#	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
-#	( [^\n\S]* : (?!:) )?  # Is this a property name?
-#///
+IDENTIFIER = /// ^
+	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
+	( [^\n\S]* : (?!:) )?  # Is this a property name?
+///
 
 NUMBER     = ///
   ^ 0x[\da-f]+ |                              # hex

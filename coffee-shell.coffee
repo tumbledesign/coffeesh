@@ -488,6 +488,9 @@ class Shell
 					output.push val
 					if tokens[i+1]?[0] is 'TERMINATOR'
 							output.push '()'
+				when 'ARG'
+					output.push "#{val},"
+					
 				when 'IDENTIFIER'
 					if builtin.hasOwnProperty val
 						output.push "builtin.#{val}"
