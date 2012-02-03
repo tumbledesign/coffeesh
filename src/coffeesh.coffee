@@ -38,7 +38,6 @@ root.echo = builtin.echo
 
 class Shell
 	constructor: ->
-
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -48,7 +47,7 @@ class Shell
 			user = process.env.USER
 			cwd = process.cwd()
 			user.white + "@#{@HOSTNAME}".white.bold + (if user is "root" then "➜ ".red else "➜ ".blue) + (path.basename(cwd) or "/").cyan.bold + " "
-		@_ALIASES = 
+		@ALIASES = 
 			ls: 'ls --color=auto'
 			l: 'ls -latr --color=auto'
 			grep: 'grep --color=auto'
@@ -63,12 +62,13 @@ class Shell
 		process.on 'uncaughtException', -> @error
 		
 		# load history
-		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		# TODO: make loading history async so no hang on big files
+		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split('\n').reverse()
 		@history.shift()
 		@historyIndex = -1
-			
+		
+		# window size
 		@winSize = @output.getWindowSize()
 		@columns = @winSize[0]
 		if process.listeners("SIGWINCH").length is 0
@@ -78,17 +78,14 @@ class Shell
 
 		@consecutive_tabs = 0
 
-		extend @_ALIASES, @ALIASES
-		for alias,val of @_ALIASES
-			do (alias, val) ->
-				cmd = val.split(" ").shift()
-				if not builtin[alias]? and binaries[cmd]?
-					builtin[alias] = (params...) ->
-						shl.execute binaries[cmd] + '/' + val + " " + params.join(" ")
+		# command aliases
+		for alias,val of @ALIASES when not builtin[alias]? and binaries[val.split(' ')[0]]?
+			builtin[alias] = (params...) -> 
+				shl.execute binaries[val.split(' ')[0]] + '/' + val + " " + params.join(" ")
 
+		# connect to tty
 		@resume()
-		
-		
+
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
@@ -418,6 +415,7 @@ class Shell
 		yield()
 		return
 
-root.shl = new Shell()
-extend(root.shl, require("./coffeeshrc"))
+
+extend((root.shl = new Shell()), require("./coffeeshrc"))
+extend(root.shl.ALIASES, require('./coffeesh_aliases'))
 root.shl.init()
