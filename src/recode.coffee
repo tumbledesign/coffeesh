@@ -35,7 +35,7 @@ exports.Recode = (code) ->
 			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
 					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
 					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
-					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
+					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'EXTENDS'
 				output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
 			#when 'IDENTIFIER'
 			#	output.push val
