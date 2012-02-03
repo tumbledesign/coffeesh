@@ -512,6 +512,8 @@ class Shell
 					output.push val
 				when 'MATH'
 					output.push val
+				else
+					output.push val
 			#output.push ' ' if tokens[i].spaced?
 			
 		(output.join(''))

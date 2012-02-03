@@ -578,13 +578,15 @@ IDENTIFIER = /// ^
   ( [^\n\S]* : (?!:) )?  # Is this a property name?
 ///
 
-#URI = /// ^
-#	(?:	[\w\-.+=%]		# letter, digit, _
-#		| [\x7f-\uffff]	# utf8
-#		| \\[\s\S]			# any escaped char
-#		| [:@/~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
-#	)+
-#///
+URI = /// ^
+	(?:	[\w\-.+=%]		# letter, digit, _
+		| [\x7f-\uffff]	# utf8
+		| \\[\s\S]			# any escaped char
+		| [:@/~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+	)+
+///
+
+SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
 #IDENTIFIER = /// ^
 #	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
@@ -664,7 +666,7 @@ TRAILING_SPACES = /\s+$/
 # Compound assignment tokens.
 COMPOUND_ASSIGN = [ '-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|=' ]
 
-SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
+
 
 # Unary tokens.
 UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
