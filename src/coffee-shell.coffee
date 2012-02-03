@@ -79,10 +79,15 @@ class Shell
 
 		@resume()
 
-	setPrompt: (prompt) ->
-		prompt ?= "#{process.env.USER}@#{@hostname}:#{process.cwd()}$ "
-		@_prompt = prompt.blue
-		@_promptLength = prompt.length
+	setPrompt: (prompt, length) ->
+		if prompt?
+			@_prompt = prompt
+			@_promptLength = length
+		else
+			usr = "#{process.env.USER}@#{@hostname}"
+			cwd = "#{process.cwd()}"
+			@_prompt = "#{usr.blue.bold}:#{cwd.green.bold}$ "
+			@_promptLength = usr.length + cwd.length + 3
 		
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
@@ -91,7 +96,7 @@ class Shell
 	pause: ->
 		@cursor = 0
 		@line = ''
-		@setPrompt ''
+		@setPrompt '', 0
 		@prompt()
 		@input.removeAllListeners 'keypress'
 		@input.pause()
