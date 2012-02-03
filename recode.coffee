@@ -1,17 +1,37 @@
-{Rewriter} = require './rewriter'
 {count, starts, compact, last} = require('coffee-script').helpers
-
-JS_KEYWORDS = ['true', 'false', 'null', 'this', 'new', 'delete', 'typeof', 'in', 'instanceof', 'return', 'throw', 'break', 'continue', 'debugger', 'if', 'else', 'switch', 'for', 'while', 'do', 'try', 'catch', 'finally', 'class', 'extends', 'super']
-COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when']
-COFFEE_ALIAS_MAP = and:'&&', or:'||', is:'==', isnt:'!=', not:'!', yes:'true', no:'false', on:'true', off:'false'
-COFFEE_ALIASES  = (key for key of COFFEE_ALIAS_MAP)
-COFFEE_KEYWORDS = COFFEE_KEYWORDS.concat COFFEE_ALIASES
 RESERVED = ['case', 'default', 'function', 'var', 'void', 'with', 'const', 'let', 'enum', 'export', 'import', 'native', '__hasProp', '__extends', '__slice', '__bind', '__indexOf']
-JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
-exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
+JS_KEYWORDS = ['true', 'false', 'null', 'this', 'new', 'delete', 'typeof', 'in', 'instanceof', 'return', 'throw', 'break', 'continue', 'debugger', 'if', 'else', 'switch', 'for', 'while', 'do', 'try', 'catch', 'finally', 'class', 'extends', 'super']
+JS_FORBIDDEN = ['true', 'false', 'null', 'this', 'new', 'delete', 'typeof', 'in', 'instanceof', 'return', 'throw', 'break', 'continue', 'debugger', 'if', 'else', 'switch', 'for', 'while', 'do', 'try', 'catch', 'finally', 'class', 'extends', 'super', 'case', 'default', 'function', 'var', 'void', 'with', 'const', 'let', 'enum', 'export', 'import', 'native', '__hasProp', '__extends', '__slice', '__bind', '__indexOf']
+COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when']
+COFFEE_ALIAS_MAP = and: '&&', or: '||', is: '==', isnt: '!=', not: '!', yes: 'true', no: 'false', on: 'true', off: 'false'
+COFFEE_ALIASES  = ['and', 'or', 'is', 'isnt', 'not', 'yes', 'no', 'on', 'off']
+COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when', 'and', 'or', 'is', 'isnt', 'not', 'yes', 'no', 'on', 'off']
 
-exports.Lexer = class Lexer
 
+exports.Recode = (code) ->
+		tokens = (new Lexer).tokenize code, {rewrite: on}
+		output = []
+		for i in [0...tokens.length]
+			[lex,val] = tokens[i]
+			echo tokens[i]
+			switch lex
+				when 'BINARIES', 'BUILTIN', 'FILEPATH'
+					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
+				when 'ARG'
+					output.push "#{val}#{if tokens[i+1]?[0] in ['CALL_END', ')'] then '' else ','}"
+				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
+						, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
+						, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
+						, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
+					output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
+				when 'TERMINATOR'
+					output.push "\n"
+				when 'INDENT'
+					output.push "then " if tokens[i].fromThen
+		(output.join(''))
+
+
+class Lexer
 	tokenize: (code, opts = {}) ->
 		TRAILING_SPACES = /\s+$/
 		WHITESPACE = /^[^\n\S]+/
@@ -24,19 +44,34 @@ exports.Lexer = class Lexer
 		@outdebt = 0              # The under-outdentation at the current level.
 		@indents = []             # The stack of all current indentation levels.
 		@tokens  = []             # Stream of parsed tokens in the form `['TYPE', value, line]`.
+		
 		i = 0
 		while @chunk = code.slice i
-			i += @pathToken()       or
+			i += @pathToken() or
 				@identifierToken() or
-				@commentToken()    or
+				@commentToken() or
 				@whitespaceToken() or
-				@lineToken()       or
-				@heredocToken()    or
-				@stringToken()     or
-				@numberToken()     or		
+				@lineToken() or
+				@heredocToken() or
+				@stringToken() or
+				@numberToken() or		
 				@literalToken()
 		@closeIndentation()
-		(new Rewriter).rewrite @tokens
+		
+		# Rewrite
+		if opts.rewrite
+			@removeLeadingNewlines()
+			@removeMidExpressionNewlines()
+			@closeOpenCalls()
+			@closeOpenIndexes()
+			@addImplicitIndentation()
+			@tagPostfixConditionals()
+			@addImplicitBraces()
+			@addImplicitParentheses()
+			@ensureBalance()
+			@rewriteClosingParens()
+		
+		(@tokens)
 
 	pathToken: ->
 		FILEPATH = /// ^
@@ -74,15 +109,6 @@ exports.Lexer = class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
-		if builtin.hasOwnProperty id
-			cmd = "builtin.#{id}"
-			@token 'BUILTIN', cmd
-			return id.length
-		if binaries.hasOwnProperty id			
-			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
-			cmd = "shl.execute.bind(shl,#{cmdstr})"
-			@token 'BINARIES', cmd
-			return id.length
 		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @makeString id, '"', yes
 			@token 'ARG', arg
@@ -93,6 +119,15 @@ exports.Lexer = class Lexer
 			arg = @makeString prev[0]+id, '"', yes
 			@tokens.pop()
 			@token 'ARG', arg
+			return id.length
+		if builtin.hasOwnProperty id
+			cmd = "builtin.#{id}"
+			@token 'BUILTIN', cmd
+			return id.length
+		if binaries.hasOwnProperty id			
+			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
+			cmd = "shl.execute.bind(shl,#{cmdstr})"
+			@token 'BINARIES', cmd
 			return id.length
 			
 		if id is 'own' and @tag() is 'FOR'
@@ -509,3 +544,249 @@ exports.Lexer = class Lexer
 			if contents in ['\n', quote] then contents else match
 		body = body.replace /// #{quote} ///g, '\\$&'
 		quote + @escapeLines(body, heredoc) + quote
+		
+		
+		
+		
+	## Rewriter
+
+	scanTokens: (block) ->
+		{tokens} = this
+		i = 0
+		i += block.call this, token, i, tokens while token = tokens[i]
+		true
+
+	detectEnd: (i, condition, action) ->
+		EXPRESSION_START = [ '(', '[', '{', 'INDENT', 'CALL_START', 'PARAM_START', 'INDEX_START' ]
+		EXPRESSION_END   = [ ')', ']', '}', 'OUTDENT', 'CALL_END', 'PARAM_END', 'INDEX_END' ]
+		{tokens} = this
+		levels = 0
+		while token = tokens[i]
+			return action.call this, token, i     if levels is 0 and condition.call this, token, i
+			return action.call this, token, i - 1 if not token or levels < 0
+			if token[0] in EXPRESSION_START
+				levels += 1
+			else if token[0] in EXPRESSION_END
+				levels -= 1
+			i += 1
+		i - 1
+
+	removeLeadingNewlines: ->
+		break for [tag], i in @tokens when tag isnt 'TERMINATOR'
+		@tokens.splice 0, i if i
+
+	removeMidExpressionNewlines: ->
+		EXPRESSION_CLOSE = [ ')', ']', '}', 'OUTDENT', 'CALL_END', 'PARAM_END', 'INDEX_END', 'CATCH', 'WHEN', 'ELSE', 'FINALLY']
+		@scanTokens (token, i, tokens) ->
+			return 1 unless token[0] is 'TERMINATOR' and @rtag(i + 1) in EXPRESSION_CLOSE
+			tokens.splice i, 1
+			0
+
+	closeOpenCalls: ->
+		condition = (token, i) ->
+			token[0] in [')', 'CALL_END'] or
+			token[0] is 'OUTDENT' and @rtag(i - 1) is ')'
+		action = (token, i) ->
+			@tokens[if token[0] is 'OUTDENT' then i - 1 else i][0] = 'CALL_END'
+		@scanTokens (token, i) ->
+			@detectEnd i + 1, condition, action if token[0] is 'CALL_START'
+			1
+
+	closeOpenIndexes: ->
+		condition = (token, i) -> token[0] in [']', 'INDEX_END']
+		action    = (token, i) -> token[0] = 'INDEX_END'
+		@scanTokens (token, i) ->
+			@detectEnd i + 1, condition, action if token[0] is 'INDEX_START'
+			1
+
+	addImplicitBraces: ->
+		EXPRESSION_START = [ '(', '[', '{', 'INDENT', 'CALL_START', 'PARAM_START', 'INDEX_START' ]
+		EXPRESSION_END   = [ ')', ']', '}', 'OUTDENT', 'CALL_END', 'PARAM_END', 'INDEX_END' ]
+		stack       = []
+		start       = null
+		startIndent = 0
+		condition = (token, i) ->
+			[one, two, three] = @tokens[i + 1 .. i + 3]
+			return false if 'HERECOMMENT' is one?[0]
+			[tag] = token
+			(tag in ['TERMINATOR', 'OUTDENT'] and
+				not (two?[0] is ':' or one?[0] is '@' and three?[0] is ':')) or
+				(tag is ',' and one and
+					one[0] not in ['FILEPATH', 'IDENTIFIER', 'NUMBER', 'STRING', '@', 'TERMINATOR', 'OUTDENT'])
+		action = (token, i) ->
+			tok = ['}', '}', token[2]]
+			tok.generated = yes
+			@tokens.splice i, 0, tok
+		@scanTokens (token, i, tokens) ->
+			if (tag = token[0]) in EXPRESSION_START
+				stack.push [(if tag is 'INDENT' and @rtag(i - 1) is '{' then '{' else tag), i]
+				return 1
+			if tag in EXPRESSION_END
+				start = stack.pop()
+				return 1
+			return 1 unless tag is ':' and
+				((ago = @rtag i - 2) is ':' or stack[stack.length - 1]?[0] isnt '{')
+			stack.push ['{']
+			idx =  if ago is '@' then i - 2 else i - 1
+			idx -= 2 while @rtag(idx - 2) is 'HERECOMMENT'
+			value = new String('{')
+			value.generated = yes
+			tok = ['{', value, token[2]]
+			tok.generated = yes
+			tokens.splice idx, 0, tok
+			@detectEnd i + 2, condition, action
+			2
+
+	addImplicitParentheses: ->
+		IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'FILEPATH', 'BINARIES', 'BUILTIN']
+		IMPLICIT_CALL    = [
+			'IDENTIFIER', 'NUMBER', 'STRING', 'JS', 'REGEX', 'NEW', 'PARAM_START', 'CLASS'
+			'IF', 'TRY', 'SWITCH', 'THIS', 'BOOL', 'UNARY', 'SUPER'
+			'@', '->', '=>', '[', '(', '{', '--', '++', 'FILEPATH', 'BINARIES', 'BUILTIN', 'ARG'
+		]
+		IMPLICIT_UNSPACED_CALL = ['+', '-']
+		IMPLICIT_BLOCK   = ['->', '=>', '{', '[', ',']
+		IMPLICIT_END     = ['POST_IF', 'FOR', 'WHILE', 'UNTIL', 'WHEN', 'BY', 'LOOP', 'TERMINATOR']
+		LINEBREAKS       = ['TERMINATOR', 'INDENT', 'OUTDENT']
+	
+		noCall = no
+		action = (token, i) ->
+			idx = if token[0] is 'OUTDENT' then i + 1 else i
+			@tokens.splice idx, 0, ['CALL_END', ')', token[2]]
+		@scanTokens (token, i, tokens) ->
+			tag     = token[0]
+			noCall  = yes if tag in ['CLASS', 'IF']
+			[prev, current, next] = tokens[i - 1 .. i + 1]
+			callObject  = not noCall and tag is 'INDENT' and
+										next and next.generated and next[0] is '{' and
+										prev and prev[0] in IMPLICIT_FUNC
+			seenSingle  = no
+			seenControl = no
+			noCall      = no if tag in LINEBREAKS
+			token.call  = yes if prev and not prev.spaced and tag is '?'
+			return 1 if token.fromThen
+			return 1 unless callObject or
+				prev?.spaced and (prev.call or prev[0] in IMPLICIT_FUNC) and
+				(tag in IMPLICIT_CALL or not (token.spaced or token.newLine) and tag in IMPLICIT_UNSPACED_CALL)
+			tokens.splice i, 0, ['CALL_START', '(', token[2]]
+			@detectEnd i + 1, (token, i) ->
+				[tag] = token
+				return yes if not seenSingle and token.fromThen
+				seenSingle  = yes if tag in ['IF', 'ELSE', 'CATCH', '->', '=>']
+				seenControl = yes if tag in ['IF', 'ELSE', 'SWITCH', 'TRY']
+				return yes if tag in ['.', '?.', '::'] and @rtag(i - 1) is 'OUTDENT'
+				not token.generated and @rtag(i - 1) isnt ',' and (tag in IMPLICIT_END or
+				(tag is 'INDENT' and not seenControl)) and
+				(tag isnt 'INDENT' or
+				 (@rtag(i - 2) isnt 'CLASS' and @rtag(i - 1) not in IMPLICIT_BLOCK and
+					not ((post = @tokens[i + 1]) and post.generated and post[0] is '{')))
+			, action
+			prev[0] = 'FUNC_EXIST' if prev[0] is '?'
+			2
+
+	addImplicitIndentation: ->
+		SINGLE_LINERS    = ['ELSE', '->', '=>', 'TRY', 'FINALLY', 'THEN']
+		SINGLE_CLOSERS   = ['TERMINATOR', 'CATCH', 'FINALLY', 'ELSE', 'OUTDENT', 'LEADING_WHEN']
+	
+		@scanTokens (token, i, tokens) ->
+			[tag] = token
+			if tag is 'TERMINATOR' and @rtag(i + 1) is 'THEN'
+				tokens.splice i, 1
+				return 0
+			if tag is 'ELSE' and @rtag(i - 1) isnt 'OUTDENT'
+				tokens.splice i, 0, @indentation(token)...
+				return 2
+			if tag is 'CATCH' and @rtag(i + 2) in ['OUTDENT', 'TERMINATOR', 'FINALLY']
+				tokens.splice i + 2, 0, @indentation(token)...
+				return 4
+			if tag in SINGLE_LINERS and @rtag(i + 1) isnt 'INDENT' and
+				 not (tag is 'ELSE' and @rtag(i + 1) is 'IF')
+				starter = tag
+				[indent, outdent] = @indentation token
+				indent.fromThen   = true if starter is 'THEN'
+				indent.generated  = outdent.generated = true
+				tokens.splice i + 1, 0, indent
+				condition = (token, i) ->
+					token[1] isnt ';' and token[0] in SINGLE_CLOSERS and
+					not (token[0] is 'ELSE' and starter not in ['IF', 'THEN'])
+				action = (token, i) ->
+					@tokens.splice (if @rtag(i - 1) is ',' then i - 1 else i), 0, outdent
+				@detectEnd i + 2, condition, action
+				tokens.splice i, 1 if tag is 'THEN'
+				return 1
+			return 1
+
+	tagPostfixConditionals: ->
+		condition = (token, i) -> token[0] in ['TERMINATOR', 'INDENT']
+		@scanTokens (token, i) ->
+			return 1 unless token[0] is 'IF'
+			original = token
+			@detectEnd i + 1, condition, (token, i) ->
+				original[0] = 'POST_' + original[0] if token[0] isnt 'INDENT'
+			1
+
+	ensureBalance: ->
+		pairs = [
+			['(', ')']
+			['[', ']']
+			['{', '}']
+			['INDENT', 'OUTDENT'],
+			['CALL_START', 'CALL_END']
+			['PARAM_START', 'PARAM_END']
+			['INDEX_START', 'INDEX_END']
+		]
+		levels   = {}
+		openLine = {}
+		for token in @tokens
+			[tag] = token
+			for [open, close] in pairs
+				levels[open] |= 0
+				if tag is open
+					openLine[open] = token[2] if levels[open]++ is 0
+				else if tag is close and --levels[open] < 0
+					throw Error "too many #{token[1]} on line #{token[2] + 1}"
+		for open, level of levels when level > 0
+			throw Error "unclosed #{ open } on line #{openLine[open] + 1}"
+		this
+
+	rewriteClosingParens: ->
+		INVERSES = 
+			')': '(', '(': ')',
+			']': '[', '[': ']',
+			'}': '{', '{': '}',
+			OUTDENT: 'INDENT', INDENT: 'OUTDENT',
+			CALL_END: 'CALL_START', CALL_START: 'CALL_END',
+			PARAM_END: 'PARAM_START', PARAM_START: 'PARAM_END',
+			INDEX_END: 'INDEX_START', INDEX_START: 'INDEX_END',
+		EXPRESSION_START = [ '(', '[', '{', 'INDENT', 'CALL_START', 'PARAM_START', 'INDEX_START' ]
+		EXPRESSION_END   = [ ')', ']', '}', 'OUTDENT', 'CALL_END', 'PARAM_END', 'INDEX_END' ]
+		
+		stack = []
+		debt  = {}
+		debt[key] = 0 for key of INVERSES
+		@scanTokens (token, i, tokens) ->
+			if (tag = token[0]) in EXPRESSION_START
+				stack.push token
+				return 1
+			return 1 unless tag in EXPRESSION_END
+			if debt[inv = INVERSES[tag]] > 0
+				debt[inv] -= 1
+				tokens.splice i, 1
+				return 0
+			match = stack.pop()
+			mtag  = match[0]
+			oppos = INVERSES[mtag]
+			return 1 if tag is oppos
+			debt[mtag] += 1
+			val = [oppos, if mtag is 'INDENT' then match[1] else oppos]
+			if @rtag(i + 2) is mtag
+				tokens.splice i + 3, 0, val
+				stack.push match
+			else
+				tokens.splice i, 0, val
+			1
+
+	indentation: (token) ->
+		[['INDENT', 2, token[2]], ['OUTDENT', 2, token[2]]]
+
+	rtag: (i) -> @tokens[i]?[0]

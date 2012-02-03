@@ -5,7 +5,7 @@
 {EventEmitter} = require('events')
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
-{Lexer} = require './lexer'
+{Recode} = require './recode'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
 
 #Load binaries and built-in shell commands
@@ -325,60 +325,6 @@ class Shell
 					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
 				
 				self._refreshLine()
-							
-	runline: ->
-		@output.write "\r\n"
-		if !@line.toString().trim() 
-			return @prompt()
-		
-		@history.unshift @line
-		@history.pop() if @history.length > @kHistorySize
-		recode = @tokenparse @line
-		echo "Recoded: #{recode}"
-		try
-			_ = global._
-			returnValue = coffee.eval "_=(#{recode}\n)"
-			if returnValue is undefined
-				global._ = _
-			else
-				print inspect(returnValue, no, 2, true) + '\n'
-			fs.write @history_fd, @line + '\n'
-		catch err
-			@error err
-		@prompt()
-
-	tokenparse: (code) ->
-		tokens = (new Lexer).tokenize code
-		output = []
-		for i in [0...tokens.length]
-			[lex,val] = tokens[i]
-			echo tokens[i]
-			switch lex
-				when 'BINARIES', 'BUILTIN', 'FILEPATH'
-					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
-				when 'ARG'
-					output.push "#{val}#{if tokens[i+1]?[0] in ['CALL_END', ')'] then '' else ','}"
-				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
-						, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
-						, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
-						, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
-					output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
-				when 'TERMINATOR'
-					output.push "\n"
-				when 'INDENT'
-					output.push "then " if tokens[i].fromThen
-		(output.join(''))
-	
-	execute: (cmd, args...) ->
-		@pause()
-		proc = spawn cmd, args,
-			cwd: process.cwd()
-			env: process.env
-			setsid: false
-			customFds:[0,1,2]
-		proc.on 'exit', =>
-			@resume()
-		return
 
 	## Autocompletion
 
@@ -435,6 +381,41 @@ class Shell
 				completions = completions.concat c
 				prefix = p
 		([completions, prefix])
+
+	## Eval and Execute
+	
+	runline: ->
+		@output.write "\r\n"
+		if !@line.toString().trim() 
+			return @prompt()
 		
-exports.Shell = Shell
+		@history.unshift @line
+		@history.pop() if @history.length > @kHistorySize
+		code = Recode @line
+		echo "Recoded: #{code}"
+		try
+			_ = global._
+			returnValue = coffee.eval "_=(#{code}\n)"
+			if returnValue is undefined
+				global._ = _
+			else
+				print inspect(returnValue, no, 2, true) + '\n'
+			fs.write @history_fd, @line + '\n'
+		catch err
+			@error err
+		@prompt()
+	
+	execute: (cmd, args...) ->
+		@pause()
+		proc = spawn cmd, args,
+			cwd: process.cwd()
+			env: process.env
+			setsid: false
+			customFds:[0,1,2]
+		proc.on 'exit', =>
+			@resume()
+		return
+
+# init
+
 root.shl = new Shell()
