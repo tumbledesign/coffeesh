@@ -396,7 +396,7 @@ class Shell
 		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
 		exec "/usr/bin/mkfifo #{fifopath}"
 		@pause()
-		cmdargs = ["-ic", "#{cmd} #{args.join(' ')}; echo a > #{fifopath}"]
+		cmdargs = ["-ic", "#{cmd}#{args.join(' ')}; echo a > #{fifopath}"]
 		echo cmdargs
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
