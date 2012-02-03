@@ -43,7 +43,12 @@ class Shell
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		@SHELL_PROMPT_CONTINUATION = '......> '.green
+		@PROMPT_CONTINUATION = =>
+			('......> '.green)
+		@PROMPT = =>
+			user = process.env.USER
+			cwd = process.cwd()
+			user.white + "@#{@HOSTNAME}".white.bold + (if user is "root" then "➜ ".red else "➜ ".blue) + (path.basename(cwd) or "/").cyan.bold + " "
 		@ALIASES = 
 			ls: 'ls --color=auto'
 			l: 'ls -latr --color=auto'
@@ -103,8 +108,8 @@ class Shell
 	pause: ->
 		@cursor = 0
 		@line = ''
-		@setPrompt '', 0
-		@prompt()
+		@code = ''
+		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.pause()
 		tty.setRawMode false
@@ -116,15 +121,9 @@ class Shell
 		@input.destroy()
 		return
 
-	setPrompt: (prompt, length) ->
-		if prompt?
-			@_prompt = prompt
-			@_promptLength = prompt.stripColors.length
-		else
-			usr = "#{process.env.USER}@#{@HOSTNAME}"
-			cwd = "#{process.cwd()}"
-			@_prompt = "#{usr.blue.bold}:#{cwd.green.bold}$ "
-			@_promptLength = usr.length + cwd.length + 3
+	setPrompt: (p) ->
+		p ?= @PROMPT
+		@_prompt = p()
 			
 	prompt: ->
 		@line = ""
@@ -137,7 +136,7 @@ class Shell
 		@output.write @_prompt
 		@output.write @line
 		@output.clearLine 1
-		@output.cursorTo @_promptLength + @cursor
+		@output.cursorTo @_prompt.stripColors.length + @cursor
 
 
 	write: (s, key) ->
@@ -151,14 +150,14 @@ class Shell
 			
 		# ctrl enter
 		else if s is '\n'
-			@history.unshift @line
-			@history.pop() if @history.length > @HISTORY_SIZE
-			fs.write @history_fd, @line + '\n'
-			
 			@insertString '\n'
 			@code += @line
 			
-			@setPrompt @SHELL_PROMPT_CONTINUATION
+			@history.unshift @code
+			@history.pop() if @history.length > @HISTORY_SIZE
+			fs.write @history_fd, @code
+			
+			@setPrompt @PROMPT_CONTINUATION
 			@prompt()
 			return
 			
@@ -274,15 +273,49 @@ class Shell
 			when "up", "C^p"
 				if @historyIndex + 1 < @history.length
 					@historyIndex++
-					@line = @history[@historyIndex]
-					@cursor = @line.length
-					@refreshLine()
-			
+					@code = @history[@historyIndex]
+					lns = @code.split('\n')
+					for i in [0...lns.length]
+						#console.log i,l
+						@output.clearLine 0
+						@output.cursorTo 0
+						@cursor = lns[i].length
+						if i is 0
+							@setPrompt()
+							#@prompt()
+							@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+							@refreshLine()
+						else
+							@setPrompt @PROMPT_CONTINUATION
+							#@prompt()
+							@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+							@refreshLine()
+						@line = ''
+						#@output.cursorTo @_prompt.stripColors.length + @cursor
+						#if i in [0, 1, lns.length-2]
+#							@setPrompt()
+#						else
+#							#@output.write '\n'
+#							@setPrompt @PROMPT_CONTINUATION
+#						
+#						@cursor = l.length
+#						@output.cursorTo 0
+#						@output.write @_prompt
+#						@output.write l
+#						
+#						
+#						@output.cursorTo @_prompt.stripColors.length + @cursor
+#						@output.write '\r\n' if i in [0..lns.length-1]
+#						@output.clearLine 1
+#						
+						
+					#@setPrompt()
+					#@prompt()
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				if s
-					lines = s.split "\r\n"
+					lines = s.split /\r\n|\n|\r/
 					for i,line of lines
 						@runline() if i > 0
 						@insertString lines[i]
@@ -407,11 +440,12 @@ class Shell
 		@output.write "\r\n"
 		if !@code.toString().trim()
 			@setPrompt()
-			return @prompt()
+			@prompt()
+			return
 
-		@history.unshift @line
+		@history.unshift @code
 		@history.pop() if @history.length > @HISTORY_SIZE
-		fs.write @history_fd, @line + '\n'
+		fs.write @history_fd, @code
 		
 		code = Recode @code
 		@code = ''
@@ -427,6 +461,7 @@ class Shell
 			).run()
 		catch err
 			@error err
+
 		@setPrompt()
 		@prompt()
 	

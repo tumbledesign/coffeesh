@@ -150,7 +150,7 @@ class Lexer
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
 			return id.length
-		if prev?[0] not in ['.'] and binaries.hasOwnProperty id
+		if prev?[0] not in ['.', '\\', '='] and binaries.hasOwnProperty id
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
