@@ -58,10 +58,6 @@ class Shell
 		# Shell Prompt		
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
 		
-		# Autocomplete
-		# Regexes to match complete-able bits of text.
-		@ACCESSOR  = /([\w\.]+)(?:\.(\w*))$/
-		@SIMPLEVAR = /^(?![\/\.])(\w+)$/i
 		@completer = (v, callback) ->
 			callback null, @autocomplete(v)
 		
@@ -95,8 +91,6 @@ class Shell
 		@line = ''
 		@setPrompt ''
 		@prompt()
-		
-		
 		@input.removeAllListeners 'keypress'
 		@input.pause()
 		tty.setRawMode false
@@ -121,10 +115,10 @@ class Shell
 		@input.destroy()
 		return
 
-	prompt: (preserveCursor) ->
+	prompt: ->
 		@line = ""
 		@historyIndex = -1
-		@cursor = 0  unless preserveCursor
+		@cursor = 0 
 		@_refreshLine()
 
 	_refreshLine: ->
@@ -264,11 +258,10 @@ class Shell
 				if s
 					lines = s.split /\r\n|\n|\r/
 					for i,line of lines
-						@runline()  if i > 0
+						@runline() if i > 0
 						@_insertString lines[i]
 
 	_insertString: (c) ->
-		#console.log c
 		if @cursor < @line.length
 			beg = @line.slice(0, @cursor)
 			end = @line.slice(@cursor, @line.length)
@@ -436,7 +429,7 @@ class Shell
 		binaryCompletions = (cmd for cmd in Object.getOwnPropertyNames(binaries) when cmd.indexOf(binaryPrefix) is 0)
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
-		if match = text.match @ACCESSOR
+		if match = text.match /([\w\.]+)(?:\.(\w*))$/
 		#console.log match
 		#if match?
 			[all, obj, accessorPrefix] = match
@@ -448,7 +441,7 @@ class Shell
 				accessorPrefix = null
 			
 		# Attempt to autocomplete an in-scope free variable: `one`.
-		varPrefix = text.match(@SIMPLEVAR)?[1]
+		varPrefix = text.match(/^(?![\/\.])(\w+)$/i)?[1]
 		varPrefix = '' if text is ''
 		if varPrefix?
 			vars = vm.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
