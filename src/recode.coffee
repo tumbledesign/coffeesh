@@ -33,11 +33,12 @@ exports.Recode = (code) ->
 					exectmp = ''
 				else exectmp += " "
 			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
-					, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
+					, 'BOOL', 'NUMBER', 'MATH', 'STRING'
 					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
 					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
-				output.push "#{val}"
-				#{if tokens[i].spaced? then ' ' else ''}"
+				output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
+			when 'IDENTIFIER'
+				output.push val
 			when 'TERMINATOR'
 				output.push "\n"
 			when 'INDENT'
@@ -145,7 +146,6 @@ class Lexer
 		if binaries.hasOwnProperty id			
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
-			console.log cmd
 			return id.length
 			
 		if id is 'own' and @tag() is 'FOR'

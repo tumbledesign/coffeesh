@@ -7,6 +7,8 @@
 {spawn,fork,exec,execFile} = require('child_process')
 {Recode} = require './recode'
 [tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
+os = require 'os'
+require 'fibers'
 
 #Load binaries and built-in shell commands
 binaries = {}
@@ -32,15 +34,22 @@ builtin =
 		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
 		else console.log "command '#{val}'' not found".red
 
+aliases =
+	ls: 'ls --color=auto'
+	l: 'ls -latr'
+	grep: 'grep --color=auto'
+	egrep: 'egrep --color=auto'
+	fgrep: 'fgrep --color=auto'
+
+root.aliases = aliases
 root.binaries = binaries
 root.builtin = builtin
 root.echo = builtin.echo
 
 class Shell
 	constructor: ->
-	
-		@fifopath = "/tmp/coffeefifo#{Math.floor Math.random()*10000}"
-		exec "/usr/bin/mkfifo #{@fifopath}"
+
+		@hostname = os.hostname()
 		
 		## Config
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
@@ -72,7 +81,7 @@ class Shell
 		@resume()
 
 	setPrompt: (prompt) ->
-		prompt ?= "#{process.env.USER}:#{process.cwd()}$ "
+		prompt ?= "#{process.env.USER}@#{@hostname}:#{process.cwd()}$ "
 		@_prompt = prompt.blue
 		@_promptLength = prompt.length
 		
@@ -268,11 +277,9 @@ class Shell
 			@output.write c
 
 	_tabComplete: ->
-		#echo @line.slice(0, @cursor).split(' ').pop()
 		@autocomplete( @line.slice(0, @cursor).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
-					#echo completions[0].slice(completeOn.length)
 					@_insertString completions[0].slice(completeOn.length)
 				else
 					@output.write "\r\n"
@@ -284,7 +291,6 @@ class Shell
 					maxColumns = Math.floor(@columns / width) or 1
 					rows = Math.ceil(completions.length / maxColumns)
 
-					#completions = completions.filter (e) -> e if e
 					completions.sort()
 					
 					for row in [0...rows]
@@ -299,13 +305,14 @@ class Shell
 
 					@output.write "\r\n"
 
+					@output.moveCursor 0, -rows
+
 					#prefix = ""
 					min = completions[0] 
 					max = completions[completions.length - 1]
 					for i in [0...min.length]
 						if min[i] isnt max[i]
 							prefix = min.slice(0, i)
-							echo prefix
 							break
 						prefix = min
 
@@ -320,17 +327,18 @@ class Shell
 
 	# Returns a list of completions, and the completed text.
 	autocomplete: (text, cb) ->
-		#echo text
 		prefix = filePrefix = builtinPrefix = binaryPrefix = accessorPrefix = varPrefix = null
 		completions = fileCompletions = builtinCompletions = binaryCompletions = accessorCompletions = varCompletions = []
 		
 		# Attempt to autocomplete a valid file or directory
-		isdir = (text is "" or text[text.length-1] is '/')
-		dir = path.resolve text, (if isdir then '.' else '..')
+		isdir = text[text.length-1] is '/'
+		dir = if isdir then text else (path.dirname text) + "/"
 		filePrefix = (if isdir then	'' else path.basename text)
+		#echo [isdir,dir,filePrefix]
 		if path.existsSync dir then listing = fs.readdirSync dir
-		else listing = fs.readdirSync '.'
-		fileCompletions = (el for el in listing when el.indexOf(filePrefix) is 0)
+		fileCompletions = []
+		for item in listing when item.indexOf(filePrefix) is 0
+			fileCompletions.push(if fs.lstatSync(dir + item).isDirectory() then item + "/" else item)
 		
 		# Attempt to autocomplete a builtin cmd
 		builtinPrefix = text
@@ -342,8 +350,6 @@ class Shell
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match /([\w\.]+)(?:\.(\w*))$/
-		#console.log match
-		#if match?
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
@@ -381,30 +387,31 @@ class Shell
 
 		@history.unshift @line
 		@history.pop() if @history.length > @HISTORY_SIZE
+		fs.write @history_fd, @line + '\n'
 		code = Recode @line
 		echo "Recoded: #{code}"
 		try
 			_ = global._
-			returnValue = coffee.eval "_=(#{code}\n)"
+			returnValue = coffee.eval "_=(Fiber(-> (#{code})).run()\n)"
 			if returnValue is undefined
 				global._ = _
 			else
 				print inspect(returnValue, no, 2, true) + '\n'
-			fs.write @history_fd, @line + '\n'
+			
 		catch err
 			@error err
 		@prompt()
 	
 	execute: (cmd) ->
+		fiber = Fiber.current
 		@pause()
-		cmdargs = ["-ic", "#{cmd} ; echo a > #{@fifopath}"]
+		cmdargs = ["-ic", "#{cmd}"]
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
-		
 		proc.on 'exit', (exitcode, signal) =>
-			@pause()
+			@input.removeAllListeners 'keypress'
+			fiber.run()
 			@resume()
-
-		fs.readFileSync(@fifopath, 'utf8')
+		yield()
 		return
 
 root.shl = new Shell()
