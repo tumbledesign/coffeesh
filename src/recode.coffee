@@ -36,7 +36,8 @@ exports.Recode = (code) ->
 					, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
 					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
 					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
-				output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
+				output.push "#{val}"
+				#{if tokens[i].spaced? then ' ' else ''}"
 			when 'TERMINATOR'
 				output.push "\n"
 			when 'INDENT'
