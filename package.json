@@ -11,7 +11,7 @@
     "dube <dube@tumbledesign.com>"
   ],
   "author": "Cobells & Dube",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "license": "MIT",
   "engines": {
     "node": "0.6.x"
@@ -33,10 +33,10 @@
   "devDependencies": {},
   "optionalDependencies": {},
   "config": {
-		"ls": "ls --color=auto",
-		"l": "ls -latr",
-		"grep": "grep --color=auto",
-		"egrep": "egrep --color=auto",
-		"fgrep": "fgrep --color=auto"
+    "ls": "ls --color=auto",
+    "l": "ls -latr",
+    "grep": "grep --color=auto",
+    "egrep": "egrep --color=auto",
+    "fgrep": "fgrep --color=auto"
   }
 }
