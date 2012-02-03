@@ -191,7 +191,7 @@ exports.Lexer = class Lexer
 	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
 
 	pathToken: ->
-		return 0 if @chunk.charAt(0) not in ['/', '~', '.']
+		#return 0 if @chunk.charAt(0) not in ['/', '~', '.']
 		#if match = FILEPATH.exec @chunk
 		#  length = @pathToken match
 		#  @line += count match[0], '\n'
@@ -580,11 +580,30 @@ IDENTIFIER = /// ^
   ( [^\n\S]* : (?!:) )?  # Is this a property name?
 ///
 
+#FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
+
+FILEPATH = /// ^
+	(?:
+		(?:	[-A-Za-z0-9_.+=%]		# letter, digit, _, -, ., +, =, %
+			| [\x7f-\uffff]	# utf8
+			| \\[\s\S]			# any escaped char
+			| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+		)*
+		(?:[/])
+		(?:	[-A-Za-z0-9_.+=%]		# letter, digit, _, -, ., +, =, %
+			| [\x7f-\uffff]	# utf8
+			| \\[\s\S]			# any escaped char
+			| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+		)*
+		(?!\n\s)
+	)+
+///
+
 URI = /// ^
-	(?:	[\w\-.+=%]		# letter, digit, _
+	(?:	[\w\-.+=%]		# letter, digit, _, -, ., +, =, %
 		| [\x7f-\uffff]	# utf8
 		| \\[\s\S]			# any escaped char
-		| [:@/~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+		| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
 	)+
 ///
 
@@ -634,7 +653,7 @@ JSTOKEN    = /^`[^\\`]*(?:\\.[^\\`]*)*`/
 
 # Coffee Shell: Matches fully defined absolute and relative paths
 #FILEPATH = /^\/[^\n\s\])},]*/
-FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
+
 
 # Regex-matching-regexes.
 REGEX = /// ^
@@ -719,3 +738,4 @@ INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
 
 exports.URI = URI
+exports.FILEPATH = FILEPATH

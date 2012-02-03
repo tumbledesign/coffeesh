@@ -507,7 +507,12 @@ class Shell
 				when 'TERMINATOR'
 					output.push ';'
 				when 'FILEPATH'
-					output.push val
+					if tokens[i+1]?[0] in ['CALL_START', '(']
+						output.push "shl.execute.bind(shl,#{val})"
+					else if tokens[i+1]?[0] is 'TERMINATOR'
+						output.push "shl.execute(#{val})"
+					else
+						output.push val
 				when 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
 					output.push val
 				when 'MATH'
