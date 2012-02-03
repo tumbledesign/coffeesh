@@ -494,6 +494,7 @@ class Shell
 							output.push '()'
 					else
 						output.push val
+						output.push ' ' if tokens[i].spaced?
 				when 'STRING'
 					output.push val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
