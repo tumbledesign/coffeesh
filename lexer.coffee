@@ -585,7 +585,7 @@ IDENTIFIER = /// ^
 FILEPATH = /// ^
 	(?:
 		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
-		\/
+		(?:[/])
 		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
 	)+
 	(?!\n\s)
