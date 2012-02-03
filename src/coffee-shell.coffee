@@ -405,7 +405,7 @@ class Shell
 			@resume()
 			fs.unlinkSync(fifopath)
 
-		#fs.readFileSync(fifopath, 'utf8')
+		fs.readFileSync(fifopath, 'utf8')
 		return proc
 
 root.shl = new Shell()
