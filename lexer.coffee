@@ -664,7 +664,7 @@ TRAILING_SPACES = /\s+$/
 # Compound assignment tokens.
 COMPOUND_ASSIGN = [ '-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|=' ]
 
-#['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
+SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
 # Unary tokens.
 UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
@@ -679,7 +679,7 @@ SHIFT   = ['<<', '>>', '>>>']
 COMPARE = ['==', '!=', '<', '>', '<=', '>=']
 
 # Mathematical tokens.
-MATH    = ['*', '/', '%']
+MATH    = ['*', '/', '%', '+', '-']
 
 # Relational tokens that are negatable with `not` prefix.
 RELATION = ['IN', 'OF', 'INSTANCEOF']

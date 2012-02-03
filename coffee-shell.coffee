@@ -486,7 +486,7 @@ class Shell
 		
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
-			#echo tokens[i]
+			echo tokens[i]
 			switch lex
 				when 'IDENTIFIER'
 					if builtin.hasOwnProperty val
@@ -509,6 +509,8 @@ class Shell
 				when 'FILEPATH'
 					output.push val
 				when 'NUMBER'
+					output.push val
+				when 'MATH'
 					output.push val
 			#output.push ' ' if tokens[i].spaced?
 			

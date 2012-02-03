@@ -6,7 +6,11 @@
     "coffeescript",
     "shell"
   ],
-  "author": "Mark Dube",
+	maintainers: [
+		'cobells <cobells@tumbledesign.com>',
+		'dube <dube@tumbledesign.com>' 
+	],
+  "author": "Cobells & Dube",
   "version": "0.5.0",
   "license": "MIT",
   "engines": {
