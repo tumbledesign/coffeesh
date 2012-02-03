@@ -514,7 +514,7 @@ class Shell
 				when 'MATH'
 					output.push val
 				when 'INDENT'
-					output.push " then " if tokens[i].fromThen
+					output.push "then " if tokens[i].fromThen
 			
 			
 		(output.join(''))
