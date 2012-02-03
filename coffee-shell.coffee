@@ -40,6 +40,12 @@ class Shell
 	constructor: ->
 	
 		## Config
+		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
+		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
+		@HISTORY_SIZE = 300
+		@SHELL_PROMPT_CONTINUATION = '......> '.green
+
+
 		# STDIO
 		@input = process.stdin
 		@output = process.stdout
@@ -47,26 +53,17 @@ class Shell
 		process.on 'uncaughtException', -> @error
 		
 		# load history
-		@SHELL_HISTORY_FILE = process.env.HOME + '/.coffee_history'
-		@kHistorySize = 30
-		@kBufSize = 10 * 1024
-		@history_fd = fs.openSync @SHELL_HISTORY_FILE, 'a+', '644'
-		@history = fs.readFileSync(@SHELL_HISTORY_FILE, 'utf-8').split('\n').reverse()
+		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
+		# TODO: make loading history async so no hang on big files
+		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split('\n').reverse()
 		@history.shift()
 		@historyIndex = -1
-		
-		# Shell Prompt		
-		@SHELL_PROMPT_CONTINUATION = '......> '.green
-		
-		@completer = (v, callback) ->
-			callback null, @autocomplete(v)
-		
+			
 		@winSize = @output.getWindowSize()
 		@columns = @winSize[0]
-		if process.listeners("SIGWINCH").length is 0
-			process.on "SIGWINCH", =>
-				@winSize = @output.getWindowSize()
-				@columns = @winSize[0]
+		process.on "SIGWINCH", =>
+			@winSize = @output.getWindowSize()
+			@columns = @winSize[0]
 
 		@resume()
 
@@ -78,13 +75,7 @@ class Shell
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
-	commonPrefix: (strings) ->
-		return ""  if not strings or strings.length is 0
-		sorted = strings.slice().sort()
-		min = sorted[0]
-		max = sorted[sorted.length - 1]
-		return min.slice(0, i) for i in [0...min.length] when min[i] isnt max[i]
-		min
+	
 
 	pause: ->
 		@cursor = 0
@@ -274,57 +265,52 @@ class Shell
 			@output.write c
 
 	_tabComplete: ->
-		self = this
-		self.completer self.line.slice(0, self.cursor), (err, rv) ->
-			return  if err
-
-			completions = rv[0]
-			completeOn = rv[1]
+		#echo @line.slice(0, @cursor).split(' ').pop()
+		@autocomplete( @line.slice(0, @cursor).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
-
 				if completions.length is 1
-					self._insertString completions[0].slice(completeOn.length)
+					#echo completions[0].slice(completeOn.length)
+					@_insertString completions[0].slice(completeOn.length)
 				else
-					handleGroup = (group) ->
-						return  if group.length is 0
-
-						minRows = Math.ceil(group.length / maxColumns)
-												
-						for row in [0...minRows]
-							for col in [0...maxColumns]
-								idx = row * maxColumns + col
-								break  if idx >= group.length
-
-								self.output.write group[idx]
-								
-								self.output.write " " for s in [0...(width-group[idx].length)] when (col < maxColumns - 1)
-
-							self.output.write "\r\n"
-
-						self.output.write "\r\n"
-					
-					self.output.write "\r\n"
+					@output.write "\r\n"
 					
 					width = completions.reduce((a, b) ->
 						(if a.length > b.length then a else b)
 					).length + 2
 					
-					maxColumns = Math.floor(self.columns / width) or 1
-					group = []
-					for i,c of completions
-						if c is ""
-							handleGroup group
-							group = []
-						else group.push c
-					handleGroup group
-					f = completions.filter (e) ->
-						e if e
-					
-					prefix = self.commonPrefix(f)
+					maxColumns = Math.floor(@columns / width) or 1
+					rows = Math.ceil(completions.length / maxColumns)
 
-					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
+					#completions = completions.filter (e) -> e if e
+					completions.sort()
+					
+					for row in [0...rows]
+						for col in [0...maxColumns]
+							idx = row * maxColumns + col
+							break  if idx >= completions.length
+
+							@output.write completions[idx]
+							@output.write " " for s in [0...(width-completions[idx].length)] when (col < maxColumns - 1)
+
+						@output.write "\r\n"
+
+					@output.write "\r\n"
+
+					#prefix = ""
+					min = completions[0] 
+					max = completions[completions.length - 1]
+					for i in [0...min.length]
+						if min[i] isnt max[i]
+							prefix = min.slice(0, i)
+							echo prefix
+							break
+						prefix = min
+
+					@_insertString prefix.slice(completeOn.length) if prefix.length > completeOn.length
 				
-				self._refreshLine()
+				@_refreshLine()
+			)
+		)
 							
 	runline: ->
 		@output.write "\r\n"
@@ -332,7 +318,7 @@ class Shell
 			return @prompt()
 		
 		@history.unshift @line
-		@history.pop() if @history.length > @kHistorySize
+		@history.pop() if @history.length > @HISTORY_SIZE
 		recode = @tokenparse @line
 		echo "Recoded: #{recode}"
 		try
@@ -405,13 +391,11 @@ class Shell
 	## Autocompletion
 
 	# Returns a list of completions, and the completed text.
-	autocomplete: (text) ->
+	autocomplete: (text, cb) ->
+		#echo text
 		prefix = filePrefix = builtinPrefix = binaryPrefix = accessorPrefix = varPrefix = null
 		completions = fileCompletions = builtinCompletions = binaryCompletions = accessorCompletions = varCompletions = []
 		
-		text = text.substr 0, @cursor
-		text = text.split(' ').pop()
-
 		# Attempt to autocomplete a valid file or directory
 		isdir = (text is "" or text[text.length-1] is '/')
 		dir = path.resolve text, (if isdir then '.' else '..')
@@ -422,11 +406,11 @@ class Shell
 		
 		# Attempt to autocomplete a builtin cmd
 		builtinPrefix = text
-		builtinCompletions = (cmd for cmd in Object.getOwnPropertyNames(builtin) when cmd.indexOf(builtinPrefix) is 0)
+		builtinCompletions = (cmd for own cmd,v of builtin when cmd.indexOf(builtinPrefix) is 0)
 		
 		# Attempt to autocomplete a valid executable
 		binaryPrefix = text
-		binaryCompletions = (cmd for cmd in Object.getOwnPropertyNames(binaries) when cmd.indexOf(binaryPrefix) is 0)
+		binaryCompletions = (cmd for own cmd,v of binaries when cmd.indexOf(binaryPrefix) is 0)
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match /([\w\.]+)(?:\.(\w*))$/
@@ -435,7 +419,7 @@ class Shell
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
-				accessorCompletions = (el for el in Object.getOwnPropertyNames(Object(val)) when el.indexOf(accessorPrefix) is 0)
+				accessorCompletions = (el for el,v of Object(val) when el.indexOf(accessorPrefix) is 0)
 			catch error
 				accessorCompletions = []
 				accessorPrefix = null
@@ -456,7 +440,8 @@ class Shell
 			if c.length
 				completions = completions.concat c
 				prefix = p
-		([completions, prefix])
+		#echo [completions, prefix]
+		cb(completions, prefix)
 		
 exports.Shell = Shell
 root.shl = new Shell()
