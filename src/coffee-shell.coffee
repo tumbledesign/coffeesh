@@ -57,7 +57,6 @@ class Shell
 		@HISTORY_SIZE = 300
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
 
-
 		# STDIO
 		@input = process.stdin
 		@output = process.stdout
