@@ -405,33 +405,28 @@ class Shell
 
 		tokens = (new Lexer).tokenize code
 		output = []
-		tmp = ''
-		call_started = false
-		index_started = false
-		dot_started = false
 		
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
 			echo tokens[i]
 			switch lex
-				when 'IDENTIFIER'
-					if builtin.hasOwnProperty val
-						output.push "builtin.#{val}"
-					else if binaries.hasOwnProperty val
-						cmd = Lexer.prototype.makeString "#{binaries[val]}/#{val}", '"', yes
-						output.push "shl.execute.bind(shl,#{cmd})"
-						if tokens[i+1]?[0] is 'TERMINATOR'
-							output.push '()'
-					else
-						output.push val
-				when 'STRING'
+				when 'BINARIES', 'BUILTIN'
 					output.push val
+					if tokens[i+1]?[0] is 'TERMINATOR'
+							output.push '()'
+				when 'ARG'
+					output.push "#{val},"
+					
+				when 'IDENTIFIER'
+					output.push if tokens[i].spaced? then "#{val} " else val
+				when 'STRING'
+					output.push if tokens[i].spaced? then "#{val} " else val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
 					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END'
-					output.push val
+				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'OWN'
+					output.push if tokens[i].spaced? then "#{val} " else val
 				when 'TERMINATOR'
-					output.push ';'
+					output.push "\n"
 				when 'FILEPATH'
 					if tokens[i+1]?[0] in ['CALL_START', '(']
 						output.push "shl.execute.bind(shl,#{val})"
@@ -439,13 +434,13 @@ class Shell
 						output.push "shl.execute(#{val})"
 					else
 						output.push val
-				when 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+				when 'BOOL', 'NUMBER'
 					output.push val
 				when 'MATH'
 					output.push val
-				else
-					output.push val
-			#output.push ' ' if tokens[i].spaced?
+				when 'INDENT'
+					output.push "then " if tokens[i].fromThen
+			
 			
 		(output.join(''))
 	

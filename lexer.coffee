@@ -80,12 +80,35 @@ exports.Lexer = class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
+		if builtin.hasOwnProperty id
+			cmd = "builtin.#{id}"
+			@token 'BUILTIN', cmd
+			return id.length
+			
+		if binaries.hasOwnProperty id			
+			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
+			cmd = "shl.execute.bind(shl,#{cmdstr})"
+			@token 'BINARIES', cmd
+			return id.length
+			
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+			arg = @makeString id, '"', yes
+			@token 'ARG', arg
+			return id.length
+		
+		if (prev = last @tokens) and prev[0] in ['-', '--']
+			arg = @makeString prev[0]+id, '"', yes
+			@token 'ARG', arg
+			return id.length
+
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length
+			
 		forcedIdentifier = colon or
 			(prev = last @tokens) and (prev[0] in ['.', '?.', '::'] or
 			not prev.spaced and prev[0] is '@')
+		
 		tag = 'IDENTIFIER'
 
 		if not forcedIdentifier and (id in JS_KEYWORDS or id in COFFEE_KEYWORDS)
@@ -129,6 +152,22 @@ exports.Lexer = class Lexer
 		@token tag, id
 		@token ':', ':' if colon
 		input.length
+		
+	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
+
+	pathToken: ->
+		#return 0 if @chunk.charAt(0) not in ['/', '~', '.']
+		#if match = FILEPATH.exec @chunk
+		#  length = @pathToken match
+		#  @line += count match[0], '\n'
+		#  return length
+
+		prev = last @tokens
+		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_REGEX))
+		return 0 unless match = FILEPATH.exec @chunk
+		[filepath] = match
+		@token 'FILEPATH', @makeString new String(filepath), '"', no
+		filepath.length
 
 	# Matches numbers, including decimals, hex, and exponential notation.
 	# Be careful not to interfere with ranges-in-progress.
@@ -141,16 +180,17 @@ exports.Lexer = class Lexer
 	# Matches strings, including multi-line strings. Ensures that quotation marks
 	# are balanced within the string's contents, and within nested interpolations.
 	stringToken: ->
+		token = if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG'] then 'ARG'	else 'STRING'
 		switch @chunk.charAt 0
 			when "'"
 				return 0 unless match = SIMPLESTR.exec @chunk
-				@token 'STRING', (string = match[0]).replace MULTILINER, '\\\n'
+				@token token, (string = match[0]).replace MULTILINER, '\\\n'
 			when '"'
 				return 0 unless string = @balancedString @chunk, '"'
 				if 0 < string.indexOf '#{', 1
 					@interpolateString string.slice 1, -1
 				else
-					@token 'STRING', @escapeLines string
+					@token token, @escapeLines string
 			else
 				return 0
 		@line += count string, '\n'
@@ -186,27 +226,6 @@ exports.Lexer = class Lexer
 		return 0 unless @chunk.charAt(0) is '`' and match = JSTOKEN.exec @chunk
 		@token 'JS', (script = match[0]).slice 1, -1
 		script.length
-
-
-	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
-
-	pathToken: ->
-		#return 0 if @chunk.charAt(0) not in ['/', '~', '.']
-		#if match = FILEPATH.exec @chunk
-		#  length = @pathToken match
-		#  @line += count match[0], '\n'
-		#  return length
-
-		prev = last @tokens
-		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_REGEX))
-		return 0 unless match = FILEPATH.exec @chunk
-		[filepath] = match
-		@token 'FILEPATH', @makeString new String(filepath), '"', no
-		filepath.length
-
-
-
-
 
 	# Matches regular expression literals. Lexing regular expressions is difficult
 	# to distinguish from division, so we borrow some basic heuristics from
@@ -575,10 +594,10 @@ JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
 exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
 
 # Token matching regexes.
-IDENTIFIER = /// ^
-  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
-  ( [^\n\S]* : (?!:) )?  # Is this a property name?
-///
+#IDENTIFIER = /// ^
+#  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
+#  ( [^\n\S]* : (?!:) )?  # Is this a property name?
+#///
 
 #FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
 
@@ -593,10 +612,10 @@ FILEPATH = /// ^
 
 SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
-#IDENTIFIER = /// ^
-#	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
-#	( [^\n\S]* : (?!:) )?  # Is this a property name?
-#///
+IDENTIFIER = /// ^
+	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
+	( [^\n\S]* : (?!:) )?  # Is this a property name?
+///
 
 NUMBER     = ///
   ^ 0x[\da-f]+ |                              # hex
@@ -722,3 +741,4 @@ INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
 
 exports.FILEPATH = FILEPATH
+exports.IDENTIFIER = IDENTIFIER
