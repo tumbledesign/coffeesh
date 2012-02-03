@@ -400,11 +400,11 @@ class Shell
 		
 		# Attempt to autocomplete a builtin cmd
 		builtinPrefix = text
-		builtinCompletions = (cmd for cmd in Object.getOwnPropertyNames(builtin) when cmd.indexOf(builtinPrefix) is 0)
+		builtinCompletions = (cmd for own cmd,v of builtin when cmd.indexOf(builtinPrefix) is 0)
 		
 		# Attempt to autocomplete a valid executable
 		binaryPrefix = text
-		binaryCompletions = (cmd for cmd in Object.getOwnPropertyNames(binaries) when cmd.indexOf(binaryPrefix) is 0)
+		binaryCompletions = (cmd for own cmd,v of binaries when cmd.indexOf(binaryPrefix) is 0)
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match /([\w\.]+)(?:\.(\w*))$/
@@ -413,7 +413,7 @@ class Shell
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
-				accessorCompletions = (el for el in Object.getOwnPropertyNames(Object(val)) when el.indexOf(accessorPrefix) is 0)
+				accessorCompletions = (el for own el,v of Object(val) when el.indexOf(accessorPrefix) is 0)
 			catch error
 				accessorCompletions = []
 				accessorPrefix = null

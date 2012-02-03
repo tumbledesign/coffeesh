@@ -1,40 +1,22 @@
-# The CoffeeScript Lexer. Uses a series of token-matching regexes to attempt
-# matches against the beginning of the source code. When a match is found,
-# a token is produced, we consume the match, and start again. Tokens are in the
-# form:
-#
-#     [tag, value, lineNumber]
-#
-# Which is a format that can be fed directly into [Jison](http://github.com/zaach/jison).
-
 {Rewriter} = require './rewriter'
-
-# Import the helpers we need.
 {count, starts, compact, last} = require('coffee-script').helpers
 
-# The Lexer Class
-# ---------------
+JS_KEYWORDS = ['true', 'false', 'null', 'this', 'new', 'delete', 'typeof', 'in', 'instanceof', 'return', 'throw', 'break', 'continue', 'debugger', 'if', 'else', 'switch', 'for', 'while', 'do', 'try', 'catch', 'finally', 'class', 'extends', 'super']
+COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when']
+COFFEE_ALIAS_MAP = and:'&&', or:'||', is:'==', isnt:'!=', not:'!', yes:'true', no:'false', on:'true', off:'false'
+COFFEE_ALIASES  = (key for key of COFFEE_ALIAS_MAP)
+COFFEE_KEYWORDS = COFFEE_KEYWORDS.concat COFFEE_ALIASES
+RESERVED = ['case', 'default', 'function', 'var', 'void', 'with', 'const', 'let', 'enum', 'export', 'import', 'native', '__hasProp', '__extends', '__slice', '__bind', '__indexOf']
+JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
+exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
 
-# The Lexer class reads a stream of CoffeeScript and divvies it up into tagged
-# tokens. Some potential ambiguity in the grammar has been avoided by
-# pushing some extra smarts into the Lexer.
 exports.Lexer = class Lexer
 
-	# **tokenize** is the Lexer's main method. Scan by attempting to match tokens
-	# one at a time, using a regular expression anchored at the start of the
-	# remaining code, or a custom recursive token-matching method
-	# (for interpolations). When the next token has been recorded, we move forward
-	# within the code past the token, and begin again.
-	#
-	# Each tokenizing method is responsible for returning the number of characters
-	# it has consumed.
-	#
-	# Before returning the token stream, run it through the [Rewriter](rewriter.html)
-	# unless explicitly asked not to.
 	tokenize: (code, opts = {}) ->
+		TRAILING_SPACES = /\s+$/
+		WHITESPACE = /^[^\n\S]+/
 		code     = "\n#{code}" if WHITESPACE.test code
 		code     = code.replace(/\r/g, '').replace TRAILING_SPACES, ''
-
 		@code    = code           # The remainder of the source code.
 		@line    = opts.line or 0 # The current line.
 		@indent  = 0              # The current indentation level.
@@ -42,10 +24,6 @@ exports.Lexer = class Lexer
 		@outdebt = 0              # The under-outdentation at the current level.
 		@indents = []             # The stack of all current indentation levels.
 		@tokens  = []             # Stream of parsed tokens in the form `['TYPE', value, line]`.
-
-		# At every position, run through this list of attempted matches,
-		# short-circuiting if any of them succeed. Their order determines precedence:
-		# `@literalToken` is the fallback catch-all.
 		i = 0
 		while @chunk = code.slice i
 			i += @pathToken()       or
@@ -55,30 +33,28 @@ exports.Lexer = class Lexer
 				@lineToken()       or
 				@heredocToken()    or
 				@stringToken()     or
-				@numberToken()     or
-				
+				@numberToken()     or		
 				@literalToken()
-				#@regexToken()      or
-				#@jsToken()         or
-				#@literalToken()
-
 		@closeIndentation()
-		#return @tokens
-		#return @tokens if opts.rewrite is off
 		(new Rewriter).rewrite @tokens
 
-	# Tokenizers
-	# ----------
-	
-	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
 	pathToken: ->
+		FILEPATH = /// ^
+			(?:
+				(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
+				(?:[/])
+				(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
+				#(?![^\n\S])
+			)+
+		///
+		NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--', '(']
+		NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'STRING', 'IDENTIFIER'
+		#SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 		prev = last @tokens
 		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_FILEPATH))
-		
 		if @chunk in ['.', '..']
 			@token 'FILEPATH', @makeString new String(@chunk), '"', no
 			return @chunk.length
-		
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
 		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
@@ -87,13 +63,14 @@ exports.Lexer = class Lexer
 		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString filepath, '"', no})"
 		(filepath.length)
 
-	# Matches identifying literals: variables, keywords, method names, etc.
-	# Check to ensure that JavaScript reserved words aren't being used as
-	# identifiers. Because CoffeeScript reserves a handful of keywords that are
-	# allowed in JavaScript, we're careful not to tag them as keywords when
-	# referenced as property names here, so you can still do `jQuery.is()` even
-	# though `is` means `===` otherwise.
 	identifierToken: ->
+		IDENTIFIER = /// ^
+			( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
+			( [^\n\S]* : (?!:) )?  # Is this a property name?
+		///
+		RELATION = ['IN', 'OF', 'INSTANCEOF']
+		LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
+		UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
@@ -101,18 +78,15 @@ exports.Lexer = class Lexer
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
 			return id.length
-			
 		if binaries.hasOwnProperty id			
 			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
 			cmd = "shl.execute.bind(shl,#{cmdstr})"
 			@token 'BINARIES', cmd
 			return id.length
-			
 		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @makeString id, '"', yes
 			@token 'ARG', arg
 			return id.length
-		
 		if (prev = last @tokens) and 
 				prev[0] in ['-', '--'] and 
 				@tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
@@ -120,17 +94,14 @@ exports.Lexer = class Lexer
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
-
+			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length
-			
 		forcedIdentifier = colon or
 			(prev = last @tokens) and (prev[0] in ['.', '?.', '::'] or
 			not prev.spaced and prev[0] is '@')
-		
 		tag = 'IDENTIFIER'
-
 		if not forcedIdentifier and (id in JS_KEYWORDS or id in COFFEE_KEYWORDS)
 			tag = id.toUpperCase()
 			if tag is 'WHEN' and @tag() in LINE_BREAK
@@ -150,7 +121,6 @@ exports.Lexer = class Lexer
 					if @value() is '!'
 						@tokens.pop()
 						id = '!' + id
-
 		if id in ['eval', 'arguments'].concat JS_FORBIDDEN
 			if forcedIdentifier
 				tag = 'IDENTIFIER'
@@ -158,7 +128,6 @@ exports.Lexer = class Lexer
 				id.reserved = yes
 			else if id in RESERVED
 				@identifierError id
-
 		unless forcedIdentifier
 			id  = COFFEE_ALIAS_MAP[id] if id in COFFEE_ALIASES
 			tag = switch id
@@ -168,22 +137,24 @@ exports.Lexer = class Lexer
 				when 'true', 'false', 'null', 'undefined' then 'BOOL'
 				when 'break', 'continue', 'debugger'      then 'STATEMENT'
 				else  tag
-
 		@token tag, id
 		@token ':', ':' if colon
 		input.length
 
-	# Matches numbers, including decimals, hex, and exponential notation.
-	# Be careful not to interfere with ranges-in-progress.
 	numberToken: ->
+		NUMBER     = ///
+			^ 0x[\da-f]+ |                              # hex
+			^ 0b[01]+ |                              # binary
+			^ \d*\.?\d+ (?:e[+-]?\d+)?  # decimal
+		///i
 		return 0 unless match = NUMBER.exec @chunk
 		number = match[0]
 		@token 'NUMBER', number
 		number.length
 
-	# Matches strings, including multi-line strings. Ensures that quotation marks
-	# are balanced within the string's contents, and within nested interpolations.
 	stringToken: ->
+		SIMPLESTR  = /^'[^\\']*(?:\\.[^\\']*)*'/
+		MULTILINER = /\n/g
 		token = if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG'] then 'ARG'	else 'STRING'
 		switch @chunk.charAt 0
 			when "'"
@@ -200,9 +171,8 @@ exports.Lexer = class Lexer
 		@line += count string, '\n'
 		string.length
 
-	# Matches heredocs, adjusting indentation to the correct level, as heredocs
-	# preserve whitespace, but ignore indentation to the left.
 	heredocToken: ->
+		HEREDOC    = /// ^ ("""|''') ([\s\S]*?) (?:\n[^\n\S]*)? \1 ///
 		return 0 unless match = HEREDOC.exec @chunk
 		heredoc = match[0]
 		quote = heredoc.charAt 0
@@ -214,8 +184,8 @@ exports.Lexer = class Lexer
 		@line += count heredoc, '\n'
 		heredoc.length
 
-	# Matches and consumes comments.
 	commentToken: ->
+		COMMENT    = /^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/
 		return 0 unless match = @chunk.match COMMENT
 		[comment, here] = match
 		if here
@@ -224,17 +194,24 @@ exports.Lexer = class Lexer
 			@token 'TERMINATOR', '\n'
 		@line += count comment, '\n'
 		comment.length
-
-	# Matches JavaScript interpolated directly into the source via backticks.
-	jsToken: ->
-		return 0 unless @chunk.charAt(0) is '`' and match = JSTOKEN.exec @chunk
-		@token 'JS', (script = match[0]).slice 1, -1
-		script.length
-
-	# Matches regular expression literals. Lexing regular expressions is difficult
-	# to distinguish from division, so we borrow some basic heuristics from
-	# JavaScript and Ruby.
+		
 	regexToken: ->
+		REGEX = /// ^
+			/ (?! [\s=] )       # disallow leading whitespace or equals signs
+			[^ [ / \n \\ ]*  # every other thing
+			(?:
+				(?: \\[\s\S]   # anything escaped
+					| \[         # character class
+							[^ \] \n \\ ]*
+							(?: \\[\s\S] [^ \] \n \\ ]* )*
+						]
+				) [^ [ / \n \\ ]*
+			)*
+			/ [imgy]{0,4} (?!\w)
+		///
+		HEREGEX = /// ^ /{3} ([\s\S]+?) /{3} ([imgy]{0,4}) (?!\w) ///
+		NOT_REGEX = ['NUMBER', 'REGEX', 'BOOL', '++', '--', ']']
+		NOT_SPACED_REGEX = NOT_REGEX.concat ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
 		return 0 if @chunk.charAt(0) isnt '/'
 		if match = HEREGEX.exec @chunk
 			length = @heregexToken match
@@ -248,8 +225,8 @@ exports.Lexer = class Lexer
 		@token 'REGEX', if regex is '//' then '/(?:)/' else regex
 		regex.length
 
-	# Matches multiline extended regular expressions.
 	heregexToken: (match) ->
+		HEREGEX_OMIT = /\s+(?:#.*)?/g
 		[heregex, body, flags] = match
 		if 0 > body.indexOf '#{'
 			re = body.replace(HEREGEX_OMIT, '').replace(/\//g, '\\/')
@@ -273,17 +250,8 @@ exports.Lexer = class Lexer
 		@token ')', ')'
 		heregex.length
 
-	# Matches newlines, indents, and outdents, and determines which is which.
-	# If we can detect that the current line is continued onto the the next line,
-	# then the newline is suppressed:
-	#
-	#     elements
-	#       .each( ... )
-	#       .map( ... )
-	#
-	# Keeps track of the level of indentation, because a single outdent token
-	# can close multiple indents, so we need to know how far in we happen to be.
 	lineToken: ->
+		MULTI_DENT = /^(?:\n[^\n\S]*)+/
 		return 0 unless match = MULTI_DENT.exec @chunk
 		indent = match[0]
 		@line += count indent, '\n'
@@ -308,8 +276,6 @@ exports.Lexer = class Lexer
 		@indent = size
 		indent.length
 
-	# Record an outdent token or multiple tokens, if we happen to be moving back
-	# inwards past several recorded indents.
 	outdentToken: (moveOut, noNewlines, close) ->
 		while moveOut > 0
 			len = @indents.length - 1
@@ -331,34 +297,42 @@ exports.Lexer = class Lexer
 		@token 'TERMINATOR', '\n' unless @tag() is 'TERMINATOR' or noNewlines
 		this
 
-	# Matches and consumes non-meaningful whitespace. Tag the previous token
-	# as being "spaced", because there are some cases where it makes a difference.
 	whitespaceToken: ->
-		return 0 unless (match = WHITESPACE.exec @chunk) or
-										(nline = @chunk.charAt(0) is '\n')
+		WHITESPACE = /^[^\n\S]+/
+		return 0 unless (match = WHITESPACE.exec @chunk) or (nline = @chunk.charAt(0) is '\n')
 		prev = last @tokens
 		prev[if match then 'spaced' else 'newLine'] = true if prev
 		if match then match[0].length else 0
 
-	# Generate a newline token. Consecutive newlines get merged together.
 	newlineToken: ->
 		@tokens.pop() while @value() is ';'
 		@token 'TERMINATOR', '\n' unless @tag() is 'TERMINATOR'
 		this
 
-	# Use a `\` at a line-ending to suppress the newline.
-	# The slash is removed here once its job is done.
 	suppressNewlines: ->
 		@tokens.pop() if @value() is '\\'
 		this
 
-	# We treat all other single characters as a token. E.g.: `( ) , . !`
-	# Multi-character operators are also literal tokens, so that Jison can assign
-	# the proper order of operations. There are some symbols that we tag specially
-	# here. `;` and newlines are both treated as a `TERMINATOR`, we distinguish
-	# parentheses that indicate a method call from regular parentheses, and so on.
 	literalToken: ->
-
+		OPERATOR   = /// ^ (
+			?: [-=]>             # function
+			| [-+*/%<>&|^!?=]=  # compound assign / compare
+			| >>>=?             # zero-fill right shift
+			| ([-+:])\1         # doubles
+			| ([&|<>])\2=?      # logic / shift
+			| \?\.              # soak access
+			| \.{2,3}           # range or splat
+		) ///
+		CODE       = /^[-=]>/
+		COMPOUND_ASSIGN = [ '-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|=' ]
+		UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
+		LOGIC   = ['&&', '||', '&', '|', '^']
+		SHIFT   = ['<<', '>>', '>>>']
+		COMPARE = ['==', '!=', '<', '>', '<=', '>=']
+		MATH    = ['*', '/', '%']
+		BOOL = ['TRUE', 'FALSE', 'NULL', 'UNDEFINED']
+		CALLABLE  = ['IDENTIFIER', 'STRING', ')', ']', '}', '?', '::', '@', 'THIS', 'SUPER']
+		INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 		if match = OPERATOR.exec @chunk
 			[value] = match
 			@tagParameters() if CODE.test value
@@ -390,12 +364,9 @@ exports.Lexer = class Lexer
 		@token tag, value
 		value.length
 
-	# Token Manipulators
-	# ------------------
-
-	# Sanitize a heredoc or herecomment by
-	# erasing all external indentation on the left-hand side.
 	sanitizeHeredoc: (doc, options) ->
+		HEREDOC_INDENT  = /\n+([^\n\S]*)/g
+		HEREDOC_ILLEGAL = /\*\//
 		{indent, herecomment} = options
 		if herecomment
 			if HEREDOC_ILLEGAL.test doc
@@ -409,9 +380,6 @@ exports.Lexer = class Lexer
 		doc = doc.replace /^\n/, '' unless herecomment
 		doc
 
-	# A source of ambiguity in our grammar used to be parameter lists in function
-	# definitions versus argument lists in function calls. Walk backwards, tagging
-	# parameters specially in order to make things easier for the parser.
 	tagParameters: ->
 		return this if @tag() isnt ')'
 		stack = []
@@ -430,25 +398,30 @@ exports.Lexer = class Lexer
 					else return this
 		this
 
-	# Close up all remaining open blocks at the end of the file.
 	closeIndentation: ->
 		@outdentToken @indent
 
-	# The error for when you try to use a forbidden word in JavaScript as
-	# an identifier.
 	identifierError: (word) ->
 		throw SyntaxError "Reserved word \"#{word}\" on line #{@line + 1}"
 
-	# The error for when you try to assign to a reserved word in JavaScript,
-	# like "function" or "default".
 	assignmentError: ->
 		throw SyntaxError "Reserved word \"#{@value()}\" on line #{@line + 1} can't be assigned"
 
-	# Matches a balanced group such as a single or double-quoted string. Pass in
-	# a series of delimiters, all of which must be nested correctly within the
-	# contents of the string. This method allows us to have strings within
-	# interpolations within strings, ad infinitum.
 	balancedString: (str, end) ->
+		REGEX = /// ^
+			/ (?! [\s=] )       # disallow leading whitespace or equals signs
+			[^ [ / \n \\ ]*  # every other thing
+			(?:
+				(?: \\[\s\S]   # anything escaped
+					| \[         # character class
+							[^ \] \n \\ ]*
+							(?: \\[\s\S] [^ \] \n \\ ]* )*
+						]
+				) [^ [ / \n \\ ]*
+			)*
+			/ [imgy]{0,4} (?!\w)
+		///
+		HEREGEX = /// ^ /{3} ([\s\S]+?) /{3} ([imgy]{0,4}) (?!\w) ///
 		stack = [end]
 		for i in [1...str.length]
 			switch letter = str.charAt i
@@ -472,15 +445,6 @@ exports.Lexer = class Lexer
 			prev = letter
 		throw new Error "missing #{ stack.pop() }, starting on line #{ @line + 1 }"
 
-
-	# Expand variables and expressions inside double-quoted strings using
-	# Ruby-like notation for substitution of arbitrary expressions.
-	#
-	#     "Hello #{name.capitalize()}."
-	#
-	# If it encounters an interpolation, this method will recursively create a
-	# new Lexer, tokenize the interpolated contents, and merge them into the
-	# token stream.
 	interpolateString: (str, options = {}) ->
 		{heredoc, regex} = options
 		tokens = []
@@ -520,229 +484,28 @@ exports.Lexer = class Lexer
 		@token ')', ')' if interpolated
 		tokens
 
-	# Helpers
-	# -------
-
-	# Add a token to the results, taking note of the line number.
 	token: (tag, value) ->
 		@tokens.push [tag, value, @line]
 
-	# Peek at a tag in the current token stream.
 	tag: (index, tag) ->
 		(tok = last @tokens, index) and if tag then tok[0] = tag else tok[0]
 
-	# Peek at a value in the current token stream.
 	value: (index, val) ->
 		(tok = last @tokens, index) and if val then tok[1] = val else tok[1]
 
-	# Are we in the midst of an unfinished expression?
 	unfinished: ->
+		LINE_CONTINUER  = /// ^ \s* (?: , | \??\.(?![.\d]) | :: ) ///
 		LINE_CONTINUER.test(@chunk) or
 		@tag() in ['\\', '.', '?.', 'UNARY', 'MATH', '+', '-', 'SHIFT', 'RELATION'
 							 'COMPARE', 'LOGIC', 'COMPOUND_ASSIGN', 'THROW', 'EXTENDS']
 
-	# Converts newlines for string literals.
 	escapeLines: (str, heredoc) ->
+		MULTILINER = /\n/g
 		str.replace MULTILINER, if heredoc then '\\n' else ''
 
-	# Constructs a string token by escaping quotes and newlines.
 	makeString: (body, quote, heredoc) ->
 		return quote + quote unless body
 		body = body.replace /\\([\s\S])/g, (match, contents) ->
 			if contents in ['\n', quote] then contents else match
 		body = body.replace /// #{quote} ///g, '\\$&'
 		quote + @escapeLines(body, heredoc) + quote
-
-# Constants
-# ---------
-
-# Keywords that CoffeeScript shares in common with JavaScript.
-JS_KEYWORDS = [
-	'true', 'false', 'null', 'this'
-	'new', 'delete', 'typeof', 'in', 'instanceof'
-	'return', 'throw', 'break', 'continue', 'debugger'
-	'if', 'else', 'switch', 'for', 'while', 'do', 'try', 'catch', 'finally'
-	'class', 'extends', 'super'
-]
-
-# CoffeeScript-only keywords.
-COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when']
-
-COFFEE_ALIAS_MAP =
-	and  : '&&'
-	or   : '||'
-	is   : '=='
-	isnt : '!='
-	not  : '!'
-	yes  : 'true'
-	no   : 'false'
-	on   : 'true'
-	off  : 'false'
-
-COFFEE_ALIASES  = (key for key of COFFEE_ALIAS_MAP)
-COFFEE_KEYWORDS = COFFEE_KEYWORDS.concat COFFEE_ALIASES
-
-# The list of keywords that are reserved by JavaScript, but not used, or are
-# used by CoffeeScript internally. We throw an error when these are encountered,
-# to avoid having a JavaScript error at runtime.
-RESERVED = [
-	'case', 'default', 'function', 'var', 'void', 'with'
-	'const', 'let', 'enum', 'export', 'import', 'native'
-	'__hasProp', '__extends', '__slice', '__bind', '__indexOf'
-]
-
-# The superset of both JavaScript keywords and reserved words, none of which may
-# be used as identifiers or properties.
-JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
-
-exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
-
-# Token matching regexes.
-IDENTIFIER = /// ^
-  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
-  ( [^\n\S]* : (?!:) )?  # Is this a property name?
-///
-
-#FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
-
-FILEPATH = /// ^
-	(?:
-		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
-		(?:[/])
-		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
-		#(?![^\n\S])
-	)+
-///
-
-SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
-
-#IDENTIFIER = /// ^
-#	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
-#	( [^\n\S]* : (?!:) )?  # Is this a property name?
-#///
-
-NUMBER     = ///
-  ^ 0x[\da-f]+ |                              # hex
-  ^ 0b[01]+ |                              # binary
-  ^ \d*\.?\d+ (?:e[+-]?\d+)?  # decimal
-///i
-
-#NUMBER  = ///
-#	^ [0-9]+
-#///
-
-HEREDOC    = /// ^ ("""|''') ([\s\S]*?) (?:\n[^\n\S]*)? \1 ///
-
-OPERATOR   = /// ^ (
-	?: [-=]>             # function
-	 | [-+*/%<>&|^!?=]=  # compound assign / compare
-	 | >>>=?             # zero-fill right shift
-	 | ([-+:])\1         # doubles
-	 | ([&|<>])\2=?      # logic / shift
-	 | \?\.              # soak access
-	 | \.{2,3}           # range or splat
-) ///
-
-#,._-+=:
-
-WHITESPACE = /^[^\n\S]+/
-
-COMMENT    = /^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/
-
-CODE       = /^[-=]>/
-
-MULTI_DENT = /^(?:\n[^\n\S]*)+/
-
-SIMPLESTR  = /^'[^\\']*(?:\\.[^\\']*)*'/
-
-JSTOKEN    = /^`[^\\`]*(?:\\.[^\\`]*)*`/
-
-
-# Coffee Shell: Matches fully defined absolute and relative paths
-#FILEPATH = /^\/[^\n\s\])},]*/
-
-
-# Regex-matching-regexes.
-REGEX = /// ^
-	/ (?! [\s=] )       # disallow leading whitespace or equals signs
-	[^ [ / \n \\ ]*  # every other thing
-	(?:
-		(?: \\[\s\S]   # anything escaped
-			| \[         # character class
-					 [^ \] \n \\ ]*
-					 (?: \\[\s\S] [^ \] \n \\ ]* )*
-				 ]
-		) [^ [ / \n \\ ]*
-	)*
-	/ [imgy]{0,4} (?!\w)
-///
-
-HEREGEX      = /// ^ /{3} ([\s\S]+?) /{3} ([imgy]{0,4}) (?!\w) ///
-
-HEREGEX_OMIT = /\s+(?:#.*)?/g
-
- # Token cleaning regexes.
-MULTILINER      = /\n/g
-
-HEREDOC_INDENT  = /\n+([^\n\S]*)/g
-
-HEREDOC_ILLEGAL = /\*\//
-
-LINE_CONTINUER  = /// ^ \s* (?: , | \??\.(?![.\d]) | :: ) ///
-
-TRAILING_SPACES = /\s+$/
-
-# Compound assignment tokens.
-COMPOUND_ASSIGN = [ '-=', '+=', '/=', '*=', '%=', '||=', '&&=', '?=', '<<=', '>>=', '>>>=', '&=', '^=', '|=' ]
-
-
-
-# Unary tokens.
-UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
-
-# Logical tokens.
-LOGIC   = ['&&', '||', '&', '|', '^']
-
-# Bit-shifting tokens.
-SHIFT   = ['<<', '>>', '>>>']
-
-# Comparison tokens.
-COMPARE = ['==', '!=', '<', '>', '<=', '>=']
-
-# Mathematical tokens.
-MATH    = ['*', '/', '%']
-
-# Relational tokens that are negatable with `not` prefix.
-RELATION = ['IN', 'OF', 'INSTANCEOF']
-
-# Boolean tokens.
-BOOL = ['TRUE', 'FALSE', 'NULL', 'UNDEFINED']
-
-# Tokens which a regular expression will never immediately follow, but which
-# a division operator might.
-#
-# See: http://www.mozilla.org/js/language/js20-2002-04/rationale/syntax.html#regular-expressions
-#
-# Our list is shorter, due to sans-parentheses method calls.
-NOT_REGEX = ['NUMBER', 'REGEX', 'BOOL', '++', '--', ']']
-
-# If the previous token is not spaced, there are more preceding tokens that
-# force a division parse:
-NOT_SPACED_REGEX = NOT_REGEX.concat ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
-
-NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--', '(']
-NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'STRING', 'IDENTIFIER'
-
-# Tokens which could legitimately be invoked or indexed. An opening
-# parentheses or bracket following these tokens will be recorded as the start
-# of a function invocation or indexing operation.
-CALLABLE  = ['IDENTIFIER', 'STRING', ')', ']', '}', '?', '::', '@', 'THIS', 'SUPER']
-INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
-
-# Tokens that, when immediately preceding a `WHEN`, indicate that the `WHEN`
-# occurs at the start of a line. We disambiguate these from trailing whens to
-# avoid an ambiguity in the grammar.
-LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
-
-exports.FILEPATH = FILEPATH
-exports.IDENTIFIER = IDENTIFIER
