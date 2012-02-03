@@ -493,15 +493,13 @@ class Shell
 						if tokens[i+1]?[0] is 'TERMINATOR'
 							output.push '()'
 					else
-						output.push val
-						output.push ' ' if tokens[i].spaced?
+						output.push if tokens[i].spaced? then "#{val} " else val
 				when 'STRING'
-					output.push val
+					output.push if tokens[i].spaced? then "#{val} " else val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
 					output.push lex
 				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF'
-					output.push val
-					output.push ' ' if tokens[i].spaced?
+					output.push if tokens[i].spaced? then "#{val} " else val
 				when 'TERMINATOR'
 					output.push "\n"
 				when 'FILEPATH'
