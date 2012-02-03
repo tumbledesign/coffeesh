@@ -1,5 +1,5 @@
 {
-  "name": "coffee-shell",
+  "name": "coffeesh",
   "description": "CoffeeScript Shell",
   "preferGlobal": "true",
   "keywords": [
@@ -16,11 +16,11 @@
   "engines": {
     "node": "0.6.x"
   },
-  "main": "./src/coffee-shell",
+  "main": "coffeesh",
   "bin": {
-    "coffee-shell": "./bin/coffee-shell"
+    "coffeesh": "./src/coffeesh.coffee"
   },
-  "homepage": "http://coffeescript.org",
+  "homepage": "https://github.com/markdube/coffee-shell",
   "repository": {
     "type": "git",
     "url": " git://github.com:markdube/coffee-shell.git"

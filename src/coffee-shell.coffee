@@ -34,14 +34,6 @@ builtin =
 		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
 		else console.log "command '#{val}'' not found".red
 
-aliases =
-	ls: 'ls --color=auto'
-	l: 'ls -latr'
-	grep: 'grep --color=auto'
-	egrep: 'egrep --color=auto'
-	fgrep: 'fgrep --color=auto'
-
-root.aliases = aliases
 root.binaries = binaries
 root.builtin = builtin
 root.echo = builtin.echo
@@ -49,14 +41,19 @@ root.echo = builtin.echo
 class Shell
 	constructor: ->
 
-		@hostname = os.hostname()
-		
-		## Config
+		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
-
+		@_ALIASES = 
+			ls: 'ls --color=auto'
+			l: 'ls -latr --color=auto'
+			grep: 'grep --color=auto'
+			egrep: 'egrep --color=auto'
+			fgrep: 'fgrep --color=auto'
+		
+	init: ->
 		# STDIO
 		@input = process.stdin
 		@output = process.stdout
@@ -78,6 +75,14 @@ class Shell
 				@columns = @winSize[0]
 
 		@consecutive_tabs = 0
+
+		extend @_ALIASES, @ALIASES
+		for alias,val of @_ALIASES
+			do (alias, val) ->
+				cmd = val.split(" ").shift()
+				if not builtin[alias]? and binaries[cmd]?
+					builtin[alias] = (params...) ->
+						shl.execute binaries[cmd] + '/' + val + " " + params.join(" ")
 
 		@resume()
 
@@ -404,7 +409,7 @@ class Shell
 				if returnValue is undefined
 					global._ = _
 				else
-					print inspect(returnValue, no, 2, true)+'\n'
+					echo returnValue
 			).run()
 		catch err
 			@error err
@@ -423,3 +428,5 @@ class Shell
 		return
 
 root.shl = new Shell()
+extend(root.shl, require("./coffeeshrc.coffee"))
+root.shl.init()
