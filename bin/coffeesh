@@ -1,2 +1,2 @@
-#!/usr/local/env coffee
+#!/usr/bin/env coffee
 require '../lib/coffeesh'
