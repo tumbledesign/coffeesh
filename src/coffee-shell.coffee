@@ -392,16 +392,13 @@ class Shell
 			@error err
 		@prompt()
 	
-	execute: (cmd, args...) ->
+	execute: (cmd) ->
 		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
 		exec "/usr/bin/mkfifo #{fifopath}"
 		#@pause()
-		cmdargs = ["-ic #{cmd} '#{args.join(' ')}' ; echo a > #{fifopath}"]
-		
-		args.unshift(cmd)
-		args.unshift('-ic')
-		console.log args
-		proc = spawn '/bin/sh', args, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
+		cmdargs = ["-ic", "#{cmd} ; echo a > #{fifopath}"]
+		console.log cmdargs
+		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		
 		proc.on 'exit', (exitcode, signal) =>
 			@pause()

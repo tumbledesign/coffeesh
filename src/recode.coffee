@@ -95,7 +95,7 @@ class Lexer
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
 		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
-			@token 'ARG', @makeString filepath, '"', no
+			@token 'ARG', filepath
 			return filepath.length
 		@token 'FILEPATH', @makeString filepath, '"', no
 		(filepath.length)
