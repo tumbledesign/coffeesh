@@ -91,6 +91,8 @@ exports.Lexer = class Lexer
 			@token 'BINARIES', cmd
 			return id.length
 			
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN']
+			console.log 'doit'
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length

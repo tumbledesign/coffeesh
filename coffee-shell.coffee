@@ -484,7 +484,7 @@ class Shell
 			[lex,val] = tokens[i]
 			echo tokens[i]
 			switch lex
-				when 'BINARIES'
+				when 'BINARIES', 'BUILTIN'
 					output.push val
 					if tokens[i+1]?[0] is 'TERMINATOR'
 							output.push '()'
