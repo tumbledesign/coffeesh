@@ -15,10 +15,12 @@ exports.Recode = (code) ->
 			[lex,val] = tokens[i]
 			echo tokens[i]
 			switch lex
-				when 'BINARIES', 'BUILTIN', 'FILEPATH'
+				when 'BUILTIN'
 					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
+				when 'BINARIES', 'FILEPATH'
+					output.push "shl.execute('" + val + (if tokens[i+1]?[0] is 'TERMINATOR' then "')" else " ")
 				when 'ARG'
-					output.push "#{val}#{if tokens[i+1]?[0] in ['CALL_END', ')'] then '' else ','}"
+					output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ")"] then "')" else " "}"
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
 						, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
 						, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
@@ -88,14 +90,14 @@ class Lexer
 		prev = last @tokens
 		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_FILEPATH))
 		if @chunk in ['.', '..']
-			@token 'FILEPATH', @makeString new String(@chunk), '"', no
+			@token 'FILEPATH', @makeString @chunk, '"', no
 			return @chunk.length
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
 		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
-			@token 'ARG', "'#{@makeString filepath, '"', no}'"
+			@token 'ARG', @makeString filepath, '"', no
 			return filepath.length
-		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString filepath, '"', no})"
+		@token 'FILEPATH', @makeString filepath, '"', no
 		(filepath.length)
 
 	identifierToken: ->
@@ -110,13 +112,11 @@ class Lexer
 		[input, id, colon] = match
 
 		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
-			arg = @makeString id, '"', yes
+			arg = @makeString id, '"', no
 			@token 'ARG', arg
 			return id.length
-		if (prev = last @tokens) and 
-				prev[0] in ['-', '--'] and 
-				@tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
-			arg = @makeString prev[0]+id, '"', yes
+		if (prev = last @tokens) and prev[0] in ['-', '--'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+			arg = @makeString prev[0]+id, '"', no
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
@@ -125,8 +125,7 @@ class Lexer
 			@token 'BUILTIN', cmd
 			return id.length
 		if binaries.hasOwnProperty id			
-			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
-			cmd = "shl.execute.bind(shl,#{cmdstr})"
+			cmd = @makeString "#{binaries[id]}/#{id}", '"', no
 			@token 'BINARIES', cmd
 			return id.length
 			
@@ -638,7 +637,7 @@ class Lexer
 			2
 
 	addImplicitParentheses: ->
-		IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'FILEPATH', 'BINARIES', 'BUILTIN']
+		IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'BUILTIN']
 		IMPLICIT_CALL    = [
 			'IDENTIFIER', 'NUMBER', 'STRING', 'JS', 'REGEX', 'NEW', 'PARAM_START', 'CLASS'
 			'IF', 'TRY', 'SWITCH', 'THIS', 'BOOL', 'UNARY', 'SUPER'
