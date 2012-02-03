@@ -305,7 +305,7 @@ class Shell
 
 					@output.write "\r\n"
 
-					@output.moveCursor 0, -rows
+					@output.moveCursor 0, -(rows+2)
 
 					#prefix = ""
 					min = completions[0] 
