@@ -1,4 +1,3 @@
-#!/usr/bin/env coffee
 # Coffeescript Shell
 {helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
 {inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
@@ -91,7 +90,7 @@ class Shell
 			@_prompt = prompt
 			@_promptLength = length
 		else
-			usr = "#{process.env.USER}@#{@hostname}"
+			usr = "#{process.env.USER}@#{@HOSTNAME}"
 			cwd = "#{process.cwd()}"
 			@_prompt = "#{usr.blue.bold}:#{cwd.green.bold}$ "
 			@_promptLength = usr.length + cwd.length + 3
