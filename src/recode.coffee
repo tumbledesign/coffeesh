@@ -127,23 +127,24 @@ class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
-		if (prev = last @tokens) and prev[0] in ['BINARIES', 'FILEPATH', 'ARG']
+		prev = last @tokens
+		if prev?[0] in ['BINARIES', 'FILEPATH', 'ARG']
 			arg = id
 			@token 'ARG', arg
 			return id.length
-		if (prev = last @tokens) and prev[0] in ['BUILTIN', 'PARAM']
+		if prev?[0] in ['BUILTIN', 'PARAM']
 			@token 'PARAM', @makeString id, '"', no
 			return id.length
-		if (prev = last @tokens) and prev[0] in ['-', '--', '+'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+		if prev?[0] in ['-', '--', '+'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = prev[0]+id
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
-		if builtin.hasOwnProperty id
+		if prev?[0] not in ['.'] and builtin.hasOwnProperty id
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
 			return id.length
-		if binaries.hasOwnProperty id			
+		if prev?[0] not in ['.'] and binaries.hasOwnProperty id
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
