@@ -134,7 +134,7 @@ class Lexer
 		if (prev = last @tokens) and prev[0] in ['BUILTIN', 'PARAM']
 			@token 'PARAM', @makeString id, '"', no
 			return id.length
-		if (prev = last @tokens) and prev[0] in ['-', '--'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+		if (prev = last @tokens) and prev[0] in ['-', '--', '+'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = prev[0]+id
 			@tokens.pop()
 			@token 'ARG', arg
