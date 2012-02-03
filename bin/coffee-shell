@@ -1,3 +1,2 @@
 #!/usr/bin/env coffee
-{Shell} = require('../coffee-shell')
-root.shl = new Shell()
+require '../coffee-shell'

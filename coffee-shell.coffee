@@ -15,13 +15,18 @@ for pathname in (process.env.PATH.split ':')
 		binaries[file] = pathname for file in fs.readdirSync(pathname)
 
 builtin = 
-	pwd: -> process.cwd.apply(this,arguments)
-	cd: -> process.chdir.apply(this,arguments)
+	pwd: -> 
+		process.cwd.apply(this,arguments)
+	cd: -> 
+		process.chdir.apply(this,arguments)
+		shl.setPrompt()
+		shl.prompt()
 	echo: (vals...) ->
 		for v in vals
 			print inspect(v, true, 5, true) + "\n"
 		return
-	kill: (pid, signal = "SIGTERM") -> process.kill pid, signal
+	kill: (pid, signal = "SIGTERM") -> 
+		process.kill pid, signal
 	which: (val) ->
 		if builtin[val]? then console.log 'built-in shell command'.green 
 		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
@@ -142,8 +147,6 @@ class Shell
 			cb line
 		else
 			@runline line
-			@setPrompt()
-			@prompt()
 
 	_addHistory: ->
 		return ""  if @line.length is 0
@@ -582,3 +585,4 @@ class Shell
 		([completions, prefix])
 		
 exports.Shell = Shell
+root.shl = new Shell()

@@ -10,7 +10,7 @@
 {Rewriter} = require './rewriter'
 
 # Import the helpers we need.
-{count, starts, compact, last} = require './helpers'
+{count, starts, compact, last} = require('coffee-script').helpers
 
 # The Lexer Class
 # ---------------
