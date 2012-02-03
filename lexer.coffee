@@ -584,18 +584,10 @@ IDENTIFIER = /// ^
 
 FILEPATH = /// ^
 	(?:
-		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
+		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
 		(?:[/])
-		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
-	)+
-	(?!\n\s)
-///
-
-URI = /// ^
-	(?:	[\w\-.+=%]		# letter, digit, _, -, ., +, =, %
-		| [\x7f-\uffff]	# utf8
-		| \\[\s\S]			# any escaped char
-		| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
+		(?:	[-A-Za-z0-9_.+=%:@~] | [\x7f-\uffff] | \\[^n\\] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char except \\ or \n
+		#(?![^\n\S])
 	)+
 ///
 
@@ -729,5 +721,4 @@ INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 # avoid an ambiguity in the grammar.
 LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
 
-exports.URI = URI
 exports.FILEPATH = FILEPATH
