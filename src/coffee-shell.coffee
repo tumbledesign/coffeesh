@@ -38,13 +38,15 @@ root.echo = builtin.echo
 
 class Shell
 	constructor: ->
+
+		@hostname = fs.readFileSync("/etc/hostname", 'utf-8').split('\n')[0]
 	
 		## Config
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
-
+		#@SHELL_PROMPT = 
 
 		# STDIO
 		@input = process.stdin
@@ -66,10 +68,12 @@ class Shell
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
 
+		@queuedprocs = 0
+
 		@resume()
 
 	setPrompt: (prompt) ->
-		prompt ?= "#{process.env.USER}:#{process.cwd()}$ "
+		prompt ?= "#{process.env.USER}@#{@hostname}:#{process.cwd()}$ "
 		@_prompt = prompt.blue
 		@_promptLength = prompt.length
 		
@@ -78,8 +82,6 @@ class Shell
 
 
 	pause: ->
-		@cursor = 0
-		@line = ''
 		@setPrompt ''
 		@prompt()
 		@input.removeAllListeners 'keypress'
@@ -381,6 +383,7 @@ class Shell
 		fs.write @history_fd, @line + '\n'
 		code = Recode @line
 		echo "Recoded: #{code}"
+		@queuedprocs = code.split('\n').length - 1
 		try
 			_ = global._
 			returnValue = coffee.eval "_=(#{code}\n)"
@@ -400,7 +403,8 @@ class Shell
 			env: process.env
 			setsid: false
 			customFds:[0,1,2]
-		proc.on 'exit', => @resume()
+		proc.on 'exit', => 
+			if --@queuedprocs is 0 then @resume()
 		return
 
 # init

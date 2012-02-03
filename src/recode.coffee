@@ -13,7 +13,7 @@ exports.Recode = (code) ->
 		output = []
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
-			echo tokens[i]
+			#echo tokens[i]
 			switch lex
 				when 'BINARIES', 'BUILTIN', 'FILEPATH'
 					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
