@@ -95,6 +95,7 @@ class Shell
 		
 		@cursor = 0
 		@line = ''
+		@code = ''
 		@setPrompt()
 		@prompt()
 		return
@@ -118,7 +119,7 @@ class Shell
 	setPrompt: (prompt, length) ->
 		if prompt?
 			@_prompt = prompt
-			@_promptLength = length
+			@_promptLength = prompt.stripColors.length
 		else
 			usr = "#{process.env.USER}@#{@HOSTNAME}"
 			cwd = "#{process.cwd()}"
@@ -129,9 +130,9 @@ class Shell
 		@line = ""
 		@historyIndex = -1
 		@cursor = 0 
-		@_refreshLine()
+		@refreshLine()
 
-	_refreshLine: ->
+	refreshLine: ->
 		@output.cursorTo 0
 		@output.write @_prompt
 		@output.write @line
@@ -142,11 +143,25 @@ class Shell
 	write: (s, key) ->
 		key ?= {}
 		
-		# 	if s is '\r'
-		# 		console.log()
-		# 		stdout.write SHELL_PROMPT_CONTINUATION
-		# 		return
-
+		# enter
+		if s is '\r'
+			@code += @line
+			@runline()
+			return
+			
+		# ctrl enter
+		else if s is '\n'
+			@history.unshift @line
+			@history.pop() if @history.length > @HISTORY_SIZE
+			fs.write @history_fd, @line + '\n'
+			
+			@insertString '\n'
+			@code += @line
+			
+			@setPrompt @SHELL_PROMPT_CONTINUATION
+			@prompt()
+			return
+			
 		keytoken = (if key.ctrl then "C^" else "") + (if key.meta then "M^" else "") + (if key.shift then "S^" else "") + key.name
 		if keytoken is "tab" then @consecutive_tabs++ else @consecutive_tabs = 0
 		switch keytoken
@@ -166,14 +181,14 @@ class Shell
 			when "C^d"
 				@close() if @cursor is 0 and @line.length is 0
 
-			when "tab" then @_tabComplete()
-			when "enter" then @runline()
+			when "tab" then @tabComplete()
+			#when "enter" then @runline()
 
 			# Clear line
 			when "C^u"
 				@cursor = 0
 				@line = ""
-				@_refreshLine()
+				@refreshLine()
 
 		## Deletions
 
@@ -181,11 +196,11 @@ class Shell
 				if @cursor > 0 and @line.length > 0
 					@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)
 					@cursor--
-					@_refreshLine()
+					@refreshLine()
 			when "delete", "C^d"
 				if @cursor < @line.length
 					@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
-					@_refreshLine()
+					@refreshLine()
 			# Word left
 			when "C^w", "C^backspace", "M^backspace"
 				if @cursor > 0
@@ -194,32 +209,32 @@ class Shell
 					leading = leading.slice(0, leading.length - match[0].length)
 					@line = leading + @line.slice(@cursor, @line.length)
 					@cursor = leading.length
-					@_refreshLine()
+					@refreshLine()
 			# Word right
 			when "C^delete", "M^d", "M^delete"
 				if @cursor < @line.length
 					trailing = @line.slice(@cursor)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
 					@line = @line.slice(0, @cursor) + trailing.slice(match[0].length)
-					@_refreshLine()
+					@refreshLine()
 			# Line right
 			when "C^k", "C^S^delete"
 				@line = @line.slice(0, @cursor)
-				@_refreshLine()
+				@refreshLine()
 			# Line left
 			when "C^S^backspace"
 				@line = @line.slice(@cursor)
 				@cursor = 0
-				@_refreshLine()
+				@refreshLine()
 
 		## Cursor Movements
 
 			when "home", "C^a"
 				@cursor = 0
-				@_refreshLine()
+				@refreshLine()
 			when "end", "C^e"
 				@cursor = @line.length
-				@_refreshLine()
+				@refreshLine()
 			when "left", "C^b"
 				if @cursor > 0
 					@cursor--
@@ -234,14 +249,14 @@ class Shell
 					leading = @line.slice(0, @cursor)
 					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
 					@cursor -= match[0].length
-					@_refreshLine()
+					@refreshLine()
 			# Word right
 			when "C^right", "M^f"
 				if @cursor < @line.length
 					trailing = @line.slice(@cursor)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
 					@cursor += match[0].length
-					@_refreshLine()
+					@refreshLine()
 
 		## History
 
@@ -250,45 +265,45 @@ class Shell
 					@historyIndex--
 					@line = @history[@historyIndex]
 					@cursor = @line.length
-					@_refreshLine()
+					@refreshLine()
 				else if @historyIndex is 0
 					@historyIndex = -1
 					@cursor = 0
 					@line = ""
-					@_refreshLine()
+					@refreshLine()
 			when "up", "C^p"
 				if @historyIndex + 1 < @history.length
 					@historyIndex++
 					@line = @history[@historyIndex]
 					@cursor = @line.length
-					@_refreshLine()
+					@refreshLine()
 			
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				if s
-					lines = s.split /\r\n|\n|\r/
+					lines = s.split "\r\n"
 					for i,line of lines
 						@runline() if i > 0
-						@_insertString lines[i]
+						@insertString lines[i]
 
-	_insertString: (c) ->
+	insertString: (c) ->
 		if @cursor < @line.length
 			beg = @line.slice(0, @cursor)
 			end = @line.slice(@cursor, @line.length)
 			@line = beg + c + end
 			@cursor += c.length
-			@_refreshLine()
+			@refreshLine()
 		else
 			@line += c
 			@cursor += c.length
 			@output.write c
 
-	_tabComplete: ->
+	tabComplete: ->
 		@autocomplete( @line.slice(0, @cursor).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
-					@_insertString completions[0].slice(completeOn.length)
+					@insertString completions[0].slice(completeOn.length)
 				else
 					@output.write "\r\n"
 					
@@ -324,9 +339,9 @@ class Shell
 							break
 						prefix = min
 
-					@_insertString prefix.slice(completeOn.length) if prefix.length > completeOn.length
+					@insertString prefix.slice(completeOn.length) if prefix.length > completeOn.length
 				
-				@_refreshLine()
+				@refreshLine()
 			)
 		)
 							
@@ -390,13 +405,16 @@ class Shell
 	
 	runline: ->
 		@output.write "\r\n"
-		if !@line.toString().trim() 
+		if !@code.toString().trim()
+			@setPrompt()
 			return @prompt()
 
 		@history.unshift @line
 		@history.pop() if @history.length > @HISTORY_SIZE
 		fs.write @history_fd, @line + '\n'
-		code = Recode @line
+		
+		code = Recode @code
+		@code = ''
 		echo "Recoded: #{code}"
 		try
 			Fiber(=>
@@ -409,6 +427,7 @@ class Shell
 			).run()
 		catch err
 			@error err
+		@setPrompt()
 		@prompt()
 	
 	execute: (cmd) ->
