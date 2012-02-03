@@ -394,18 +394,18 @@ class Shell
 	
 	execute: (cmd) ->
 		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
-		exec "/usr/bin/mkfifo #{fifopath}"
+		#exec "/usr/bin/mkfifo #{fifopath}"
 		#@pause()
-		cmdargs = ["-ic", "#{cmd} ; echo a > #{fifopath}"]
+		cmdargs = ["-ic", "#{cmd}"]# ; echo a > #{fifopath}"]
 		console.log cmdargs
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		
 		proc.on 'exit', (exitcode, signal) =>
 			@pause()
 			@resume()
-			fs.unlinkSync(fifopath)
+			#fs.unlinkSync(fifopath)
 
-		fs.readFileSync(fifopath, 'utf8')
+		#fs.readFileSync(fifopath, 'utf8')
 		return proc
 
 root.shl = new Shell()

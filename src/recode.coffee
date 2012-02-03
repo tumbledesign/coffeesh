@@ -9,28 +9,38 @@ COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', '
 
 
 exports.Recode = (code) ->
-		tokens = (new Lexer).tokenize code, {rewrite: on}
-		output = []
-		for i in [0...tokens.length]
-			[lex,val] = tokens[i]
-			echo tokens[i]
-			switch lex
-				when 'BUILTIN'
-					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
-				when 'BINARIES', 'FILEPATH'
-					output.push "shl.execute('" + val + (if tokens[i+1]?[0] is 'TERMINATOR' then "')" else " ")
-				when 'ARG'
-					output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ")"] then "')" else " "}"
-				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
-						, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
-						, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
-						, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
-					output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
-				when 'TERMINATOR'
-					output.push "\n"
-				when 'INDENT'
-					output.push "then " if tokens[i].fromThen
-		(output.join(''))
+	exectmp = ''
+	tokens = (new Lexer).tokenize code, {rewrite: on}
+	output = []
+	for i in [0...tokens.length]
+		[lex,val] = tokens[i]
+		echo tokens[i]
+		switch lex
+			when 'BUILTIN'
+				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
+			when 'BINARIES', 'FILEPATH'
+				exectmp += val
+				console.log exectmp, tokens[i+1]?[0]
+				if tokens[i+1]?[0] is 'TERMINATOR'
+					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
+					exectmp = ''
+				else exectmp += " "
+			when 'ARG'
+				exectmp += val
+				if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ")"]
+					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
+					exectmp = ''
+				else exectmp += " "
+			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
+					, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
+					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
+					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
+				output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
+			when 'TERMINATOR'
+				output.push "\n"
+			when 'INDENT'
+				output.push "then " if tokens[i].fromThen
+	(output.join(''))
 
 
 class Lexer
@@ -127,6 +137,7 @@ class Lexer
 		if binaries.hasOwnProperty id			
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
+			console.log cmd
 			return id.length
 			
 		if id is 'own' and @tag() is 'FOR'
@@ -637,7 +648,7 @@ class Lexer
 			2
 
 	addImplicitParentheses: ->
-		IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'BUILTIN']
+		IMPLICIT_FUNC    = ['IDENTIFIER', 'SUPER', ')', 'CALL_END', ']', 'INDEX_END', '@', 'THIS', 'BUILTIN', 'FILEPATH', 'BINARIES']
 		IMPLICIT_CALL    = [
 			'IDENTIFIER', 'NUMBER', 'STRING', 'JS', 'REGEX', 'NEW', 'PARAM_START', 'CLASS'
 			'IF', 'TRY', 'SWITCH', 'THIS', 'BOOL', 'UNARY', 'SUPER'
