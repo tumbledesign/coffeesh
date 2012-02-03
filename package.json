@@ -16,14 +16,14 @@
   "engines": {
     "node": "0.6.x"
   },
-  "main": "./coffee-shell",
+  "main": "./src/coffee-shell",
   "bin": {
     "coffee-shell": "./bin/coffee-shell"
   },
   "homepage": "http://coffeescript.org",
   "repository": {
     "type": "git",
-    "url": "http://git@tnrepo.tmbl.us:coffeeshell"
+    "url": " git://github.com:markdube/coffee-shell.git"
   },
   "dependencies": {
     "coffee-script": ">=1.2.0",
