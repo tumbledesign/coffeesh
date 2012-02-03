@@ -391,13 +391,14 @@ class Shell
 		code = Recode @line
 		echo "Recoded: #{code}"
 		try
-			_ = global._
-			returnValue = coffee.eval "_=(Fiber(-> (#{code})).run()\n)"
-			if returnValue is undefined
-				global._ = _
-			else
-				print inspect(returnValue, no, 2, true) + '\n'
-			
+			Fiber(=>
+				_ = global._
+				returnValue = coffee.eval "_=(#{code}\n)"
+				if returnValue is undefined
+					global._ = _
+				else
+					print inspect(returnValue, no, 2, true)+'\n'
+			).run()
 		catch err
 			@error err
 		@prompt()
