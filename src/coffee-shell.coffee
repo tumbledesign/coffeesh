@@ -68,7 +68,7 @@ class Shell
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
 
-		@queuedprocs = 0
+		@runningproc = null
 
 		@resume()
 
@@ -304,7 +304,6 @@ class Shell
 					for i in [0...min.length]
 						if min[i] isnt max[i]
 							prefix = min.slice(0, i)
-							echo prefix
 							break
 						prefix = min
 
@@ -319,7 +318,6 @@ class Shell
 
 	# Returns a list of completions, and the completed text.
 	autocomplete: (text, cb) ->
-		#echo text
 		prefix = filePrefix = builtinPrefix = binaryPrefix = accessorPrefix = varPrefix = null
 		completions = fileCompletions = builtinCompletions = binaryCompletions = accessorCompletions = varCompletions = []
 		
@@ -329,7 +327,7 @@ class Shell
 		filePrefix = (if isdir then	'' else path.basename text)
 		if path.existsSync dir then listing = fs.readdirSync dir
 		else listing = fs.readdirSync '.'
-		fileCompletions = (el for el in listing when el.indexOf(filePrefix) is 0)
+		fileCompletions = (el.green for el in listing when el.indexOf(filePrefix) is 0)
 		
 		# Attempt to autocomplete a builtin cmd
 		builtinPrefix = text
@@ -341,8 +339,6 @@ class Shell
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match /([\w\.]+)(?:\.(\w*))$/
-		#console.log match
-		#if match?
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
@@ -382,7 +378,7 @@ class Shell
 		@history.pop() if @history.length > @HISTORY_SIZE
 		fs.write @history_fd, @line + '\n'
 		code = Recode @line
-		echo "Recoded: #{code}"
+		#echo "Recoded: #{code}"
 		@queuedprocs = code.split('\n').length - 1
 		try
 			_ = global._
@@ -397,14 +393,27 @@ class Shell
 		@prompt()
 	
 	execute: (cmd, args...) ->
-		@pause()
-		proc = spawn cmd, args,
-			cwd: process.cwd()
-			env: process.env
-			setsid: false
-			customFds:[0,1,2]
-		proc.on 'exit', => 
-			if --@queuedprocs is 0 then @resume()
+		if @runningproc?
+			@runningproc.removeAllListeners 'exit'
+			@runningproc.on 'exit', =>
+				@runningproc = spawn cmd, args,
+					cwd: process.cwd()
+					env: process.env
+					setsid: false
+					customFds:[0,1,2]
+				@runningproc.on 'exit', => 
+					@runningproc = null
+					@resume()
+		else
+			@pause()
+			@runningproc = spawn cmd, args,
+				cwd: process.cwd()
+				env: process.env
+				setsid: false
+				customFds:[0,1,2]
+			@runningproc.on 'exit', => 
+				@runningproc = null
+				@resume()
 		return
 
 # init
