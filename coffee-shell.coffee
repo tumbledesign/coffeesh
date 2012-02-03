@@ -105,7 +105,7 @@ class Shell
 	resume: ->
 		@input.setEncoding('utf8')
 		@input.on("keypress", (s, key) =>
-			@_ttyWrite(s, key)
+			@write(s, key)
 		).resume()
 		tty.setRawMode true
 		
@@ -164,91 +164,7 @@ class Shell
 		@output.cursorTo @_promptLength + @cursor
 
 
-	write: (d, key) ->
-		@_ttyWrite(d, key)
-
-	_insertString: (c) ->
-		#console.log c
-		if @cursor < @line.length
-			beg = @line.slice(0, @cursor)
-			end = @line.slice(@cursor, @line.length)
-			@line = beg + c + end
-			@cursor += c.length
-			@_refreshLine()
-		else
-			@line += c
-			@cursor += c.length
-			@output.write c
-
-	_tabComplete: ->
-		self = this
-		#tty.setRawMode false
-		self.completer self.line.slice(0, self.cursor), (err, rv) ->
-			#tty.setRawMode true
-			return  if err
-
-			completions = rv[0]
-			completeOn = rv[1]
-			if completions and completions.length
-
-				if completions.length is 1
-					self._insertString completions[0].slice(completeOn.length)
-				else
-					handleGroup = (group) ->
-						return  if group.length is 0
-
-						minRows = Math.ceil(group.length / maxColumns)
-												
-						for row in [0...minRows]
-							for col in [0...maxColumns]
-								idx = row * maxColumns + col
-								break  if idx >= group.length
-
-								self.output.write group[idx]
-								
-								self.output.write " " for s in [0...(width-group[idx].length)] when (col < maxColumns - 1)
-
-							self.output.write "\r\n"
-
-						self.output.write "\r\n"
-					
-					self.output.write "\r\n"
-					
-					width = completions.reduce((a, b) ->
-						(if a.length > b.length then a else b)
-					).length + 2
-					
-					maxColumns = Math.floor(self.columns / width) or 1
-					group = []
-					c = undefined
-					i = 0
-					compLen = completions.length
-
-					while i < compLen
-						c = completions[i]
-						if c is ""
-							handleGroup group
-							group = []
-						else
-							group.push c
-						i++
-					handleGroup group
-					f = completions.filter (e) ->
-						e if e
-					
-					prefix = self.commonPrefix(f)
-
-					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
-				
-				self._refreshLine()
-
-
-	_line: ->
-		line = @_addHistory()
-		@output.write "\r\n"
-		@_onLine line
-
-	_ttyWrite: (s, key) ->
+	write: (s, key) ->
 		key ?= {}
 		
 		# 	if s is '\r'
@@ -383,6 +299,88 @@ class Shell
 						@_line()  if i > 0
 						@_insertString lines[i]
 						i++
+
+	_insertString: (c) ->
+		#console.log c
+		if @cursor < @line.length
+			beg = @line.slice(0, @cursor)
+			end = @line.slice(@cursor, @line.length)
+			@line = beg + c + end
+			@cursor += c.length
+			@_refreshLine()
+		else
+			@line += c
+			@cursor += c.length
+			@output.write c
+
+	_tabComplete: ->
+		self = this
+		#tty.setRawMode false
+		self.completer self.line.slice(0, self.cursor), (err, rv) ->
+			#tty.setRawMode true
+			return  if err
+
+			completions = rv[0]
+			completeOn = rv[1]
+			if completions and completions.length
+
+				if completions.length is 1
+					self._insertString completions[0].slice(completeOn.length)
+				else
+					handleGroup = (group) ->
+						return  if group.length is 0
+
+						minRows = Math.ceil(group.length / maxColumns)
+												
+						for row in [0...minRows]
+							for col in [0...maxColumns]
+								idx = row * maxColumns + col
+								break  if idx >= group.length
+
+								self.output.write group[idx]
+								
+								self.output.write " " for s in [0...(width-group[idx].length)] when (col < maxColumns - 1)
+
+							self.output.write "\r\n"
+
+						self.output.write "\r\n"
+					
+					self.output.write "\r\n"
+					
+					width = completions.reduce((a, b) ->
+						(if a.length > b.length then a else b)
+					).length + 2
+					
+					maxColumns = Math.floor(self.columns / width) or 1
+					group = []
+					c = undefined
+					i = 0
+					compLen = completions.length
+
+					while i < compLen
+						c = completions[i]
+						if c is ""
+							handleGroup group
+							group = []
+						else
+							group.push c
+						i++
+					handleGroup group
+					f = completions.filter (e) ->
+						e if e
+					
+					prefix = self.commonPrefix(f)
+
+					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
+				
+				self._refreshLine()
+
+
+	_line: ->
+		line = @_addHistory()
+		@output.write "\r\n"
+		@_onLine line
+
 							
 	runline: (buffer) ->
 		if !buffer.toString().trim() 
