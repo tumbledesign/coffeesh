@@ -1,2 +1,2 @@
 #!/usr/bin/env coffee
-require '../coffee-shell'
+require '../src/coffee-shell'
