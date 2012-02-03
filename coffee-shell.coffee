@@ -484,6 +484,10 @@ class Shell
 			[lex,val] = tokens[i]
 			echo tokens[i]
 			switch lex
+				when 'BINARIES'
+					output.push val
+					if tokens[i+1]?[0] is 'TERMINATOR'
+							output.push '()'
 				when 'IDENTIFIER'
 					if builtin.hasOwnProperty val
 						output.push "builtin.#{val}"
@@ -498,7 +502,7 @@ class Shell
 					output.push if tokens[i].spaced? then "#{val} " else val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
 					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF'
+				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
 					output.push if tokens[i].spaced? then "#{val} " else val
 				when 'TERMINATOR'
 					output.push "\n"

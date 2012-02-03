@@ -81,11 +81,16 @@ exports.Lexer = class Lexer
 		[input, id, colon] = match
 
 		if builtin.hasOwnProperty id
-			@token 'BUILTIN', "builtin.#{id}"
+			cmd = "builtin.#{id}"
+			@token 'BUILTIN', cmd
+			return id.length
+			
 		else if binaries.hasOwnProperty id
-			cmd = @makeString "#{binaries[id]}/#{id}", '"', yes
-			@token 'BINARIES', "shl.execute.bind(shl,#{cmd})"
-
+			cmdstr = @makeString "#{binaries[id]}/#{id}", '"', yes
+			cmd = "shl.execute.bind(shl,#{cmdstr})"
+			@token 'BINARIES', cmd
+			return id.length
+			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length
