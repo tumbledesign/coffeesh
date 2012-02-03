@@ -395,7 +395,7 @@ class Shell
 	execute: (cmd) ->
 		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
 		exec "/usr/bin/mkfifo #{fifopath}"
-		@pause()
+		#@pause()
 		cmdargs = ["-ic", "#{cmd} ; echo a > #{fifopath}"]
 		console.log cmdargs
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
