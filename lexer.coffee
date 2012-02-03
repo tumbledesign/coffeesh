@@ -593,14 +593,14 @@ SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', 
 #	( [^\n\S]* : (?!:) )?  # Is this a property name?
 #///
 
-#NUMBER     = ///
-#	^ 0x[\da-f]+ |                              # hex
-#	^ [^\.]\d*\.?\d+ (?:e[+-]?\d+)?  # decimal
-#///i
+NUMBER     = ///
+	^ 0x[\da-f]+ |                              # hex
+	^ [^\.]\d*\.?\d+ (?:e[+-]?\d+)?  # decimal
+///i
 
-NUMBER  = ///
-	^ [0-9]+
-///
+#NUMBER  = ///
+#	^ [0-9]+
+#///
 
 HEREDOC    = /// ^ ("""|''') ([\s\S]*?) (?:\n[^\n\S]*)? \1 ///
 
@@ -711,3 +711,5 @@ INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 # occurs at the start of a line. We disambiguate these from trailing whens to
 # avoid an ambiguity in the grammar.
 LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
+
+exports.URI = URI

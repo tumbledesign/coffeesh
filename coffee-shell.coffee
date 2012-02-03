@@ -508,7 +508,7 @@ class Shell
 					output.push ';'
 				when 'FILEPATH'
 					output.push val
-				when 'NUMBER'
+				when 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
 					output.push val
 				when 'MATH'
 					output.push val
