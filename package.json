@@ -11,13 +11,15 @@
     "dube <dube@tumbledesign.com>"
   ],
   "author": "Cobells & Dube",
-  "version": "0.12.0",
+  "version": "0.12.0-1",
   "license": "MIT",
   "engines": {
     "node": "0.6.x"
   },
   "main": "./src/coffeesh",
-  "bin": "./bin/coffeesh", 
+  "bin": {
+    "coffeesh": "./bin/coffeesh"
+  },
   "homepage": "https://github.com/markdube/coffee-shell",
   "repository": {
     "type": "git",
