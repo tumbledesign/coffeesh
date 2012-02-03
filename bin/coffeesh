@@ -1,2 +1,2 @@
 #!/usr/bin/env coffee
-require '../lib/coffeesh'
+require '../src/coffeesh'
