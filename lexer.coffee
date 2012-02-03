@@ -584,17 +584,9 @@ IDENTIFIER = /// ^
 
 FILEPATH = /// ^
 	(?:
-		(?:	[-A-Za-z0-9_.+=%]		# letter, digit, _, -, ., +, =, %
-			| [\x7f-\uffff]	# utf8
-			| \\[\s\S]			# any escaped char
-			| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
-		)*
+		(?:	[-A-Za-z0-9_.+=%] | [\x7f-\uffff]	| \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
 		(?:[/])
-		(?:	[-A-Za-z0-9_.+=%]		# letter, digit, _, -, ., +, =, %
-			| [\x7f-\uffff]	# utf8
-			| \\[\s\S]			# any escaped char
-			| [:@~]				# delemiters for protocol:// username:password@ remotehost: ~/paths/
-		)*
+		(?:	[-A-Za-z0-9_.+=%] | [\x7f-\uffff]	| \\[\s\S] )* # letter, digit, _, -, ., +, =, %, :, @, ~, utf8, any escaped char
 		(?!\n\s)
 	)+
 ///
