@@ -93,9 +93,9 @@ class Lexer
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
 		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
-			@token 'ARG', @makeString filepath, '"', no
+			@token 'ARG', @makeString new String(filepath), '"', no
 			return filepath.length
-		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString filepath, '"', no})"
+		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString new String(filepath), '"', no})"
 		(filepath.length)
 
 	identifierToken: ->
