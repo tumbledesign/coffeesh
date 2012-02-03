@@ -20,7 +20,6 @@ builtin =
 		process.cwd.apply(this,arguments)
 	cd: -> 
 		process.chdir.apply(this,arguments)
-		shl.setPrompt()
 		shl.prompt()
 	echo: (vals...) ->
 		for v in vals
@@ -44,7 +43,11 @@ class Shell
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		@SHELL_PROMPT_CONTINUATION = '......> '.green
+		#@PROMPT_CONTINUATION = '......> '
+		@PROMPT = ->
+			user = process.env.USER
+			cwd = process.cwd()
+			user.white + "@#{@HOSTNAME}".white.bold + (if user is "root" then "➜ ".red else "➜ ".blue) + (path.basename(cwd) or "/").cyan.bold + " "
 		@_ALIASES = 
 			ls: 'ls --color=auto'
 			l: 'ls -latr --color=auto'
@@ -84,16 +87,7 @@ class Shell
 						shl.execute binaries[cmd] + '/' + val + " " + params.join(" ")
 
 		@resume()
-
-	setPrompt: (prompt, length) ->
-		if prompt?
-			@_prompt = prompt
-			@_promptLength = length
-		else
-			usr = "#{process.env.USER}@#{@HOSTNAME}"
-			cwd = "#{process.cwd()}"
-			@_prompt = "#{usr.blue.bold}:#{cwd.green.bold}$ "
-			@_promptLength = usr.length + cwd.length + 3
+		
 		
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
@@ -102,8 +96,8 @@ class Shell
 	pause: ->
 		@cursor = 0
 		@line = ''
-		@setPrompt '', 0
-		@prompt()
+		@historyIndex = -1
+		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.pause()
 		tty.setRawMode false
@@ -118,7 +112,6 @@ class Shell
 		
 		@cursor = 0
 		@line = ''
-		@setPrompt()
 		@prompt()
 		return
 
@@ -136,10 +129,10 @@ class Shell
 
 	_refreshLine: ->
 		@output.cursorTo 0
-		@output.write @_prompt
+		@output.write @PROMPT()
 		@output.write @line
 		@output.clearLine 1
-		@output.cursorTo @_promptLength + @cursor
+		@output.cursorTo @PROMPT().stripColors.length + @cursor
 
 
 	write: (s, key) ->
@@ -412,7 +405,6 @@ class Shell
 			).run()
 		catch err
 			@error err
-		@prompt()
 	
 	execute: (cmd) ->
 		fiber = Fiber.current
