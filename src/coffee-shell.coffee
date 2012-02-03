@@ -77,6 +77,8 @@ class Shell
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
 
+		@consecutive_tabs = 0
+
 		@resume()
 
 	setPrompt: (prompt, length) ->
@@ -145,6 +147,7 @@ class Shell
 		# 		return
 
 		keytoken = (if key.ctrl then "C^" else "") + (if key.meta then "M^" else "") + (if key.shift then "S^" else "") + key.name
+		if keytoken is "tab" then @consecutive_tabs++ else @consecutive_tabs = 0
 		switch keytoken
 			
 		## Utility functions
