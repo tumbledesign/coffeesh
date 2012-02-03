@@ -58,7 +58,6 @@ class Shell
 		# Shell Prompt		
 		@SHELL_PROMPT_CONTINUATION = '......> '.green
 		
-		
 		# Autocomplete
 		# Regexes to match complete-able bits of text.
 		@ACCESSOR  = /([\w\.]+)(?:\.(\w*))$/
@@ -81,7 +80,7 @@ class Shell
 		@_promptLength = prompt.length
 		
 	error: (err) -> 
-		process.stdout.write (err.stack or err.toString()) + '\n'
+		process.stderr.write (err.stack or err.toString()) + '\n'
 
 	commonPrefix: (strings) ->
 		return ""  if not strings or strings.length is 0
@@ -243,81 +242,11 @@ class Shell
 				
 				self._refreshLine()
 
-	_wordLeft: ->
-		if @cursor > 0
-			leading = @line.slice(0, @cursor)
-			match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-			@cursor -= match[0].length
-			@_refreshLine()
-
-	_wordRight: ->
-		if @cursor < @line.length
-			trailing = @line.slice(@cursor)
-			match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-			@cursor += match[0].length
-			@_refreshLine()
-
-	_deleteLeft: ->
-		if @cursor > 0 and @line.length > 0
-			@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)
-			@cursor--
-			@_refreshLine()
-
-	_deleteRight: ->
-		@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
-		@_refreshLine()
-
-	_deleteWordLeft: ->
-		if @cursor > 0
-			leading = @line.slice(0, @cursor)
-			match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-			leading = leading.slice(0, leading.length - match[0].length)
-			@line = leading + @line.slice(@cursor, @line.length)
-			@cursor = leading.length
-			@_refreshLine()
-
-	_deleteWordRight: ->
-		if @cursor < @line.length
-			trailing = @line.slice(@cursor)
-			match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-			@line = @line.slice(0, @cursor) + trailing.slice(match[0].length)
-			@_refreshLine()
-
-	_deleteLineLeft: ->
-		@line = @line.slice(@cursor)
-		@cursor = 0
-		@_refreshLine()
-
-	_deleteLineRight: ->
-		@line = @line.slice(0, @cursor)
-		@_refreshLine()
 
 	_line: ->
 		line = @_addHistory()
 		@output.write "\r\n"
 		@_onLine line
-
-	_historyNext: ->
-		if @historyIndex > 0
-			@historyIndex--
-			@line = @history[@historyIndex]
-			@cursor = @line.length
-			@_refreshLine()
-		else if @historyIndex is 0
-			@historyIndex = -1
-			@cursor = 0
-			@line = ""
-			@_refreshLine()
-
-	_historyPrev: ->
-		if @historyIndex + 1 < @history.length
-			@historyIndex++
-			@line = @history[@historyIndex]
-			@cursor = @line.length
-			@_refreshLine()
-
-
-
 
 	_ttyWrite: (s, key) ->
 		key ?= {}
@@ -327,120 +256,135 @@ class Shell
 		# 		stdout.write SHELL_PROMPT_CONTINUATION
 		# 		return
 
-		# 	else if s is '\n'
-		# 		#console.log([buf])
-				
-		# 		#writeline()
-		# 		console.log()
-		# 		stdin.removeAllListeners 'keypress'
-		# 		tty.setRawMode false
-		# 		runline(buf)
-		# 		buf = ''
-		# 		return
+		keytoken = (if key.ctrl then "C^" else "") + (if key.meta then "M^" else "") + (if key.shift then "S^" else "") + key.name
+		switch keytoken
+			
+		## Utility functions
 
+			# SIGINT
+			when "C^c"
+				console.log()
+				@pause()
+				@resume()
 
-		if key.ctrl and key.shift
-			switch key.name
-				when "backspace"
-					@_deleteLineLeft()
-				when "delete"
-					@_deleteLineRight()
-		else if key.ctrl
-			switch key.name
-				when "c"
-					console.log()
-					#proc = spawn './bin/coffee-shell', '',
-					#	cwd: process.cwd()
-					#	env: process.env
-					#	setsid: false
-					#	customFds:[0,1,2]
-					#process.stdin.pause()
-					#proc.stdin.resume()
-					@pause()
-					@resume()
-				when "h" then @_deleteLeft()
-				when "d"
-					@close()
-					#if @cursor is 0 and @line.length is 0
-					#	@_attemptClose()
-					#else @_deleteRight()  if @cursor < @line.length
-				when "u"
+			# Background
+			when "C^z" then	return process.kill process.pid, "SIGTSTP"
+
+			# Logout
+			when "C^d"
+				@close() if @cursor is 0 and @line.length is 0
+
+			when "tab" then @_tabComplete()
+			when "enter" then @_line()
+
+			# Clear line
+			when "C^u"
+				@cursor = 0
+				@line = ""
+				@_refreshLine()
+
+		## Deletions
+
+			when "backspace", "C^h"
+				if @cursor > 0 and @line.length > 0
+					@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)
+					@cursor--
+					@_refreshLine()
+			when "delete", "C^d"
+				if @cursor < @line.length
+					@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
+					@_refreshLine()
+			# Word left
+			when "C^w", "C^backspace", "M^backspace"
+				if @cursor > 0
+					leading = @line.slice(0, @cursor)
+					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
+					leading = leading.slice(0, leading.length - match[0].length)
+					@line = leading + @line.slice(@cursor, @line.length)
+					@cursor = leading.length
+					@_refreshLine()
+			# Word right
+			when "C^delete", "M^d", "M^delete"
+				if @cursor < @line.length
+					trailing = @line.slice(@cursor)
+					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
+					@line = @line.slice(0, @cursor) + trailing.slice(match[0].length)
+					@_refreshLine()
+			# Line right
+			when "C^k", "C^S^delete"
+				@line = @line.slice(0, @cursor)
+				@_refreshLine()
+			# Line left
+			when "C^S^backspace"
+				@line = @line.slice(@cursor)
+				@cursor = 0
+				@_refreshLine()
+
+		## Cursor Movements
+
+			when "home", "C^a"
+				@cursor = 0
+				@_refreshLine()
+			when "end", "C^e"
+				@cursor = @line.length
+				@_refreshLine()
+			when "left", "C^b"
+				if @cursor > 0
+					@cursor--
+					@output.moveCursor -1, 0
+			when "right", "C^f"
+				unless @cursor is @line.length
+					@cursor++
+					@output.moveCursor 1, 0
+			# Word left
+			when "C^left", "M^b"
+				if @cursor > 0
+					leading = @line.slice(0, @cursor)
+					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
+					@cursor -= match[0].length
+					@_refreshLine()
+			# Word right
+			when "C^right", "M^f"
+				if @cursor < @line.length
+					trailing = @line.slice(@cursor)
+					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
+					@cursor += match[0].length
+					@_refreshLine()
+
+		## History
+
+			when "down", "C^n"
+				if @historyIndex > 0
+					@historyIndex--
+					@line = @history[@historyIndex]
+					@cursor = @line.length
+					@_refreshLine()
+				else if @historyIndex is 0
+					@historyIndex = -1
 					@cursor = 0
 					@line = ""
 					@_refreshLine()
-				when "k" then @_deleteLineRight()
-				when "a"
-					@cursor = 0
-					@_refreshLine()
-				when "e"
+			when "up", "C^p"
+				if @historyIndex + 1 < @history.length
+					@historyIndex++
+					@line = @history[@historyIndex]
 					@cursor = @line.length
 					@_refreshLine()
-				when "b"
-					if @cursor > 0
-						@cursor--
-						@_refreshLine()
-				when "f"
-					unless @cursor is @line.length
-						@cursor++
-						@_refreshLine()
-				when "n" then @_historyNext()
-				when "p" then @_historyPrev()
-				when "z" then return process.kill process.pid, "SIGTSTP"
-				when "w", "backspace" then @_deleteWordLeft()
-				when "delete" then @_deleteWordRight()
-				when "backspace" then @_deleteWordLeft()
-				when "left" then @_wordLeft()
-				when "right" then @_wordRight()
-		else if key.meta
-			switch key.name
-				when "b" then @_wordLeft()
-				when "f"then @_wordRight()
-				when "d", "delete" then @_deleteWordRight()
-				when "backspace" then @_deleteWordLeft()
-		else
-			switch key.name
-				when "enter"
-					@_line()
-					#@prompt()
+			
+		## Directly output char to terminal
+			else
+				s = s.toString("utf-8") if Buffer.isBuffer(s)
+				if s
+					lines = s.split /\r\n|\n|\r/
+					i = 0
+					len = lines.length
 
-				when "backspace"
-					@_deleteLeft()
-				when "delete"
-					@_deleteRight()
-				when "tab"
-					@_tabComplete()
-				when "left"
-					if @cursor > 0
-						@cursor--
-						@output.moveCursor -1, 0
-				when "right"
-					unless @cursor is @line.length
-						@cursor++
-						@output.moveCursor 1, 0
-				when "home"
-					@cursor = 0
-					@_refreshLine()
-				when "end"
-					@cursor = @line.length
-					@_refreshLine()
-				when "up"
-					@_historyPrev()
-				when "down"
-					@_historyNext()
-				else
-					s = s.toString("utf-8")  if Buffer.isBuffer(s)
-					if s
-						lines = s.split(/\r\n|\n|\r/)
-						i = 0
-						len = lines.length
-
-						while i < len
-							@_line()  if i > 0
-							@_insertString lines[i]
-							i++
+					while i < len
+						@_line()  if i > 0
+						@_insertString lines[i]
+						i++
 							
 	runline: (buffer) ->
-		#return @prompt()
 		if !buffer.toString().trim() 
 			return @prompt()
 			
