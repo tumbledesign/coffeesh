@@ -38,7 +38,7 @@ root.echo = builtin.echo
 
 class Shell
 	constructor: ->
-	
+		
 		## Config
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -393,16 +393,18 @@ class Shell
 		@prompt()
 	
 	execute: (cmd, args...) ->
+		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
+		exec "/usr/bin/mkfifo #{fifopath}"
 		@pause()
-		proc = spawn cmd, args,
-			cwd: process.cwd()
-			env: process.env
-			setsid: false
-			customFds:[0,1,2]
-		proc.on 'exit', =>
+		cmdargs = ["-ic", "#{cmd} #{args.join(' ')}; echo a > #{fifopath}"]
+		echo cmdargs
+		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
+		proc.on 'exit', (exitcode, signal) =>
+			@pause()
 			@resume()
-		return
+			fs.unlinkSync(fifopath)
 
-# init
+		fs.readFileSync(fifopath, 'utf8')
+		return proc
 
 root.shl = new Shell()

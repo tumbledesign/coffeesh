@@ -100,7 +100,7 @@ class Lexer
 
 	identifierToken: ->
 		IDENTIFIER = /// ^
-			( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
+			( [$A-Za-z_\x7f-\uffff][$=\w\x7f-\uffff]* )
 			( [^\n\S]* : (?!:) )?  # Is this a property name?
 		///
 		RELATION = ['IN', 'OF', 'INSTANCEOF']
