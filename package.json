@@ -7,7 +7,7 @@
     "shell"
   ],
   "author": "Mark Dube",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "MIT",
   "engines": {
     "node": "0.6.x"
