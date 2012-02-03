@@ -104,9 +104,11 @@ exports.Lexer = class Lexer
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
 			return id.length
+			
 		forcedIdentifier = colon or
 			(prev = last @tokens) and (prev[0] in ['.', '?.', '::'] or
 			not prev.spaced and prev[0] is '@')
+		
 		tag = 'IDENTIFIER'
 
 		if not forcedIdentifier and (id in JS_KEYWORDS or id in COFFEE_KEYWORDS)
