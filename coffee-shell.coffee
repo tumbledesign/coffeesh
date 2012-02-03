@@ -479,10 +479,6 @@ class Shell
 
 		tokens = (new Lexer).tokenize code
 		output = []
-		tmp = ''
-		call_started = false
-		index_started = false
-		dot_started = false
 		
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
@@ -502,10 +498,11 @@ class Shell
 					output.push val
 				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
 					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END'
+				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF'
 					output.push val
+					output.push ' ' if tokens[i].spaced?
 				when 'TERMINATOR'
-					output.push ';'
+					output.push "\n"
 				when 'FILEPATH'
 					if tokens[i+1]?[0] in ['CALL_START', '(']
 						output.push "shl.execute.bind(shl,#{val})"
@@ -513,13 +510,13 @@ class Shell
 						output.push "shl.execute(#{val})"
 					else
 						output.push val
-				when 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+				when 'BOOL', 'NUMBER', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
 					output.push val
 				when 'MATH'
 					output.push val
-				else
-					output.push val
-			#output.push ' ' if tokens[i].spaced?
+				when 'INDENT'
+					output.push " then " if tokens[i].fromThen
+			
 			
 		(output.join(''))
 	
