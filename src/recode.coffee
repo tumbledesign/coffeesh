@@ -18,9 +18,10 @@ exports.Recode = (code) ->
 		switch lex
 			when 'BUILTIN'
 				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
+			when 'PARAM'
+				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ')'] then '' else ','}"
 			when 'BINARIES', 'FILEPATH'
 				exectmp += val
-				console.log exectmp, tokens[i+1]?[0]
 				if tokens[i+1]?[0] is 'TERMINATOR'
 					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
 					exectmp = ''
@@ -104,8 +105,11 @@ class Lexer
 			return @chunk.length
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
-		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
+		if prev and prev[0] in ['BINARIES', 'FILEPATH', 'ARG', 'IDENTIFIER']
 			@token 'ARG', filepath
+			return filepath.length
+		if prev and prev[0] in ['BUILTIN']
+			@token 'PARAM', @makeString filepath, '"', no
 			return filepath.length
 		@token 'FILEPATH', @makeString filepath, '"', no
 		(filepath.length)
@@ -121,9 +125,12 @@ class Lexer
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
-		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'FILEPATH', 'ARG']
 			arg = id
 			@token 'ARG', arg
+			return id.length
+		if (prev = last @tokens) and prev[0] in ['BUILTIN', 'PARAM']
+			@token 'PARAM', @makeString id, '"', no
 			return id.length
 		if (prev = last @tokens) and prev[0] in ['-', '--'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = prev[0]+id
@@ -194,6 +201,13 @@ class Lexer
 		///i
 		return 0 unless match = NUMBER.exec @chunk
 		number = match[0]
+		if (prev = last @tokens) and prev[0] in ['BINARIES', 'FILEPATH', 'ARG']
+			@token 'ARG', number
+			return number.length
+		if (prev = last @tokens) and prev[0] in ['BUILTIN', 'PARAM']
+			@token 'PARAM', @makeString number, '"', no
+			return number.length
+		
 		@token 'NUMBER', number
 		number.length
 
@@ -652,7 +666,7 @@ class Lexer
 		IMPLICIT_CALL    = [
 			'IDENTIFIER', 'NUMBER', 'STRING', 'JS', 'REGEX', 'NEW', 'PARAM_START', 'CLASS'
 			'IF', 'TRY', 'SWITCH', 'THIS', 'BOOL', 'UNARY', 'SUPER'
-			'@', '->', '=>', '[', '(', '{', '--', '++', 'FILEPATH', 'BINARIES', 'BUILTIN', 'ARG'
+			'@', '->', '=>', '[', '(', '{', '--', '++', 'FILEPATH', 'BINARIES', 'BUILTIN', 'ARG', 'PARAM'
 		]
 		IMPLICIT_UNSPACED_CALL = ['+', '-']
 		IMPLICIT_BLOCK   = ['->', '=>', '{', '[', ',']

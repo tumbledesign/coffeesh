@@ -393,7 +393,7 @@ class Shell
 		@prompt()
 	
 	execute: (cmd) ->
-		fifopath = "/tmp/fifo#{Math.floor Math.random()*10000}"
+		fifopath = "/tmp/coffeefifo"#{Math.floor Math.random()*10000}"
 		exec "/usr/bin/mkfifo #{fifopath}"
 		#@pause()
 		cmdargs = ["-ic", "#{cmd} ; echo a > #{fifopath}"]
@@ -406,6 +406,6 @@ class Shell
 			fs.unlinkSync(fifopath)
 
 		fs.readFileSync(fifopath, 'utf8')
-		return proc
+		return
 
 root.shl = new Shell()
