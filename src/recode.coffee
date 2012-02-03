@@ -112,11 +112,11 @@ class Lexer
 		[input, id, colon] = match
 
 		if (prev = last @tokens) and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
-			arg = @makeString id, '"', no
+			arg = id
 			@token 'ARG', arg
 			return id.length
 		if (prev = last @tokens) and prev[0] in ['-', '--'] and @tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
-			arg = @makeString prev[0]+id, '"', no
+			arg = prev[0]+id
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
@@ -125,7 +125,7 @@ class Lexer
 			@token 'BUILTIN', cmd
 			return id.length
 		if binaries.hasOwnProperty id			
-			cmd = @makeString "#{binaries[id]}/#{id}", '"', no
+			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
 			
