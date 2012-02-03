@@ -378,6 +378,7 @@ class Shell
 
 		@history.unshift @line
 		@history.pop() if @history.length > @HISTORY_SIZE
+		fs.write @history_fd, @line + '\n'
 		code = Recode @line
 		echo "Recoded: #{code}"
 		try
@@ -387,7 +388,7 @@ class Shell
 				global._ = _
 			else
 				print inspect(returnValue, no, 2, true) + '\n'
-			fs.write @history_fd, @line + '\n'
+			
 		catch err
 			@error err
 		@prompt()
@@ -399,8 +400,7 @@ class Shell
 			env: process.env
 			setsid: false
 			customFds:[0,1,2]
-		proc.on 'exit', =>
-			@resume()
+		proc.on 'exit', => @resume()
 		return
 
 # init
