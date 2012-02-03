@@ -402,48 +402,26 @@ class Shell
 		@prompt()
 
 	tokenparse: (code) ->
-
 		tokens = (new Lexer).tokenize code
 		output = []
-		
 		for i in [0...tokens.length]
 			[lex,val] = tokens[i]
 			echo tokens[i]
 			switch lex
-				when 'BINARIES', 'BUILTIN'
-					output.push val
-					if tokens[i+1]?[0] is 'TERMINATOR'
-							output.push '()'
+				when 'BINARIES', 'BUILTIN', 'FILEPATH'
+					output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
 				when 'ARG'
-					output.push "#{val},"
-					
-				when 'IDENTIFIER'
-					output.push if tokens[i].spaced? then "#{val} " else val
-				when 'STRING'
-					output.push if tokens[i].spaced? then "#{val} " else val
-				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '...'
-					output.push lex
-				when 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'FOR', 'FORIN', 'FOROF', 'PARAM_START', 'PARAM_END', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'OWN'
-					output.push if tokens[i].spaced? then "#{val} " else val
+					output.push "#{val}#{if tokens[i+1]?[0] in ['CALL_END', ')'] then '' else ','}"
+				when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
+						, 'BOOL', 'NUMBER', 'MATH', 'IDENTIFIER', 'STRING'
+						, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
+						, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN'
+					output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
 				when 'TERMINATOR'
 					output.push "\n"
-				when 'FILEPATH'
-					if tokens[i+1]?[0] in ['CALL_START', '(']
-						output.push "shl.execute.bind(shl,#{val})"
-					else if tokens[i+1]?[0] is 'TERMINATOR'
-						output.push "shl.execute(#{val})"
-					else
-						output.push val
-				when 'BOOL', 'NUMBER'
-					output.push val
-				when 'MATH'
-					output.push val
 				when 'INDENT'
 					output.push "then " if tokens[i].fromThen
-			
-			
 		(output.join(''))
-	
 	
 	execute: (cmd, args...) ->
 		@pause()

@@ -69,6 +69,23 @@ exports.Lexer = class Lexer
 
 	# Tokenizers
 	# ----------
+	
+	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
+	pathToken: ->
+		prev = last @tokens
+		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_FILEPATH))
+		
+		if @chunk in ['.', '..']
+			@token 'FILEPATH', @makeString new String(@chunk), '"', no
+			return @chunk.length
+		
+		return 0 unless match = FILEPATH.exec @chunk
+		[filepath] = match
+		if prev and prev[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG', 'IDENTIFIER']
+			@token 'ARG', @makeString filepath, '"', no
+			return filepath.length
+		@token 'FILEPATH', "shl.execute.bind(shl,#{@makeString filepath, '"', no})"
+		(filepath.length)
 
 	# Matches identifying literals: variables, keywords, method names, etc.
 	# Check to ensure that JavaScript reserved words aren't being used as
@@ -96,8 +113,11 @@ exports.Lexer = class Lexer
 			@token 'ARG', arg
 			return id.length
 		
-		if (prev = last @tokens) and prev[0] in ['-', '--']
+		if (prev = last @tokens) and 
+				prev[0] in ['-', '--'] and 
+				@tokens[@tokens.length-2][0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @makeString prev[0]+id, '"', yes
+			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
 
@@ -152,22 +172,6 @@ exports.Lexer = class Lexer
 		@token tag, id
 		@token ':', ':' if colon
 		input.length
-		
-	# COFFEE SHELL: Instead of matching regex syntax, used to match path syntax. For regex in the shell use ///
-
-	pathToken: ->
-		#return 0 if @chunk.charAt(0) not in ['/', '~', '.']
-		#if match = FILEPATH.exec @chunk
-		#  length = @pathToken match
-		#  @line += count match[0], '\n'
-		#  return length
-
-		prev = last @tokens
-		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_REGEX))
-		return 0 unless match = FILEPATH.exec @chunk
-		[filepath] = match
-		@token 'FILEPATH', @makeString new String(filepath), '"', no
-		filepath.length
 
 	# Matches numbers, including decimals, hex, and exponential notation.
 	# Be careful not to interfere with ranges-in-progress.
@@ -594,10 +598,10 @@ JS_FORBIDDEN = JS_KEYWORDS.concat RESERVED
 exports.RESERVED = RESERVED.concat(JS_KEYWORDS).concat(COFFEE_KEYWORDS)
 
 # Token matching regexes.
-#IDENTIFIER = /// ^
-#  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
-#  ( [^\n\S]* : (?!:) )?  # Is this a property name?
-#///
+IDENTIFIER = /// ^
+  ( [$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]* )
+  ( [^\n\S]* : (?!:) )?  # Is this a property name?
+///
 
 #FILEPATH = /^[.]?[.~]?\/([-A-Za-z0-9_,.+=%@]|([\][#~:[]{}]|(\\\s)|[^\n\s]))*/
 
@@ -612,10 +616,10 @@ FILEPATH = /// ^
 
 SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 
-IDENTIFIER = /// ^
-	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
-	( [^\n\S]* : (?!:) )?  # Is this a property name?
-///
+#IDENTIFIER = /// ^
+#	( [$A-Za-z_\x7f-\uffff][-$\w:@\x7f-\uffff]* )
+#	( [^\n\S]* : (?!:) )?  # Is this a property name?
+#///
 
 NUMBER     = ///
   ^ 0x[\da-f]+ |                              # hex
@@ -726,13 +730,13 @@ NOT_REGEX = ['NUMBER', 'REGEX', 'BOOL', '++', '--', ']']
 # force a division parse:
 NOT_SPACED_REGEX = NOT_REGEX.concat ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
 
-NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--']
-NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'IDENTIFIER', 'STRING'
+NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--', '(']
+NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'STRING', 'IDENTIFIER'
 
 # Tokens which could legitimately be invoked or indexed. An opening
 # parentheses or bracket following these tokens will be recorded as the start
 # of a function invocation or indexing operation.
-CALLABLE  = ['IDENTIFIER', 'STRING', ')', ']', '}', '?', '::', '@', 'THIS', 'SUPER', 'FILEPATH']
+CALLABLE  = ['IDENTIFIER', 'STRING', ')', ']', '}', '?', '::', '@', 'THIS', 'SUPER']
 INDEXABLE = CALLABLE.concat 'NUMBER', 'BOOL'
 
 # Tokens that, when immediately preceding a `WHEN`, indicate that the `WHEN`
