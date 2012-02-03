@@ -122,39 +122,10 @@ class Shell
 		return
 
 	prompt: (preserveCursor) ->
-		@cursor = 0  unless preserveCursor
-		@_refreshLine()
-
-	question: (query, cb) ->
-		if cb
-			#@resume()
-			if @_questionCallback
-				@output.write "\n"
-				@prompt()
-			else
-				@_oldPrompt = @_prompt
-				@setPrompt query
-				@_questionCallback = cb
-				@output.write "\n"
-				@prompt()
-
-	_onLine: (line) ->
-		if @_questionCallback
-			cb = @_questionCallback
-			@_questionCallback = null
-			@setPrompt @_oldPrompt
-			cb line
-		else
-			@runline line
-
-	_addHistory: ->
-		return ""  if @line.length is 0
-		@history.unshift @line
 		@line = ""
 		@historyIndex = -1
-		@cursor = 0
-		@history.pop()  if @history.length > @kHistorySize
-		@history[0]
+		@cursor = 0  unless preserveCursor
+		@_refreshLine()
 
 	_refreshLine: ->
 		@output.cursorTo 0
@@ -191,7 +162,7 @@ class Shell
 				@close() if @cursor is 0 and @line.length is 0
 
 			when "tab" then @_tabComplete()
-			when "enter" then @_line()
+			when "enter" then @runline()
 
 			# Clear line
 			when "C^u"
@@ -292,13 +263,9 @@ class Shell
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				if s
 					lines = s.split /\r\n|\n|\r/
-					i = 0
-					len = lines.length
-
-					while i < len
-						@_line()  if i > 0
+					for i,line of lines
+						@runline()  if i > 0
 						@_insertString lines[i]
-						i++
 
 	_insertString: (c) ->
 		#console.log c
@@ -315,9 +282,7 @@ class Shell
 
 	_tabComplete: ->
 		self = this
-		#tty.setRawMode false
 		self.completer self.line.slice(0, self.cursor), (err, rv) ->
-			#tty.setRawMode true
 			return  if err
 
 			completions = rv[0]
@@ -353,18 +318,11 @@ class Shell
 					
 					maxColumns = Math.floor(self.columns / width) or 1
 					group = []
-					c = undefined
-					i = 0
-					compLen = completions.length
-
-					while i < compLen
-						c = completions[i]
+					for i,c of completions
 						if c is ""
 							handleGroup group
 							group = []
-						else
-							group.push c
-						i++
+						else group.push c
 					handleGroup group
 					f = completions.filter (e) ->
 						e if e
@@ -374,20 +332,15 @@ class Shell
 					self._insertString prefix.slice(completeOn.length)  if prefix.length > completeOn.length
 				
 				self._refreshLine()
-
-
-	_line: ->
-		line = @_addHistory()
-		@output.write "\r\n"
-		@_onLine line
-
 							
-	runline: (buffer) ->
-		if !buffer.toString().trim() 
+	runline: ->
+		@output.write "\r\n"
+		if !@line.toString().trim() 
 			return @prompt()
-			
-		code = buffer
-		recode = @tokenparse code
+		
+		@history.unshift @line
+		@history.pop() if @history.length > @kHistorySize
+		recode = @tokenparse @line
 		echo "Recoded: #{recode}"
 		try
 			_ = global._
@@ -396,7 +349,7 @@ class Shell
 				global._ = _
 			else
 				print inspect(returnValue, no, 2, true) + '\n'
-			fs.write @history_fd, code + '\n'
+			fs.write @history_fd, @line + '\n'
 		catch err
 			@error err
 		@prompt()
@@ -455,8 +408,6 @@ class Shell
 		proc.on 'exit', =>
 			@resume()
 		return
-			
-		
 
 	## Autocompletion
 
