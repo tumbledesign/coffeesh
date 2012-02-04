@@ -9,49 +9,20 @@
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
 {Recode} = require './recode'
-[vm,fs,colors] = [require('vm'), require('fs'), require('colors')]
-tty = require('tty')
-os = require 'os'
+[os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('colors')]
 require 'fibers'
-
-#Load binaries and built-in shell commands
-binaries = {}
-for pathname in (process.env.PATH.split ':') when path.existsSync(pathname) 
-	binaries[file] = pathname for file in fs.readdirSync(pathname)
-
-builtin = 
-	cd: (to) -> 
-		if to.indexOf('~') is 0
-			to = shl.home + to.substr(1)
-		newcwd = shl.cwd
-		if newcwd.indexOf('~') is 0
-			newcwd = shl.home + newcwd.substr(1)
-			
-		newcwd = path.resolve newcwd, to
-		return if not path.existsSync(newcwd)?
-		process.chdir newcwd
-		process.env.PWD = newcwd
-		if newcwd.indexOf(shl.home) is 0
-			shl.cwd =	'~'+newcwd.substr(shl.home.length)
-		shl.setPrompt()
-		shl.prompt()
-	echo: (vals...) ->
-		for v in vals
-			print inspect(v, true, 5, true) + "\n"
-		return
-	kill: (pid, signal = "SIGTERM") -> 
-		process.kill pid, signal
-	which: (val) ->
-		if builtin[val]? then console.log 'built-in shell command'.green 
-		else if binaries[val]? then console.log "#{binaries[val]}/#{val}".white
-		else console.log "command '#{val}'' not found".red
-
-root.binaries = binaries
-root.builtin = builtin
-root.echo = builtin.echo
 
 class Shell
 	constructor: ->
+		# STDIO
+		@input = process.stdin
+		@output = process.stdout		
+		@stderr = process.stderr
+		@user = process.env.USER
+		@home = process.env.HOME
+		@cwd = ''
+		process.on 'uncaughtException', -> @error
+		
 		@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
 		@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		@HOSTNAME = os.hostname()
@@ -61,21 +32,12 @@ class Shell
 		@PROMPT_CONTINUATION = => ('......> '.green)
 		@PROMPT = => ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ")
 		@ALIASES = 
-			ls: 'ls --color=auto'
-			l: 'ls -latr --color=auto'
+			ls: 'ls -atr --color=auto'
+			l: 'ls --color=auto'
 			grep: 'grep --color=auto'
 			egrep: 'egrep --color=auto'
 			fgrep: 'fgrep --color=auto'
 		
-		# STDIO
-		@input = process.stdin
-		@output = process.stdout		
-		@stderr = process.stderr
-		@cwd = process.cwd()
-		@user = process.env.USER
-		@home = process.env.HOME
-			
-		process.on 'uncaughtException', -> @error
 		
 	init: ->
 		# load history
@@ -85,21 +47,56 @@ class Shell
 		@history.shift()
 		@historyIndex = -1
 		
-		# command aliases
-		for alias,val of @ALIASES when not builtin[alias]? and binaries[val.split(' ')[0]]?
-			builtin[alias] = (params...) -> 
-				shl.execute binaries[val.split(' ')[0]] + '/' + val + " " + params.join(" ")
-
 		# internal variables
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
-		@_prompt = ''
-		@_line = ''
-		@_code = ''
-		@_consecutive_tabs = 0
+		@_prompt = @_line = @_code = ''
+		@_lines = []
+		@_numlines = @_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 		process.on "SIGWINCH", => 
 			[@_columns, @_rows] = @output.getWindowSize()
+		
+		#Load binaries and built-in shell commands
+		@binaries = {}
+		for pathname in (process.env.PATH.split ':') when path.existsSync(pathname) 
+			@binaries[file] = pathname for file in fs.readdirSync(pathname)
+
+		@builtin = 
+			pwd: () =>
+				@cwd
+			cd: (to) => 
+				if to.indexOf('~') is 0
+					to = @home + to.substr(1)
+				newcwd = @cwd
+				if newcwd.indexOf('~') is 0
+					newcwd = @home + newcwd.substr(1)
+				newcwd = path.resolve newcwd, to
+				return if not path.existsSync(newcwd)?
+				process.chdir newcwd
+				process.env.PWD = newcwd
+				if newcwd.indexOf(@home) is 0
+					@cwd =	'~'+newcwd.substr(@home.length)
+				else @cwd = newcwd
+				@_prompt = @PROMPT()
+				@refreshLine()
+			echo: (vals...) ->
+				for v in vals
+					print inspect(v, true, 5, true) + "\n"
+				return
+			kill: (pid, signal = "SIGTERM") -> 
+				process.kill pid, signal
+			which: (val) =>
+				if @builtin[val]? then console.log 'built-in shell command'.green 
+				else if @binaries[val]? then console.log "#{@binaries[val]}/#{val}".white
+				else console.log "command '#{val}'' not found".red
+
+		root.aliases = @ALIASES
+		root.binaries = @binaries
+		root.builtin = @builtin
+		root.echo = @builtin.echo
+		
+		Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
 
 		# connect to tty
 		@resume()
@@ -109,10 +106,8 @@ class Shell
 
 	resume: ->
 		@input.setEncoding('utf8')
-
 		@_data_listener = (s) =>
 			if (s.indexOf("\u001b[M") is 0) then @write s
-			
 		@input.on("data", @_data_listener)
 		@input.on("keypress", (s, key) =>
 			@write s, key
@@ -120,17 +115,21 @@ class Shell
 		tty.setRawMode true
 		@output.write @MOUSETRACK
 		@output.moveCursor - @MOUSETRACK.length
-		@_cursor.x = 0
-		@_line = ''
-		@_code = ''
-		@setPrompt()
-		@prompt()
+		@historyIndex = -1
+		@_cursor = x:0, y:0
+		@_prompt = @_line = @_code = ''
+		@_lines = []
+		@_numlines = @_consecutive_tabs = 0
+		@_prompt = @PROMPT()
+		@refreshLine()
 		return
 
 	pause: ->
-		@_cursor.x = 0
-		@_line = ''
-		@_code = ''
+		@historyIndex = -1
+		@_cursor = x:0, y:0
+		@_prompt = @_line = @_code = ''
+		@_lines = []
+		@_numlines = @_consecutive_tabs = 0
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
@@ -148,16 +147,6 @@ class Shell
 		tty.setRawMode false
 		@input.destroy()
 		return
-
-	setPrompt: (p) ->
-		p ?= @PROMPT
-		@_prompt = p()
-			
-	prompt: ->
-		@_line = ""
-		@historyIndex = -1
-		@_cursor.x = 0 
-		@refreshLine()
 
 	refreshLine: ->
 		@output.cursorTo 0
@@ -189,12 +178,10 @@ class Shell
 
 		# enter
 		if s is '\r'
-			if @_cursor.y is @numlines
+			if @_cursor.y is @_numlines
 				@_code += @_line
 			else
 				@_code = @_lines.join('\n')
-			@numlines = @_cursor.y = 0
-			@_lines = []
 			@runline()
 			return
 			
@@ -203,10 +190,10 @@ class Shell
 			@insertString '\n'
 			@_code += @_line
 			@_lines = @_code.split('\n')
-			@numlines = @_lines.length-1
-			@_cursor.y = @numlines
-			@setPrompt @PROMPT_CONTINUATION
-			@prompt()
+			@_numlines = @_lines.length-1
+			@_cursor.y = @_numlines
+			@_prompt =  @PROMPT_CONTINUATION()
+			@refreshLine()
 			return
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
@@ -262,18 +249,18 @@ class Shell
 							@output.cursorTo 0
 							@_cursor.x = code[i].length
 							if i is 0
-								@setPrompt()
+								@_prompt = @PROMPT_CONTINUATION()
 								@_line = code[i] + (if i < code.length-1 then '\n' else '')
 								@refreshLine()
 							else
-								@setPrompt @PROMPT_CONTINUATION
+								@_prompt = @PROMPT_CONTINUATION()
 								@_line = code[i] + (if i < code.length-1 then '\n' else '')
 								@refreshLine()
 							if i < code.length - 1
 								@_code += @_line
 								@_lines = @_code.split('\n')
-								@numlines = @_lines.length-1
-								@_cursor.y = @numlines
+								@_numlines = @_lines.length-1
+								@_cursor.y = @_numlines
 			when "delete", "C^d"
 				if @_cursor.x < @_line.length
 					@_line = @_line.slice(0, @_cursor.x) + @_line.slice(@_cursor.x + 1, @_line.length)
@@ -338,7 +325,7 @@ class Shell
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @numlines and @numlines > 0
+				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_numlines and @_numlines > 0
 					@_cursor.y--
 					@output.moveCursor 0, -1
 					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
@@ -347,7 +334,7 @@ class Shell
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
 					
-				else if keytoken in ['down', 'C^n'] and @_cursor.y < @numlines and @_cursor.y >= 0 and @numlines > 0
+				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_numlines and @_cursor.y >= 0 and @_numlines > 0
 					@_cursor.y++
 					@output.moveCursor 0, 1
 					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
@@ -360,26 +347,25 @@ class Shell
 					
 				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@historyIndex++
-					@output.moveCursor 0, @numlines
+					@output.moveCursor 0, @_numlines
 				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
 					@historyIndex--
 				else if @historyIndex is 0
-					for i in [0...@numlines]
+					for i in [0...@_numlines]
 						@output.cursorTo 0
 						@output.clearLine 0
 						@output.moveCursor 0,-1
-					@numlines = @_cursor.y = 0
-					@_lines=[]
 					@historyIndex = -1
-					@_cursor.x = 0
-					@_line = ""
-					@_code = ""
-					@setPrompt()
+					@_cursor = x:0, y:0
+					@_prompt = @_line = @_code = ''
+					@_lines = []
+					@_numlines = @_consecutive_tabs = 0
+					@_prompt = @PROMPT()
 					@refreshLine()
 					return
 				else return
 				
-				for i in [0...@numlines]
+				for i in [0...@_numlines]
 					@output.cursorTo 0
 					@output.clearLine 0
 					@output.moveCursor 0,-1
@@ -387,27 +373,27 @@ class Shell
 				@_line = @_code = ''
 				code = @history[@historyIndex]
 				@_lines = code.split('\n')
-				@numlines = @_lines.length-1
-				@_cursor.y = @numlines
+				@_numlines = @_lines.length-1
+				@_cursor.y = @_numlines
 				
 				for i in [0...@_lines.length]
 					@output.clearLine 0
 					@output.cursorTo 0
 					@_cursor.x = @_lines[i].length
 					if i is 0
-						@setPrompt()
-						@_line = @_lines[i] + (if i < @numlines then '\n' else '')
+						@_prompt = @PROMPT()
+						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
 						@refreshLine()
 					else
-						@setPrompt @PROMPT_CONTINUATION
-						@_line = @_lines[i] + (if i < @numlines then '\n' else '')
+						@_prompt =  @PROMPT_CONTINUATION()
+						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
 						@refreshLine()
-					if i < @numlines
+					if i < @_numlines
 						@_code += @_line
 						
 				if keytoken in ['down', 'C^n']
 					@_cursor.y = 0
-					@output.moveCursor 0, - @numlines
+					@output.moveCursor 0, - @_numlines
 					@_prompt = @PROMPT()
 					@_line = @_lines[0]
 					@_cursor.x = @_line.length
@@ -549,18 +535,29 @@ class Shell
 	
 	runline: ->
 		@output.write "\r\n"
-		if !@_code.toString().trim()
-			@setPrompt()
-			@prompt()
+		if !@_code.trim()
+			@historyIndex = -1
+			@_cursor = x:0, y:0
+			@_prompt = @_line = @_code = ''
+			@_lines = []
+			@_numlines = @_consecutive_tabs = 0
+			@_prompt =  @PROMPT()
+			@refreshLine()
 			return
-
+			
+		@historyIndex = -1
 		@history.unshift @_code
 		@history.pop() if @history.length > @HISTORY_SIZE
 		fs.write @history_fd, @_code+"\r\n"
 		
 		code = Recode @_code
-		@_code = ''
 		echo "Recoded: #{code}"
+		
+		@_cursor = x:0, y:0
+		@_prompt = @_line = @_code = ''
+		@_lines = []
+		@_numlines = @_consecutive_tabs = 0
+		
 		try
 			Fiber(=>
 				_ = global._
@@ -569,18 +566,21 @@ class Shell
 					global._ = _
 				else
 					echo returnValue
-				@setPrompt()
-				@prompt()
+				@_prompt =  @PROMPT()
+				@refreshLine()
 			).run()
 		catch err
 			@error err
-
-		#@setPrompt()
-		#@prompt()
 	
 	run: (cmd) ->
 		fiber = Fiber.current
 		#@pause()
+		@historyIndex = -1
+		@_cursor = x:0, y:0
+		@_prompt = @_line = @_code = ''
+		@_lines = []
+		@_numlines = @_consecutive_tabs = 0
+		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
 		proc.stdout.on 'data', (data) =>
@@ -600,6 +600,7 @@ class Shell
 	execute: (cmd) ->
 		fiber = Fiber.current
 		@pause()
+		console.log("···")
 		cmdargs = ["-ic", "#{cmd}"]
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
@@ -616,6 +617,3 @@ class Shell
 extend((root.shl = new Shell()), require("./coffeeshrc"))
 extend(root.shl.ALIASES, require('./coffeesh_aliases'))
 root.shl.init()
-#root.shl.cwd = shl.execute("/bin/pwd -L")
-#if root.shl.cwd.indexOf(root.shl.home) is 0
-#	root.shl.cwd =	'~'+root.shl.cwd.substr(root.shl.home.length)

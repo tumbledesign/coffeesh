@@ -150,10 +150,17 @@ class Lexer
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
 			return id.length
+		if prev?[0] not in ['.', '\\', '='] and aliases.hasOwnProperty id
+			alias = (aliases[id].split(' '))[0]
+			if binaries.hasOwnProperty alias
+				cmd = "#{binaries[alias]}/#{aliases[id]}"
+				@token 'BINARIES', cmd
+				return id.length
 		if prev?[0] not in ['.', '\\', '='] and binaries.hasOwnProperty id
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
+			
 			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
