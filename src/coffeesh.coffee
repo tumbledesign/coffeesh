@@ -185,11 +185,20 @@ class Shell
 			
 		# ctrl enter
 		else if s is '\n'
+			@output.cursorTo 0
+			@output.clearLine 0
+			@output.write @_prompt
+			@output.write @_lines[@_cursor.y]
+			@output.write '\n'
 			@_cursor.y++
 			@_lines[@_cursor.y] = ''
 			@_cursor.x = 0
 			@_prompt =  @PROMPT_CONTINUATION()
-			@refreshLine()
+			@output.cursorTo 0
+			@output.clearLine 0
+			@output.write @_prompt
+			@output.write @_lines[@_cursor.y]
+			@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			return
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
