@@ -50,9 +50,12 @@ class Shell
 		# internal variables
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
-		@_prompt = @_line = @_code = ''
-		@_lines = @_completions = []
-		@_numlines = @_consecutive_tabs = 0
+		@_prompt = ''
+		@_lines = []
+ 		@_completions = []
+		@_lines[@_cursor.y] = ''
+		
+		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 		process.on "SIGWINCH", => 
 			[@_columns, @_rows] = @output.getWindowSize()
@@ -119,17 +122,17 @@ class Shell
 		@output.moveCursor - @MOUSETRACK.length
 		@historyIndex = -1
 		@_cursor = x:0, y:0
-		@_prompt = @_line = @_code = ''
-		@_lines = []
-		@_numlines = @_consecutive_tabs = 0
+		@_prompt = ''
+		@_lines[@_cursor.y]  = ''
+		@_consecutive_tabs = 0
 		return
 
 	pause: ->
 		@historyIndex = -1
 		@_cursor = x:0, y:0
-		@_prompt = @_line = @_code = ''
-		@_lines = []
-		@_numlines = @_consecutive_tabs = 0
+		@_prompt = ''
+		@_lines[@_cursor.y]  = ''
+		@_consecutive_tabs = 0
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
@@ -151,10 +154,9 @@ class Shell
 	refreshLine: ->
 		@output.cursorTo 0
 		@output.write @_prompt
-		@output.write @_line
+		@output.write @_lines[@_cursor.y]
 		@output.clearLine 1
 		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-
 
 	write: (s, key) ->
 		
@@ -178,21 +180,13 @@ class Shell
 
 		# enter
 		if s is '\r'
-			if @_cursor.y is @_numlines
-				@_code += @_line
-			else
-				@_code = @_lines.join('\n')
 			@runline()
 			return
 			
 		# ctrl enter
 		else if s is '\n'
-			@insertString '\n'
-			@_code += @_line
-			@_lines = @_code.split('\n')
-			@_numlines = @_lines.length-1
-			@_cursor.y = @_numlines
-			@_line = ''
+			@_cursor.y++
+			@_lines[@_cursor.y] = ''
 			@_cursor.x = 0
 			@_prompt =  @PROMPT_CONTINUATION()
 			@refreshLine()
@@ -232,25 +226,17 @@ class Shell
 		## Deletions
 
 			when "backspace", "C^h"
-				if @_cursor.x > 0 and @_line.length > 0
-					#@_line = @_line.slice(0, @_cursor.x - 1) + @_line.slice(@_cursor.x, @_line.length)
+				if @_cursor.x > 0 and @_lines[@_cursor.y].length > 0
 					@_cursor.x--
-					@_line = @_line[0...@_cursor.x]
-					#@_lines[@_cursor.y] = @_line
-					@_code = @_lines.join '\n'
+					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
 					@output.moveCursor -1
 					@output.clearLine 1
 					
-				else if @_cursor.y is @_numlines
-					@_lines = @_code.split('\n')
+				else if @_cursor.y is @_lines.length
 					@_lines.pop()
-					@_code = @_lines.join('\n')
-
-					@_numlines = @_lines.length - 1
-					@_cursor.y = @_numlines
-					@_line = @_lines[@_cursor.y]
-					@_cursor.x = @_line.length
-					@_prompt = if @_numlines is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@_cursor.y--
+					@_cursor.x = @_lines[@_cursor.y].length
+					@_prompt = if @_lines[@_cursor.y].length is 0 then @PROMPT() else @PROMPT_CONTINUATION()
 
 					@output.clearLine 0
 					@output.moveCursor 0,-1
@@ -320,78 +306,68 @@ class Shell
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_numlines and @_numlines > 0
+				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_lines.length and @_lines.length > 0
 					@_cursor.y--
 					@output.moveCursor 0, -1
 					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
-					@_line = @_lines[@_cursor.y]
-					@_cursor.x = @_line.length
+					@_cursor.x = @_lines[@_cursor.y].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
 					
-				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_numlines and @_cursor.y >= 0 and @_numlines > 0
+				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_lines.length-1 and @_cursor.y >= 0 and @_lines.length > 0
 					@_cursor.y++
 					@output.moveCursor 0, 1
 					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
-					@_line = @_lines[@_cursor.y]
-					@_cursor.x = @_line.length
+					@_cursor.x = @_lines[@_cursor.y].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
-				
-				
-					
+									
 				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@historyIndex++
-					@output.moveCursor 0, @_numlines
+					@output.moveCursor 0, @_lines.length-1
+					
 				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
 					@historyIndex--
+					
 				else if @historyIndex is 0
-					for i in [0...@_numlines]
+					for i in [0...@_lines.length-1]
 						@output.cursorTo 0
 						@output.clearLine 0
 						@output.moveCursor 0,-1
 					@historyIndex = -1
 					@_cursor = x:0, y:0
-					@_prompt = @_line = @_code = ''
-					@_lines = []
-					@_numlines = @_consecutive_tabs = 0
+					@_lines[@_cursor.y]  = ''
+					@_consecutive_tabs = 0
 					@_prompt = @PROMPT()
 					@refreshLine()
 					return
 				else return
 				
-				for i in [0...@_numlines]
+				for i in [0...@_lines.length-1]
 					@output.cursorTo 0
 					@output.clearLine 0
 					@output.moveCursor 0,-1
 
-				@_line = @_code = ''
-				code = @history[@historyIndex]
-				@_lines = code.split('\n')
-				@_numlines = @_lines.length-1
-				@_cursor.y = @_numlines
+				@_lines = (@history[@historyIndex]).split('\n')
+				@_cursor.y = @_lines.length
 				
 				for i in [0...@_lines.length]
+					@_cursor.y = i
+					@_cursor.x = @_lines[@_cursor.y].length
+					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
 					@output.clearLine 0
 					@output.cursorTo 0
-					@_cursor.x = @_lines[i].length
-					if i is 0
-						@_prompt = @PROMPT()
-						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
-						@refreshLine()
-					else
-						@_prompt =  @PROMPT_CONTINUATION()
-						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
-						@refreshLine()
-					if i < @_numlines
-						@_code += @_line
+					@output.write @_prompt
+					@output.write @_lines[@_cursor.y]
+					@output.write '\n' if i < @_lines.length-1
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+
 						
 				if keytoken in ['down', 'C^n']
 					@_cursor.y = 0
-					@output.moveCursor 0, -1*@_numlines
+					@output.moveCursor 0, -1*(@_lines.length-1)
 					@_prompt = @PROMPT()
-					@_line = @_lines[0]
-					@_cursor.x = @_line.length
+					@_cursor.x = @_lines[0].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 
 		## Mouse stuff
@@ -406,23 +382,30 @@ class Shell
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
-				if s
-					lines = s.split /\r\n|\n|\r/
-					for i,line of lines
-						@runline() if i > 0
-						@insertString lines[i]
+				@_lines[@_cursor.y]+=s
+				@_cursor.x = @_lines[@_cursor.y].length
+				@refreshLine()
+#				if s
+#					lines = s.split /\r\n|\n|\r/
+#					for i,line of lines
+#						@runline() if i > 0
+#						@insertString lines[i]
 
-	insertString: (c) ->
-		if @_cursor.x < @_line.length
-			beg = @_line.slice(0, @_cursor.x)
-			end = @_line.slice(@_cursor.x, @_line.length)
-			@_line = beg + c + end
-			@_cursor.x += c.length
-			@refreshLine()
-		else
-			@_line += c
-			@_cursor.x += c.length
-			@output.write c
+	insertString: (s) ->
+		s = s.toString("utf-8") if Buffer.isBuffer(s)
+		@_lines[@_cursor.y]+=s
+		@_cursor.x = @_lines[@_cursor.y].length
+		@refreshLine()
+#		if @_cursor.x < @_line.length
+#			beg = @_line.slice(0, @_cursor.x)
+#			end = @_line.slice(@_cursor.x, @_line.length)
+#			@_line = beg + c + end
+#			@_cursor.x += c.length
+#			@refreshLine()
+#		else
+#			@_line += c
+#			@_cursor.x += c.length
+#			@output.write c
 
 	tabComplete: ->
 		@autocomplete( @_line.slice(0, @_cursor.x).split(' ').pop(), ( (completions, completeOn) =>
@@ -533,34 +516,34 @@ class Shell
 	## Eval and Execute
 	
 	runline: ->
-		@output.write "\r\n"
-		if !@_code.trim()
+		if !@_lines.length
 			@historyIndex = -1
 			@_cursor = x:0, y:0
-			@_prompt = @_line = @_code = ''
-			@_lines = []
-			@_numlines = @_consecutive_tabs = 0
+			@_lines[@_cursor.y]  = ''
+			@_consecutive_tabs = 0
 			@_prompt =  @PROMPT()
 			@refreshLine()
 			return
 			
+		code = @_lines.join("\n")
+			
 		@historyIndex = -1
-		@history.unshift @_code
+		@history.unshift code
 		@history.pop() if @history.length > @HISTORY_SIZE
-		fs.write @history_fd, @_code+"\r\n"
+		fs.write @history_fd, code+"\r\n"
 		
-		code = Recode @_code
-		echo "Recoded: #{code}"
+		rcode = Recode code
+		echo "Recoded: #{rcode}"
 		
 		@_cursor = x:0, y:0
-		@_prompt = @_line = @_code = ''
-		@_lines = []
-		@_numlines = @_consecutive_tabs = 0
+		@_prompt = ''
+		@_lines[@_cursor.y]  = ''
+		@_consecutive_tabs = 0
 		
 		try
 			Fiber(=>
 				_ = global._
-				returnValue = coffee.eval "_=(#{code}\n)"
+				returnValue = coffee.eval "_=(#{rcode})"
 				if returnValue is undefined
 					global._ = _
 				else
@@ -575,9 +558,9 @@ class Shell
 		fiber = Fiber.current
 		@historyIndex = -1
 		@_cursor = x:0, y:0
-		@_prompt = @_line = @_code = ''
-		@_lines = []
-		@_numlines = @_consecutive_tabs = 0
+		@_prompt = ''
+		@_lines[@_cursor.y]  = ''
+		@_consecutive_tabs = 0
 		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]

@@ -37,7 +37,7 @@ exports.Recode = (code) ->
 					exectmp = ''
 				else exectmp += " "
 			when 'CALL_START', 'CALL_END'
-				if tokens[i-1][0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE']
+				if tokens[i-1]?[0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE', 'CALL_END']
 					output.push val
 			#			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
 			#					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
@@ -176,11 +176,7 @@ class Lexer
 			@token 'ARG', arg
 			return id.length
 		
-		if prev?[1] in ['|', '<', '>', '<<', '>>', '&'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
-			@tokens.pop()
-			@token 'PIPE', prev[1]
-			@token 'ARG', id
-			return id.length
+		
 		
 		if prev?[0] in ['.'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @tokens[@tokens.length-2][1]+prev[0]+id
@@ -212,7 +208,12 @@ class Lexer
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
-			
+		
+		if prev?[1] in ['|', '<', '>', '<<', '>>', '&'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+			@tokens.pop()
+			@token 'PIPE', prev[1]
+			@token 'ARG', id
+			return id.length
 			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
