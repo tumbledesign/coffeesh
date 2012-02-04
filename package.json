@@ -18,7 +18,7 @@
   },
   "main": "./src/coffeesh.coffee",
   "bin": "./bin/coffeesh",
-  "https://github.com/markdube/coffee-shell",
+  "website":"https://github.com/markdube/coffee-shell",
   "repository": {
     "type": "git",
     "url": " git://github.com:markdube/coffee-shell.git"
