@@ -51,7 +51,7 @@ class Shell
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
 		@_prompt = @_line = @_code = ''
-		@_lines = []
+		@_lines = @_completions = []
 		@_numlines = @_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 		process.on "SIGWINCH", => 
@@ -440,6 +440,10 @@ class Shell
 					rows = Math.ceil(completions.length / maxColumns)
 
 					completions.sort()
+
+					if rows > @_rows
+						@output.write "Do you wish to see all #{completions.length} possibilities? "
+						return
 					
 					for row in [0...rows]
 						for col in [0...maxColumns]
@@ -451,7 +455,7 @@ class Shell
 
 						@output.write "\r\n"
 
-					@output.write "\r\n"
+					#@output.write "\r\n"
 
 					@output.moveCursor 0, -(rows+2)
 
@@ -485,23 +489,23 @@ class Shell
 		#echo [isdir,dir,filePrefix]
 		if path.existsSync dir then listing = fs.readdirSync dir
 		fileCompletions = []
-		for item in listing when item.indexOf(filePrefix) is 0
+		for item in listing when item.toLowerCase().indexOf(filePrefix.toLowerCase()) is 0
 			fileCompletions.push(if fs.lstatSync(dir + item).isDirectory() then item + "/" else item)
 		
 		# Attempt to autocomplete a builtin cmd
 		builtinPrefix = text
-		builtinCompletions = (cmd for own cmd,v of builtin when cmd.indexOf(builtinPrefix) is 0)
+		builtinCompletions = (cmd for own cmd,v of builtin when cmd.toLowerCase().indexOf(builtinPrefix.toLowerCase()) is 0)
 		
 		# Attempt to autocomplete a valid executable
 		binaryPrefix = text
-		binaryCompletions = (cmd for own cmd,v of binaries when cmd.indexOf(binaryPrefix) is 0)
+		binaryCompletions = (cmd for own cmd,v of binaries when cmd.toLowerCase().indexOf(binaryPrefix.toLowerCase()) is 0)
 		
 		# Attempt to autocomplete a chained dotted attribute: `one.two.three`.
 		if match = text.match /([\w\.]+)(?:\.(\w*))$/
 			[all, obj, accessorPrefix] = match
 			try
 				val = vm.runInThisContext obj
-				accessorCompletions = (el for own el,v of Object(val) when el.indexOf(accessorPrefix) is 0)
+				accessorCompletions = (el for own el,v of Object(val) when el.toLowerCase().indexOf(accessorPrefix.toLowerCase()) is 0)
 			catch error
 				accessorCompletions = []
 				accessorPrefix = null
@@ -513,7 +517,7 @@ class Shell
 			vars = vm.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
 			keywords = (r for r in coffee.RESERVED when r[..1] isnt '__')
 			possibilities = vars.concat keywords
-			varCompletions = (el for el in possibilities when el.indexOf(varPrefix) is 0)
+			varCompletions = (el for el in possibilities when el.toLowerCase().indexOf(varPrefix.toLowerCase()) is 0)
 		else varPrefix = null
 
 		# Combine the various types of completions
