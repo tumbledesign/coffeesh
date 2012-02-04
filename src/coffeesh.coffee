@@ -65,7 +65,7 @@ class Shell
 		@output = process.stdout		
 		@stderr = process.stderr
 		process.on 'uncaughtException', -> @error
-		@mousetrack = "\x1b[?1003h\x1b[?1005h"
+		@mousetrack = on:"\x1b[?1003h\x1b[?1005h", off:"\x1b[?1003l\x1b[?1005l"
 		
 	init: ->
 		# load history
@@ -88,7 +88,8 @@ class Shell
 		@_code = ''
 		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
-		process.on "SIGWINCH", => [@_columns, @_rows] = @output.getWindowSize()
+		process.on "SIGWINCH", => 
+			[@_columns, @_rows] = @output.getWindowSize()
 
 		# connect to tty
 		@resume()
@@ -98,13 +99,17 @@ class Shell
 
 	resume: ->
 		@input.setEncoding('utf8')
+
+		@_data_listener = (s) =>
+			if (s.indexOf("\u001b[M") is 0) then @write s
 			
-		@input.on("data", (s) => @write s)
+		@input.on("data", @_data_listener)
 		@input.on("keypress", (s, key) =>
 			@write s, key
 		).resume()
 		tty.setRawMode true
-		#console.log(@mousetrack)
+		@output.write @mousetrack.on
+		@output.moveCursor -@mousetrack.on.length
 		@_cursor.x = 0
 		@_line = ''
 		@_code = ''
@@ -118,7 +123,9 @@ class Shell
 		@_code = ''
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
-		@input.removeListener 'data', @mtrack
+		@input.removeListener 'data', @_data_listener
+		@output.write @mousetrack.off
+		@output.moveCursor -@mousetrack.off.length
 		@input.pause()
 		tty.setRawMode false
 		return 
@@ -126,6 +133,8 @@ class Shell
 	close: ->
 		@input.removeAllListeners 'keypress'
 		@input.removeAllListeners 'data'
+		@output.write @mousetrack.off
+		@output.moveCursor -@mousetrack.off.length
 		tty.setRawMode false
 		@input.destroy()
 		return
@@ -149,43 +158,46 @@ class Shell
 
 
 	write: (s, key) ->
-
-		# We need to handle mouse events, they are not provided by node's tty.js
-		if (s.length >= 5) and not key?
+		
+		#We need to handle mouse events, they are not provided by node's tty.js
+		if not key? and (s.indexOf("\u001b[M") is 0)
 			modifier = s.charCodeAt(3)
-			key = shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
+			key ?= shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
 			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
 			if ((modifier & 96) is 96)
-				key.name = if modifier & 1 then 'scrolldown' else 'scrollup'
-			else if modifier & 64 then key.name = 'mousemove'
+				key.name ?= if modifier & 1 then 'scrolldown' else 'scrollup'
+			else if modifier & 64 then key.name ?= 'mousemove'
 			else
 				switch (modifier & 3)
-					when 0 then key.name = 'mousedownL'
-					when 1 then key.name = 'mousedownM'
-					when 2 then key.name = 'mousedownR'
-					when 3 then key.name = 'mouseup'
-					else return
-		else
-			# enter
-			if s is '\r'
-				@_code += @_line
-				@numlines = @_code.split('\n').length-1
-				@_cursor.y = @numlines
-				@runline()
-				return
-				
-			# ctrl enter
-			else if s is '\n'
-				@insertString '\n'
-				@_code += @_line
-				@setPrompt @PROMPT_CONTINUATION
-				@prompt()
-				return
+					when 0 then key.name ?= 'mousedownL'
+					when 1 then key.name ?= 'mousedownM'
+					when 2 then key.name ?= 'mousedownR'
+					when 3 then key.name ?= 'mouseup'
+					#else return
+
+		key ?= {}
+
+		# enter
+		if s is '\r'
+			@_code += @_line
+			@numlines = @_code.split('\n').length-1
+			@_cursor.y = @numlines
+			@runline()
+			return
 			
-		keytoken = (if key.ctrl then "C^") + (if key.meta then "M^") + (if key.shift then "S^") + key.name
+		# ctrl enter
+		else if s is '\n'
+			@insertString '\n'
+			@_code += @_line
+			@setPrompt @PROMPT_CONTINUATION
+			@prompt()
+			return
+			
+		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
 
 		if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
 
+		
 		switch keytoken
 			
 		## Utility functions
@@ -364,6 +376,16 @@ class Shell
 						#@numlines = @_code.split('\n').length-1
 						#@_cursor.y = @numlines
 					#@_line = ''
+
+		## Mouse stuff
+			when 'mousedownL' then
+			when 'mousedownM' then
+			when 'mousedownR' then
+			when 'mouseup' then
+			when 'mousemove' then
+			when 'scrolldown' then
+			when 'scrollup' then
+
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
@@ -525,6 +547,7 @@ class Shell
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
 			@input.removeAllListeners 'keypress'
+			@input.removeListener 'data', @_data_listener
 			fiber.run()
 			@resume()
 		yield()
