@@ -5,7 +5,8 @@
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
 {Recode} = require './recode'
-[tty,vm,fs,colors] = [require('tty'), require('vm'), require('fs'), require('colors')]
+[vm,fs,colors] = [require('vm'), require('fs'), require('colors')]
+tty = require('tty')
 os = require 'os'
 require 'fibers'
 
@@ -39,6 +40,7 @@ root.echo = builtin.echo
 
 class Shell
 	constructor: ->
+		@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -58,7 +60,7 @@ class Shell
 		
 		# STDIO
 		@input = process.stdin
-		@output = process.stdout
+		@output = process.stdout		
 		@stderr = process.stderr
 		process.on 'uncaughtException', -> @error
 		
@@ -92,12 +94,36 @@ class Shell
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
 	resume: ->
-		@input.setEncoding('utf8')
+		@input.setEncoding('utf8')	
 		@input.on("keypress", (s, key) =>
 			@write(s, key)
+			#console.log s,key
+		).on('data', (s) =>
+			key = {}
+			return if (s.length < 5)
+			modifier = s.charCodeAt(3)
+			key.shift = !!(modifier & 4)
+			key.meta = !!(modifier & 8)
+			key.ctrl = !!(modifier & 16)
+			key.button = null
+			key.x = s.charCodeAt(4) - 33
+			key.y = s.charCodeAt(5) - 33
+			#console.log s.charCodeAt(0), s.charCodeAt(1), s.charCodeAt(2), s.charCodeAt(3), (s.charCodeAt(4) & 255), s.charCodeAt(5)
+			if ((modifier & 96) is 96)
+				key.name = 'scroll'
+				key.button = if modifier & 1 then 'down' else 'up'
+			else
+				key.name = if modifier & 64 then 'move' else 'click'
+				switch (modifier & 3)
+					when 0 then key.button = 'left'
+					when 1 then key.button = 'middle'
+					when 2 then key.button = 'right'
+					when 3 then key.button = 'none'
+					else return
+			#console.log key
 		).resume()
 		tty.setRawMode true
-		
+		console.log(@MOUSETRACK)
 		@cursor = 0
 		@line = ''
 		@code = ''
@@ -111,12 +137,14 @@ class Shell
 		@code = ''
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
+		@input.removeAllListeners 'data'
 		@input.pause()
 		tty.setRawMode false
 		return 
 
 	close: ->
 		@input.removeAllListeners 'keypress'
+		@input.removeAllListeners 'data'
 		tty.setRawMode false
 		@input.destroy()
 		return
@@ -145,6 +173,8 @@ class Shell
 		# enter
 		if s is '\r'
 			@code += @line
+			@numlines = @code.split('\n').length-1
+			@atline = @numlines
 			@runline()
 			return
 			
@@ -215,6 +245,8 @@ class Shell
 								@refreshLine()
 							if i < code.length - 1
 								@code += @line
+								@numlines = @code.split('\n').length-1
+								@atline = @numlines
 			when "delete", "C^d"
 				if @cursor < @line.length
 					@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
@@ -275,14 +307,28 @@ class Shell
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
 					@cursor += match[0].length
 					@refreshLine()
+			when "C^up"
+				@output.moveCursor 0, -1
+			when "C^down"
+				@output.moveCursor 0, 1
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				for i in [0...@code.split('\n').length-1]
-					
-					@output.clearLine 0
+				if keytoken in ['up', 'C^p'] and @atline > 0 and @atline <= @numlines and @numlines > 1
+					@atline--
+					@output.moveCursor 0, -1
+					return
+				else if keytoken in ['down', 'C^n'] and @atline < @numlines and @atline >= 0 and @numlines > 1
+					@atline++
+					@output.moveCursor 0, 1
+					return
+				
+				
+				for i in [0...@numlines]
 					@output.cursorTo 0
+					@output.clearLine 0
 					@output.moveCursor 0,-1
+					
 				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@historyIndex++
 				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
@@ -296,25 +342,29 @@ class Shell
 					@refreshLine()
 					return
 				else return
+
 				@line = @code = ''
 				code = @history[@historyIndex]
 				lns = code.split('\n')
+				@numlines = lns.length-1
+				@atline = @numlines
+				
 				for i in [0...lns.length]
 					@output.clearLine 0
 					@output.cursorTo 0
 					@cursor = lns[i].length
 					if i is 0
 						@setPrompt()
-						#@prompt()
 						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
 						@refreshLine()
 					else
 						@setPrompt @PROMPT_CONTINUATION
-						#@prompt()
 						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
 						@refreshLine()
 					if i < lns.length - 1
 						@code += @line
+						#@numlines = @code.split('\n').length-1
+						#@atline = @numlines
 					#@line = ''
 		## Directly output char to terminal
 			else
