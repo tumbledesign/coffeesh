@@ -66,7 +66,7 @@ class Shell
 		# load history
 		# TODO: make loading history async so no hang on big files
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
-		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split('\n').reverse()
+		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
 		@historyIndex = -1
 		
@@ -152,11 +152,6 @@ class Shell
 		else if s is '\n'
 			@insertString '\n'
 			@code += @line
-			
-			@history.unshift @code
-			@history.pop() if @history.length > @HISTORY_SIZE
-			fs.write @history_fd, @code
-			
 			@setPrompt @PROMPT_CONTINUATION
 			@prompt()
 			return
@@ -196,6 +191,30 @@ class Shell
 					@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)
 					@cursor--
 					@refreshLine()
+				else
+					if @code.length > 0
+						code = @code.split('\n')
+						code.pop()
+						code.unshift()
+						#@code = code.join('\n')
+						@code = @line = ''
+						for i in [0...code.length]
+							@output.clearLine 0
+							@output.cursorTo 0
+							@output.moveCursor 0,-1
+							@output.clearLine 0
+							@output.cursorTo 0
+							@cursor = code[i].length
+							if i is 0
+								@setPrompt()
+								@line = code[i] + (if i < code.length-1 then '\n' else '')
+								@refreshLine()
+							else
+								@setPrompt @PROMPT_CONTINUATION
+								@line = code[i] + (if i < code.length-1 then '\n' else '')
+								@refreshLine()
+							if i < code.length - 1
+								@code += @line
 			when "delete", "C^d"
 				if @cursor < @line.length
 					@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
@@ -258,59 +277,45 @@ class Shell
 					@refreshLine()
 
 		## History
-
-			when "down", "C^n"
-				if @historyIndex > 0
+			when "up", "C^p", "down", "C^n"
+				for i in [0...@code.split('\n').length-1]
+					
+					@output.clearLine 0
+					@output.cursorTo 0
+					@output.moveCursor 0,-1
+				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
+					@historyIndex++
+				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
 					@historyIndex--
-					@line = @history[@historyIndex]
-					@cursor = @line.length
-					@refreshLine()
 				else if @historyIndex is 0
 					@historyIndex = -1
 					@cursor = 0
 					@line = ""
+					@code = ""
+					@setPrompt()
 					@refreshLine()
-			when "up", "C^p"
-				if @historyIndex + 1 < @history.length
-					@historyIndex++
-					@code = @history[@historyIndex]
-					lns = @code.split('\n')
-					for i in [0...lns.length]
-						#console.log i,l
-						@output.clearLine 0
-						@output.cursorTo 0
-						@cursor = lns[i].length
-						if i is 0
-							@setPrompt()
-							#@prompt()
-							@line = lns[i] + (if i < lns.length-1 then '\n' else '')
-							@refreshLine()
-						else
-							@setPrompt @PROMPT_CONTINUATION
-							#@prompt()
-							@line = lns[i] + (if i < lns.length-1 then '\n' else '')
-							@refreshLine()
-						@line = ''
-						#@output.cursorTo @_prompt.stripColors.length + @cursor
-						#if i in [0, 1, lns.length-2]
-#							@setPrompt()
-#						else
-#							#@output.write '\n'
-#							@setPrompt @PROMPT_CONTINUATION
-#						
-#						@cursor = l.length
-#						@output.cursorTo 0
-#						@output.write @_prompt
-#						@output.write l
-#						
-#						
-#						@output.cursorTo @_prompt.stripColors.length + @cursor
-#						@output.write '\r\n' if i in [0..lns.length-1]
-#						@output.clearLine 1
-#						
-						
-					#@setPrompt()
-					#@prompt()
+					return
+				else return
+				@line = @code = ''
+				code = @history[@historyIndex]
+				lns = code.split('\n')
+				for i in [0...lns.length]
+					@output.clearLine 0
+					@output.cursorTo 0
+					@cursor = lns[i].length
+					if i is 0
+						@setPrompt()
+						#@prompt()
+						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@refreshLine()
+					else
+						@setPrompt @PROMPT_CONTINUATION
+						#@prompt()
+						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@refreshLine()
+					if i < lns.length - 1
+						@code += @line
+					#@line = ''
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
@@ -445,7 +450,7 @@ class Shell
 
 		@history.unshift @code
 		@history.pop() if @history.length > @HISTORY_SIZE
-		fs.write @history_fd, @code
+		fs.write @history_fd, @code+"\r\n"
 		
 		code = Recode @code
 		@code = ''
