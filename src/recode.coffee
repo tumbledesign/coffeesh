@@ -10,11 +10,15 @@ COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', '
 
 exports.Recode = (code) ->
 	exectmp = ''
+	indented = 0
 	tokens = (new Lexer).tokenize code, {rewrite: on}
 	output = []
 	for i in [0...tokens.length]
 		[lex,val] = tokens[i]
 		echo tokens[i]
+		if tokens[i-1]?[0] in ['TERMINATOR', 'INDENT', 'OUTDENT']
+			output.push('\t') for t in [0...indented] 
+		
 		switch lex
 			when 'BUILTIN'
 				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
@@ -22,27 +26,41 @@ exports.Recode = (code) ->
 				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ')'] then '' else ','}"
 			when 'BINARIES', 'FILEPATH'
 				exectmp += val
-				if tokens[i+1]?[0] is 'TERMINATOR'
+				if tokens[i+1]?[0] in ['TERMINATOR', 'OUTDENT', 'CALL_END']
 					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
 					exectmp = ''
 				else exectmp += " "
-			when 'ARG'
+			when 'ARG', 'PIPE'
 				exectmp += val
 				if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ")"]
 					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
 					exectmp = ''
 				else exectmp += " "
-			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
-					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
-					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
-					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'EXTENDS'
-				output.push "#{val}#{if tokens[i].spaced? then ' ' else ''}"
+			when 'CALL_START', 'CALL_END'
+				if tokens[i-1][0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE']
+					output.push val
+			#			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
+			#					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
+			#					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
+			#					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'EXTENDS'
+			#				output.push val
 			#when 'IDENTIFIER'
 			#	output.push val
 			when 'TERMINATOR'
-				output.push "\n"
+				output.push ""
 			when 'INDENT'
-				output.push "then " if tokens[i].fromThen
+				if tokens[i].fromThen
+					output.push "then " 
+				indented += tokens[i][1]
+			when 'OUTDENT'
+				indented -= tokens[i][1]
+			else 
+				output.push val
+		
+		if tokens[i+1]?[0] not in ['CALL_START'] and tokens[i].spaced?
+			output.push ' '
+		if tokens[i].newLine?
+			output.push '\n' 
 	(output.join(''))
 
 
@@ -99,20 +117,34 @@ class Lexer
 		///
 		NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--', '(']
 		NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'STRING', 'IDENTIFIER'
-		#SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
+		
 		prev = last @tokens
 		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_FILEPATH))
 		if @chunk in ['.', '..']
-			@token 'FILEPATH', @makeString @chunk, '"', no
+			if prev and prev[0] in ['BINARIES', 'FILEPATH', 'ARG', 'IDENTIFIER']
+				@token 'ARG', @chunk
+			else if prev and prev[0] in ['BUILTIN']
+				@token 'PARAM', @makeString @chunk, '"', no
+			else
+				@token 'FILEPATH', @makeString @chunk, '"', no
 			return @chunk.length
 		return 0 unless match = FILEPATH.exec @chunk
 		[filepath] = match
+		
+		if prev and prev[1] in ['|', '<', '>', '<<', '>>', '&']
+			@tokens.pop()
+			@token 'PIPE', prev[1]
+			@token 'ARG', filepath
+			return filepath.length
+		
 		if prev and prev[0] in ['BINARIES', 'FILEPATH', 'ARG', 'IDENTIFIER']
 			@token 'ARG', filepath
 			return filepath.length
+		
 		if prev and prev[0] in ['BUILTIN']
 			@token 'PARAM', @makeString filepath, '"', no
 			return filepath.length
+		
 		@token 'FILEPATH', @makeString filepath, '"', no
 		(filepath.length)
 
@@ -121,6 +153,7 @@ class Lexer
 			( [$A-Za-z_\x7f-\uffff][$=\w\x7f-\uffff]* )
 			( [^\n\S]* : (?!:) )?  # Is this a property name?
 		///
+		#SHELL_CONTROL = ['&', '|', '<', '>', '<<', '>>', '*', '~', '!', '-', '--', '/', '%', '+', '.', '$', '`', '\'', '"' ]
 		RELATION = ['IN', 'OF', 'INSTANCEOF']
 		LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
 		UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
@@ -132,31 +165,50 @@ class Lexer
 			arg = id
 			@token 'ARG', arg
 			return id.length
+			
 		if prev?[0] in ['BUILTIN', 'PARAM']
 			@token 'PARAM', @makeString id, '"', no
 			return id.length
+		
 		if prev?[0] in ['-', '--', '+'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = prev[0]+id
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
+		
+		if prev?[1] in ['|', '<', '>', '<<', '>>', '&'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
+			@tokens.pop()
+			@token 'PIPE', prev[1]
+			@token 'ARG', id
+			return id.length
+		
 		if prev?[0] in ['.'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @tokens[@tokens.length-2][1]+prev[0]+id
 			@tokens.pop()
 			@tokens.pop()
 			@token 'ARG', arg
 			return id.length
+		
 		if prev?[0] not in ['.'] and builtin.hasOwnProperty id
 			cmd = "builtin.#{id}"
 			@token 'BUILTIN', cmd
 			return id.length
+			
 		if prev?[0] not in ['.', '\\', '='] and aliases.hasOwnProperty id
 			alias = (aliases[id].split(' '))[0]
 			if binaries.hasOwnProperty alias
+				if prev?[1] in ['|', '<', '>', '<<', '>>', '&']
+					@tokens.pop()
+					@token 'PIPE', prev[1]
 				cmd = "#{binaries[alias]}/#{aliases[id]}"
 				@token 'BINARIES', cmd
 				return id.length
+				
 		if prev?[0] not in ['.', '\\', '='] and binaries.hasOwnProperty id
+			if prev?[1] in ['|', '<', '>', '<<', '>>', '&']
+				@tokens.pop()
+				@token 'PIPE', prev[1]
+
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length

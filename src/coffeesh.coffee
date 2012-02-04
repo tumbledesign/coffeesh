@@ -100,6 +100,8 @@ class Shell
 
 		# connect to tty
 		@resume()
+		@_prompt = @PROMPT()
+		@refreshLine()
 
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
@@ -120,8 +122,6 @@ class Shell
 		@_prompt = @_line = @_code = ''
 		@_lines = []
 		@_numlines = @_consecutive_tabs = 0
-		@_prompt = @PROMPT()
-		@refreshLine()
 		return
 
 	pause: ->
@@ -192,6 +192,7 @@ class Shell
 			@_lines = @_code.split('\n')
 			@_numlines = @_lines.length-1
 			@_cursor.y = @_numlines
+			@_line = ''
 			@_prompt =  @PROMPT_CONTINUATION()
 			@refreshLine()
 			return
@@ -574,7 +575,6 @@ class Shell
 	
 	run: (cmd) ->
 		fiber = Fiber.current
-		#@pause()
 		@historyIndex = -1
 		@_cursor = x:0, y:0
 		@_prompt = @_line = @_code = ''
@@ -584,23 +584,20 @@ class Shell
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
 		proc.stdout.on 'data', (data) =>
-			#console.log data.toString()
 			lastcmd = data.toString().trim()
 		proc.stderr.on 'data', (data) =>
 			console.log data.toString()		
 		proc.on 'exit', (exitcode, signal) =>
-			#@input.removeAllListeners 'keypress'
-			#@input.removeListener 'data', @_data_listener
-			#@output.write(@MOUSEUNTRACK)
 			fiber.run()
-			#@resume()
 		yield()
 		return lastcmd
 		
 	execute: (cmd) ->
 		fiber = Fiber.current
 		@pause()
-		console.log("···")
+		@output.clearLine 0
+		@output.cursorTo 0
+		@output.write("···\n")
 		cmdargs = ["-ic", "#{cmd}"]
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
