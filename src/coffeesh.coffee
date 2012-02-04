@@ -80,12 +80,17 @@ class Shell
 				@winSize = @output.getWindowSize()
 				@columns = @winSize[0]
 
-		@consecutive_tabs = 0
-
 		# command aliases
 		for alias,val of @ALIASES when not builtin[alias]? and binaries[val.split(' ')[0]]?
 			builtin[alias] = (params...) -> 
 				shl.execute binaries[val.split(' ')[0]] + '/' + val + " " + params.join(" ")
+
+		# internal variables
+		@_cursor = x:0, y:0
+		@_prompt = ''
+		@_line = ''
+		@_code = ''
+		@_consecutive_tabs = 0
 
 		# connect to tty
 		@resume()
@@ -126,17 +131,17 @@ class Shell
 		).resume()
 		tty.setRawMode true
 		#console.log(@MOUSETRACK)
-		@cursor = 0
-		@line = ''
-		@code = ''
+		@_cursor.x = 0
+		@_line = ''
+		@_code = ''
 		@setPrompt()
 		@prompt()
 		return
 
 	pause: ->
-		@cursor = 0
-		@line = ''
-		@code = ''
+		@_cursor.x = 0
+		@_line = ''
+		@_code = ''
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @mtrack
@@ -156,17 +161,17 @@ class Shell
 		@_prompt = p()
 			
 	prompt: ->
-		@line = ""
+		@_line = ""
 		@historyIndex = -1
-		@cursor = 0 
+		@_cursor.x = 0 
 		@refreshLine()
 
 	refreshLine: ->
 		@output.cursorTo 0
 		@output.write @_prompt
-		@output.write @line
+		@output.write @_line
 		@output.clearLine 1
-		@output.cursorTo @_prompt.stripColors.length + @cursor
+		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 
 
 	write: (s, key) ->
@@ -174,22 +179,24 @@ class Shell
 		
 		# enter
 		if s is '\r'
-			@code += @line
-			@numlines = @code.split('\n').length-1
-			@atline = @numlines
+			@_code += @_line
+			@numlines = @_code.split('\n').length-1
+			@_cursor.y = @numlines
 			@runline()
 			return
 			
 		# ctrl enter
 		else if s is '\n'
 			@insertString '\n'
-			@code += @line
+			@_code += @_line
 			@setPrompt @PROMPT_CONTINUATION
 			@prompt()
 			return
 			
 		keytoken = (if key.ctrl then "C^" else "") + (if key.meta then "M^" else "") + (if key.shift then "S^" else "") + key.name
-		if keytoken is "tab" then @consecutive_tabs++ else @consecutive_tabs = 0
+
+		if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
+
 		switch keytoken
 			
 		## Utility functions
@@ -205,109 +212,109 @@ class Shell
 
 			# Logout
 			when "C^d"
-				@close() if @cursor is 0 and @line.length is 0
+				@close() if @_cursor.x is 0 and @_line.length is 0
 
 			when "tab" then @tabComplete()
 			#when "enter" then @runline()
 
 			# Clear line
 			when "C^u"
-				@cursor = 0
-				@line = ""
+				@_cursor.x = 0
+				@_line = ""
 				@refreshLine()
 
 		## Deletions
 
 			when "backspace", "C^h"
-				if @cursor > 0 and @line.length > 0
-					@line = @line.slice(0, @cursor - 1) + @line.slice(@cursor, @line.length)
-					@cursor--
+				if @_cursor.x > 0 and @_line.length > 0
+					@_line = @_line.slice(0, @_cursor.x - 1) + @_line.slice(@_cursor.x, @_line.length)
+					@_cursor.x--
 					@refreshLine()
 				else
-					if @code.length > 0
-						code = @code.split('\n')
+					if @_code.length > 0
+						code = @_code.split('\n')
 						code.pop()
 						code.unshift()
-						#@code = code.join('\n')
-						@code = @line = ''
+						#@_code = code.join('\n')
+						@_code = @_line = ''
 						for i in [0...code.length]
 							@output.clearLine 0
 							@output.cursorTo 0
 							@output.moveCursor 0,-1
 							@output.clearLine 0
 							@output.cursorTo 0
-							@cursor = code[i].length
+							@_cursor.x = code[i].length
 							if i is 0
 								@setPrompt()
-								@line = code[i] + (if i < code.length-1 then '\n' else '')
+								@_line = code[i] + (if i < code.length-1 then '\n' else '')
 								@refreshLine()
 							else
 								@setPrompt @PROMPT_CONTINUATION
-								@line = code[i] + (if i < code.length-1 then '\n' else '')
+								@_line = code[i] + (if i < code.length-1 then '\n' else '')
 								@refreshLine()
 							if i < code.length - 1
-								@code += @line
-								@numlines = @code.split('\n').length-1
-								@atline = @numlines
+								@_code += @_line
+								@numlines = @_code.split('\n').length-1
+								@_cursor.y = @numlines
 			when "delete", "C^d"
-				if @cursor < @line.length
-					@line = @line.slice(0, @cursor) + @line.slice(@cursor + 1, @line.length)
+				if @_cursor.x < @_line.length
+					@_line = @_line.slice(0, @_cursor.x) + @_line.slice(@_cursor.x + 1, @_line.length)
 					@refreshLine()
 			# Word left
 			when "C^w", "C^backspace", "M^backspace"
-				if @cursor > 0
-					leading = @line.slice(0, @cursor)
+				if @_cursor.x > 0
+					leading = @_line.slice(0, @_cursor.x)
 					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
 					leading = leading.slice(0, leading.length - match[0].length)
-					@line = leading + @line.slice(@cursor, @line.length)
-					@cursor = leading.length
+					@_line = leading + @_line.slice(@_cursor.x, @_line.length)
+					@_cursor.x = leading.length
 					@refreshLine()
 			# Word right
 			when "C^delete", "M^d", "M^delete"
-				if @cursor < @line.length
-					trailing = @line.slice(@cursor)
+				if @_cursor.x < @_line.length
+					trailing = @_line.slice(@_cursor.x)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-					@line = @line.slice(0, @cursor) + trailing.slice(match[0].length)
+					@_line = @_line.slice(0, @_cursor.x) + trailing.slice(match[0].length)
 					@refreshLine()
 			# Line right
 			when "C^k", "C^S^delete"
-				@line = @line.slice(0, @cursor)
+				@_line = @_line.slice(0, @_cursor.x)
 				@refreshLine()
 			# Line left
 			when "C^S^backspace"
-				@line = @line.slice(@cursor)
-				@cursor = 0
+				@_line = @_line.slice(@_cursor.x)
+				@_cursor.x = 0
 				@refreshLine()
 
 		## Cursor Movements
 
 			when "home", "C^a"
-				@cursor = 0
+				@_cursor.x = 0
 				@refreshLine()
 			when "end", "C^e"
-				@cursor = @line.length
+				@_cursor.x = @_line.length
 				@refreshLine()
 			when "left", "C^b"
-				if @cursor > 0
-					@cursor--
+				if @_cursor.x > 0
+					@_cursor.x--
 					@output.moveCursor -1, 0
 			when "right", "C^f"
-				unless @cursor is @line.length
-					@cursor++
+				unless @_cursor.x is @_line.length
+					@_cursor.x++
 					@output.moveCursor 1, 0
 			# Word left
 			when "C^left", "M^b"
-				if @cursor > 0
-					leading = @line.slice(0, @cursor)
+				if @_cursor.x > 0
+					leading = @_line.slice(0, @_cursor.x)
 					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-					@cursor -= match[0].length
+					@_cursor.x -= match[0].length
 					@refreshLine()
 			# Word right
 			when "C^right", "M^f"
-				if @cursor < @line.length
-					trailing = @line.slice(@cursor)
+				if @_cursor.x < @_line.length
+					trailing = @_line.slice(@_cursor.x)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-					@cursor += match[0].length
+					@_cursor.x += match[0].length
 					@refreshLine()
 			when "C^up"
 				@output.moveCursor 0, -1
@@ -316,12 +323,12 @@ class Shell
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				if keytoken in ['up', 'C^p'] and @atline > 0 and @atline <= @numlines and @numlines > 1
-					@atline--
+				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @numlines and @numlines > 1
+					@_cursor.y--
 					@output.moveCursor 0, -1
 					return
-				else if keytoken in ['down', 'C^n'] and @atline < @numlines and @atline >= 0 and @numlines > 1
-					@atline++
+				else if keytoken in ['down', 'C^n'] and @_cursor.y < @numlines and @_cursor.y >= 0 and @numlines > 1
+					@_cursor.y++
 					@output.moveCursor 0, 1
 					return
 				
@@ -337,37 +344,37 @@ class Shell
 					@historyIndex--
 				else if @historyIndex is 0
 					@historyIndex = -1
-					@cursor = 0
-					@line = ""
-					@code = ""
+					@_cursor.x = 0
+					@_line = ""
+					@_code = ""
 					@setPrompt()
 					@refreshLine()
 					return
 				else return
 
-				@line = @code = ''
+				@_line = @_code = ''
 				code = @history[@historyIndex]
 				lns = code.split('\n')
 				@numlines = lns.length-1
-				@atline = @numlines
+				@_cursor.y = @numlines
 				
 				for i in [0...lns.length]
 					@output.clearLine 0
 					@output.cursorTo 0
-					@cursor = lns[i].length
+					@_cursor.x = lns[i].length
 					if i is 0
 						@setPrompt()
-						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@_line = lns[i] + (if i < lns.length-1 then '\n' else '')
 						@refreshLine()
 					else
 						@setPrompt @PROMPT_CONTINUATION
-						@line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@_line = lns[i] + (if i < lns.length-1 then '\n' else '')
 						@refreshLine()
 					if i < lns.length - 1
-						@code += @line
-						#@numlines = @code.split('\n').length-1
-						#@atline = @numlines
-					#@line = ''
+						@_code += @_line
+						#@numlines = @_code.split('\n').length-1
+						#@_cursor.y = @numlines
+					#@_line = ''
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
@@ -378,19 +385,19 @@ class Shell
 						@insertString lines[i]
 
 	insertString: (c) ->
-		if @cursor < @line.length
-			beg = @line.slice(0, @cursor)
-			end = @line.slice(@cursor, @line.length)
-			@line = beg + c + end
-			@cursor += c.length
+		if @_cursor.x < @_line.length
+			beg = @_line.slice(0, @_cursor.x)
+			end = @_line.slice(@_cursor.x, @_line.length)
+			@_line = beg + c + end
+			@_cursor.x += c.length
 			@refreshLine()
 		else
-			@line += c
-			@cursor += c.length
+			@_line += c
+			@_cursor.x += c.length
 			@output.write c
 
 	tabComplete: ->
-		@autocomplete( @line.slice(0, @cursor).split(' ').pop(), ( (completions, completeOn) =>
+		@autocomplete( @_line.slice(0, @_cursor.x).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
 					@insertString completions[0].slice(completeOn.length)
@@ -495,17 +502,17 @@ class Shell
 	
 	runline: ->
 		@output.write "\r\n"
-		if !@code.toString().trim()
+		if !@_code.toString().trim()
 			@setPrompt()
 			@prompt()
 			return
 
-		@history.unshift @code
+		@history.unshift @_code
 		@history.pop() if @history.length > @HISTORY_SIZE
-		fs.write @history_fd, @code+"\r\n"
+		fs.write @history_fd, @_code+"\r\n"
 		
-		code = Recode @code
-		@code = ''
+		code = Recode @_code
+		@_code = ''
 		echo "Recoded: #{code}"
 		try
 			Fiber(=>
