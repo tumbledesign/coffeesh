@@ -72,14 +72,6 @@ class Shell
 		@history.shift()
 		@historyIndex = -1
 		
-		# window size
-		@winSize = @output.getWindowSize()
-		@columns = @winSize[0]
-		if process.listeners("SIGWINCH").length is 0
-			process.on "SIGWINCH", =>
-				@winSize = @output.getWindowSize()
-				@columns = @winSize[0]
-
 		# command aliases
 		for alias,val of @ALIASES when not builtin[alias]? and binaries[val.split(' ')[0]]?
 			builtin[alias] = (params...) -> 
@@ -91,6 +83,8 @@ class Shell
 		@_line = ''
 		@_code = ''
 		@_consecutive_tabs = 0
+		[@_columns, @_rows] = @output.getWindowSize()
+		process.on "SIGWINCH", => [@_columns, @_rows] = @output.getWindowSize()
 
 		# connect to tty
 		@resume()
@@ -408,7 +402,7 @@ class Shell
 						(if a.length > b.length then a else b)
 					).length + 2
 					
-					maxColumns = Math.floor(@columns / width) or 1
+					maxColumns = Math.floor(@_columns / width) or 1
 					rows = Math.ceil(completions.length / maxColumns)
 
 					completions.sort()
