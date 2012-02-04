@@ -17,10 +17,19 @@ for pathname in (process.env.PATH.split ':')
 		binaries[file] = pathname for file in fs.readdirSync(pathname)
 
 builtin = 
-	pwd: -> 
-		process.cwd.apply(this,arguments)
-	cd: -> 
-		process.chdir.apply(this,arguments)
+	cd: (to) -> 
+		if to.indexOf('~') is 0
+			to = shl.home + to.substr(1)
+		newcwd = shl.cwd
+		if newcwd.indexOf('~') is 0
+			newcwd = shl.home + newcwd.substr(1)
+			
+		newcwd = path.resolve newcwd, to
+		return if not path.existsSync(newcwd)?
+		process.chdir newcwd
+		process.env.PWD = newcwd
+		if newcwd.indexOf(shl.home) is 0
+			shl.cwd =	'~'+newcwd.substr(shl.home.length)
 		shl.setPrompt()
 		shl.prompt()
 	echo: (vals...) ->
@@ -41,16 +50,13 @@ root.echo = builtin.echo
 class Shell
 	constructor: ->
 		@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
+		@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		@PROMPT_CONTINUATION = =>
-			('......> '.green)
-		@PROMPT = =>
-			user = process.env.USER
-			cwd = process.cwd()
-			user.white + "@#{@HOSTNAME}".white.bold + (if user is "root" then "➜ ".red else "➜ ".blue) + (path.basename(cwd) or "/").cyan.bold + " "
+		@PROMPT_CONTINUATION = => ('......> '.green)
+		@PROMPT = => ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ")
 		@ALIASES = 
 			ls: 'ls --color=auto'
 			l: 'ls -latr --color=auto'
@@ -62,9 +68,15 @@ class Shell
 		@input = process.stdin
 		@output = process.stdout		
 		@stderr = process.stderr
+		@cwd = process.cwd()
+		@user = process.env.USER
+		@home = process.env.HOME
+			
 		process.on 'uncaughtException', -> @error
 		
 	init: ->
+		@numlines = @atline = 0
+	
 		# load history
 		# TODO: make loading history async so no hang on big files
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
@@ -88,7 +100,7 @@ class Shell
 				shl.execute binaries[val.split(' ')[0]] + '/' + val + " " + params.join(" ")
 
 		# connect to tty
-		@resume()
+		@resume()		
 
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
@@ -96,15 +108,15 @@ class Shell
 	resume: ->
 		@input.setEncoding('utf8')
 		@mtrack = (s) =>
-			key = {}
 			return if (s.length < 5)
 			modifier = s.charCodeAt(3)
-			key.shift = !!(modifier & 4)
-			key.meta = !!(modifier & 8)
-			key.ctrl = !!(modifier & 16)
-			key.button = null
-			key.x = s.charCodeAt(4) - 33
-			key.y = s.charCodeAt(5) - 33
+			key =
+				shift: !!(modifier & 4)
+				meta: !!(modifier & 8)
+				ctrl: !!(modifier & 16)
+				button: null
+				x: s.charCodeAt(4) - 33
+				y: s.charCodeAt(5) - 33
 			#console.log s.charCodeAt(0), s.charCodeAt(1), s.charCodeAt(2), s.charCodeAt(3), (s.charCodeAt(4) & 255), s.charCodeAt(5)
 			if ((modifier & 96) is 96)
 				key.name = 'scroll'
@@ -117,15 +129,13 @@ class Shell
 					when 2 then key.button = 'right'
 					when 3 then key.button = 'none'
 					else return
-			#console.log key
+			@write('', key)
 			
 		@input.on('data', @mtrack)
-		@input.on("keypress", (s, key) =>
-			@write(s, key)
-			#console.log s,key
-		).resume()
+		@input.on("keypress", (s, key) => @write(s, key)).resume()
 		tty.setRawMode true
-		#console.log(@MOUSETRACK)
+		@output.write(@MOUSETRACK)
+		
 		@cursor = 0
 		@line = ''
 		@code = ''
@@ -140,6 +150,7 @@ class Shell
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @mtrack
+		console.log(@MOUSEUNTRACK)
 		@input.pause()
 		tty.setRawMode false
 		return 
@@ -147,6 +158,7 @@ class Shell
 	close: ->
 		@input.removeAllListeners 'keypress'
 		@input.removeAllListeners 'data'
+		console.log(@MOUSEUNTRACK)
 		tty.setRawMode false
 		@input.destroy()
 		return
@@ -184,6 +196,8 @@ class Shell
 		else if s is '\n'
 			@insertString '\n'
 			@code += @line
+			@numlines = @code.split('\n').length-1
+			@atline = @numlines
 			@setPrompt @PROMPT_CONTINUATION
 			@prompt()
 			return
@@ -309,22 +323,18 @@ class Shell
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
 					@cursor += match[0].length
 					@refreshLine()
-			when "C^up"
-				@output.moveCursor 0, -1
-			when "C^down"
-				@output.moveCursor 0, 1
+
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				if keytoken in ['up', 'C^p'] and @atline > 0 and @atline <= @numlines and @numlines > 1
+				if keytoken in ['up', 'C^p'] and @atline > 0 and @atline <= @numlines and @numlines > 0
 					@atline--
 					@output.moveCursor 0, -1
 					return
-				else if keytoken in ['down', 'C^n'] and @atline < @numlines and @atline >= 0 and @numlines > 1
+				else if keytoken in ['down', 'C^n'] and @atline < @numlines and @atline >= 0 and @numlines > 0
 					@atline++
 					@output.moveCursor 0, 1
 					return
-				
 				
 				for i in [0...@numlines]
 					@output.cursorTo 0
@@ -524,17 +534,42 @@ class Shell
 	
 	execute: (cmd) ->
 		fiber = Fiber.current
+		#@pause()
+		lastcmd = ''
+		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
+		proc.stdout.on 'data', (data) =>
+			#console.log data.toString()
+			lastcmd = data.toString().trim()
+		proc.stderr.on 'data', (data) =>
+			console.log data.toString()		
+		proc.on 'exit', (exitcode, signal) =>
+			#@input.removeAllListeners 'keypress'
+			#@input.removeListener 'data', @mtrack
+			#@output.write(@MOUSEUNTRACK)
+			fiber.run()
+			#@resume()
+		yield()
+		return lastcmd
+		
+	interactive: (cmd) ->
+		fiber = Fiber.current
 		@pause()
 		cmdargs = ["-ic", "#{cmd}"]
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
 			@input.removeAllListeners 'keypress'
+			@input.removeListener 'data', @mtrack
+			@output.write(@MOUSEUNTRACK)
 			fiber.run()
 			@resume()
 		yield()
 		return
 
 
+
 extend((root.shl = new Shell()), require("./coffeeshrc"))
 extend(root.shl.ALIASES, require('./coffeesh_aliases'))
 root.shl.init()
+#root.shl.cwd = shl.execute("/bin/pwd -L")
+#if root.shl.cwd.indexOf(root.shl.home) is 0
+#	root.shl.cwd =	'~'+root.shl.cwd.substr(root.shl.home.length)
