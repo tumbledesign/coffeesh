@@ -94,11 +94,8 @@ class Shell
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
 	resume: ->
-		@input.setEncoding('utf8')	
-		@input.on("keypress", (s, key) =>
-			@write(s, key)
-			#console.log s,key
-		).on('data', (s) =>
+		@input.setEncoding('utf8')
+		@mtrack = (s) =>
 			key = {}
 			return if (s.length < 5)
 			modifier = s.charCodeAt(3)
@@ -121,9 +118,14 @@ class Shell
 					when 3 then key.button = 'none'
 					else return
 			#console.log key
+			
+		@input.on('data', @mtrack)
+		@input.on("keypress", (s, key) =>
+			@write(s, key)
+			#console.log s,key
 		).resume()
 		tty.setRawMode true
-		console.log(@MOUSETRACK)
+		#console.log(@MOUSETRACK)
 		@cursor = 0
 		@line = ''
 		@code = ''
@@ -137,7 +139,7 @@ class Shell
 		@code = ''
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
-		@input.removeAllListeners 'data'
+		@input.removeListener 'data', @mtrack
 		@input.pause()
 		tty.setRawMode false
 		return 
