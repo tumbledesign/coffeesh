@@ -52,7 +52,7 @@ class Shell
 		@_mouse = x:0, y:0
 		@_prompt = ''
 		@_lines = []
- 		@_completions = []
+		@_completions = []
 		@_lines[@_cursor.y] = ''
 		
 		@_consecutive_tabs = 0
