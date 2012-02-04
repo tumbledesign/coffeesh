@@ -569,12 +569,14 @@ class Shell
 					global._ = _
 				else
 					echo returnValue
+				@setPrompt()
+				@prompt()
 			).run()
 		catch err
 			@error err
 
-		@setPrompt()
-		@prompt()
+		#@setPrompt()
+		#@prompt()
 	
 	run: (cmd) ->
 		fiber = Fiber.current
