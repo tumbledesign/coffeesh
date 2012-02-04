@@ -1,4 +1,8 @@
-# Coffeescript Shell
+#
+## Coffeescript Shell
+#
+
+# Load Dependencies
 {helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
 {inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
 {EventEmitter} = require('events')
@@ -12,9 +16,8 @@ require 'fibers'
 
 #Load binaries and built-in shell commands
 binaries = {}
-for pathname in (process.env.PATH.split ':')
-	if path.existsSync(pathname) 
-		binaries[file] = pathname for file in fs.readdirSync(pathname)
+for pathname in (process.env.PATH.split ':') when path.existsSync(pathname) 
+	binaries[file] = pathname for file in fs.readdirSync(pathname)
 
 builtin = 
 	pwd: -> 
@@ -40,7 +43,6 @@ root.echo = builtin.echo
 
 class Shell
 	constructor: ->
-		@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -63,6 +65,7 @@ class Shell
 		@output = process.stdout		
 		@stderr = process.stderr
 		process.on 'uncaughtException', -> @error
+		@mousetrack = "\x1b[?1003h\x1b[?1005h"
 		
 	init: ->
 		# load history
@@ -79,6 +82,7 @@ class Shell
 
 		# internal variables
 		@_cursor = x:0, y:0
+		@_mouse = x:0, y:0
 		@_prompt = ''
 		@_line = ''
 		@_code = ''
@@ -94,37 +98,13 @@ class Shell
 
 	resume: ->
 		@input.setEncoding('utf8')
-		@mtrack = (s) =>
-			key = {}
-			return if (s.length < 5)
-			modifier = s.charCodeAt(3)
-			key.shift = !!(modifier & 4)
-			key.meta = !!(modifier & 8)
-			key.ctrl = !!(modifier & 16)
-			key.button = null
-			key.x = s.charCodeAt(4) - 33
-			key.y = s.charCodeAt(5) - 33
-			#console.log s.charCodeAt(0), s.charCodeAt(1), s.charCodeAt(2), s.charCodeAt(3), (s.charCodeAt(4) & 255), s.charCodeAt(5)
-			if ((modifier & 96) is 96)
-				key.name = 'scroll'
-				key.button = if modifier & 1 then 'down' else 'up'
-			else
-				key.name = if modifier & 64 then 'move' else 'click'
-				switch (modifier & 3)
-					when 0 then key.button = 'left'
-					when 1 then key.button = 'middle'
-					when 2 then key.button = 'right'
-					when 3 then key.button = 'none'
-					else return
-			#console.log key
 			
-		@input.on('data', @mtrack)
+		@input.on("data", (s) => @write s)
 		@input.on("keypress", (s, key) =>
-			@write(s, key)
-			#console.log s,key
+			@write s, key
 		).resume()
 		tty.setRawMode true
-		#console.log(@MOUSETRACK)
+		#console.log(@mousetrack)
 		@_cursor.x = 0
 		@_line = ''
 		@_code = ''
@@ -169,25 +149,40 @@ class Shell
 
 
 	write: (s, key) ->
-		key ?= {}
-		
-		# enter
-		if s is '\r'
-			@_code += @_line
-			@numlines = @_code.split('\n').length-1
-			@_cursor.y = @numlines
-			@runline()
-			return
+
+		# We need to handle mouse events, they are not provided by node's tty.js
+		if (s.length >= 5) and not key?
+			modifier = s.charCodeAt(3)
+			key = shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
+			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
+			if ((modifier & 96) is 96)
+				key.name = if modifier & 1 then 'scrolldown' else 'scrollup'
+			else if modifier & 64 then key.name = 'mousemove'
+			else
+				switch (modifier & 3)
+					when 0 then key.name = 'mousedownL'
+					when 1 then key.name = 'mousedownM'
+					when 2 then key.name = 'mousedownR'
+					when 3 then key.name = 'mouseup'
+					else return
+		else
+			# enter
+			if s is '\r'
+				@_code += @_line
+				@numlines = @_code.split('\n').length-1
+				@_cursor.y = @numlines
+				@runline()
+				return
+				
+			# ctrl enter
+			else if s is '\n'
+				@insertString '\n'
+				@_code += @_line
+				@setPrompt @PROMPT_CONTINUATION
+				@prompt()
+				return
 			
-		# ctrl enter
-		else if s is '\n'
-			@insertString '\n'
-			@_code += @_line
-			@setPrompt @PROMPT_CONTINUATION
-			@prompt()
-			return
-			
-		keytoken = (if key.ctrl then "C^" else "") + (if key.meta then "M^" else "") + (if key.shift then "S^" else "") + key.name
+		keytoken = (if key.ctrl then "C^") + (if key.meta then "M^") + (if key.shift then "S^") + key.name
 
 		if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
 
