@@ -190,12 +190,11 @@ class Shell
 			@insertString '\n'
 			@_code += @_line
 			@_lines = @_code.split('\n')
-			@_numlines = @_lines.length
+			@_numlines = @_lines.length-1
 			@_cursor.y = @_numlines
 			@_line = ''
 			@_cursor.x = 0
 			@_prompt =  @PROMPT_CONTINUATION()
-			
 			@refreshLine()
 			return
 			
@@ -234,9 +233,10 @@ class Shell
 
 			when "backspace", "C^h"
 				if @_cursor.x > 0 and @_line.length > 0
+					#@_line = @_line.slice(0, @_cursor.x - 1) + @_line.slice(@_cursor.x, @_line.length)
 					@_cursor.x--
 					@_line = @_line[0...@_cursor.x]
-					@_lines[@_cursor.y] = @_line
+					#@_lines[@_cursor.y] = @_line
 					@_code = @_lines.join '\n'
 					@output.moveCursor -1
 					@output.clearLine 1
@@ -246,8 +246,8 @@ class Shell
 					@_lines.pop()
 					@_code = @_lines.join('\n')
 
-					@_numlines = @_lines.length
-					@_cursor.y = @numlines
+					@_numlines = @_lines.length - 1
+					@_cursor.y = @_numlines
 					@_line = @_lines[@_cursor.y]
 					@_cursor.x = @_line.length
 					@_prompt = if @_numlines is 0 then @PROMPT() else @PROMPT_CONTINUATION()
@@ -320,97 +320,80 @@ class Shell
 
 		## History
 			when "up", "C^p", "down", "C^n"
-#				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y < @_numlines-1 and @_numlines > 0
-#					@_cursor.y--
-#					@output.moveCursor 0, -1
-#					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
-#					@_line = @_lines[@_cursor.y]
-#					@_cursor.x = @_line.length
-#					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-#					return
-#					
-#				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_numlines-1 and @_cursor.y > 0 and @_numlines > 0
-#					@_cursor.y++
-#					@output.moveCursor 0, 1
-#					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
-#					@_line = @_lines[@_cursor.y]
-#					@_cursor.x = @_line.length
-#					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-#					return
+				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_numlines and @_numlines > 0
+					@_cursor.y--
+					@output.moveCursor 0, -1
+					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_line = @_lines[@_cursor.y]
+					@_cursor.x = @_line.length
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					return
+					
+				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_numlines and @_cursor.y >= 0 and @_numlines > 0
+					@_cursor.y++
+					@output.moveCursor 0, 1
+					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_line = @_lines[@_cursor.y]
+					@_cursor.x = @_line.length
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					return
 				
 				
 					
 				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@historyIndex++
-					
+					@output.moveCursor 0, @_numlines
 				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
 					@historyIndex--
-					#@output.moveCursor 0, -@_numlines
-
 				else if @historyIndex is 0
-					for i in [0...@_numlines-1]
+					for i in [0...@_numlines]
 						@output.cursorTo 0
 						@output.clearLine 0
 						@output.moveCursor 0,-1
-					@output.cursorTo 0
-					@output.clearLine 0
 					@historyIndex = -1
 					@_cursor = x:0, y:0
 					@_prompt = @_line = @_code = ''
 					@_lines = []
 					@_numlines = @_consecutive_tabs = 0
 					@_prompt = @PROMPT()
-					@output.cursorTo 0
-					@output.write @_prompt
-					@output.write @_line
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@refreshLine()
 					return
-					
 				else return
 				
-#				else if @historyIndex is 0
-#					for i in [0...@_numlines]
-#						@output.cursorTo 0
-#						@output.clearLine 0
-#						@output.moveCursor 0,-1
-#					@historyIndex = -1
-#					
-#					return
-#				else return
-				@output.moveCursor 0,@_numlines
-				for i in [0...@_numlines+1]
+				for i in [0...@_numlines]
 					@output.cursorTo 0
 					@output.clearLine 0
-					@output.moveCursor 0,-1			
+					@output.moveCursor 0,-1
+
+				@_line = @_code = ''
+				code = @history[@historyIndex]
+				@_lines = code.split('\n')
+				@_numlines = @_lines.length-1
+				@_cursor.y = @_numlines
 				
-				#return
-				@_lines = (@history[@historyIndex]).split('\n')
-				@_code = @_lines.join('\n')
-				@_numlines = @_lines.length
-								
-				for i in [0...@_numlines+1]
-					@_cursor.y = i
-					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
-					@_line = @_lines[@_cursor.y]
-					@_cursor.x = @_line.length
-					@output.cursorTo 0
+				for i in [0...@_lines.length]
 					@output.clearLine 0
-					
-					@output.write @_prompt
-					@output.write @_line
-					@output.write '\n'
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-				@output.moveCursor 0,-1
-				
+					@output.cursorTo 0
+					@_cursor.x = @_lines[i].length
+					if i is 0
+						@_prompt = @PROMPT()
+						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
+						@refreshLine()
+					else
+						@_prompt =  @PROMPT_CONTINUATION()
+						@_line = @_lines[i] + (if i < @_numlines then '\n' else '')
+						@refreshLine()
+					if i < @_numlines
+						@_code += @_line
+						
 				if keytoken in ['down', 'C^n']
 					@_cursor.y = 0
-					@output.moveCursor 0, -1*(@_numline-1)
+					@output.moveCursor 0, -1*@_numlines
 					@_prompt = @PROMPT()
 					@_line = @_lines[0]
 					@_cursor.x = @_line.length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-				
-					
+
 		## Mouse stuff
 			when 'mousedownL' then
 			when 'mousedownM' then
