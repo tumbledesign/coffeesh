@@ -189,9 +189,12 @@ class Shell
 
 		# enter
 		if s is '\r'
-			@_code += @_line
-			@numlines = @_code.split('\n').length-1
-			@_cursor.y = @numlines
+			if @_cursor.y is @numlines
+				@_code += @_line
+			else
+				@_code = @_lines.join('\n')
+			@numlines = @_cursor.y = 0
+			@_lines = []
 			@runline()
 			return
 			
@@ -199,6 +202,9 @@ class Shell
 		else if s is '\n'
 			@insertString '\n'
 			@_code += @_line
+			@_lines = @_code.split('\n')
+			@numlines = @_lines.length-1
+			@_cursor.y = @numlines
 			@setPrompt @PROMPT_CONTINUATION
 			@prompt()
 			return
@@ -265,7 +271,8 @@ class Shell
 								@refreshLine()
 							if i < code.length - 1
 								@_code += @_line
-								@numlines = @_code.split('\n').length-1
+								@_lines = @_code.split('\n')
+								@numlines = @_lines.length-1
 								@_cursor.y = @numlines
 			when "delete", "C^d"
 				if @_cursor.x < @_line.length
@@ -331,25 +338,38 @@ class Shell
 
 		## History
 			when "up", "C^p", "down", "C^n"
-				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @numlines and @numlines > 1
+				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @numlines and @numlines > 0
 					@_cursor.y--
 					@output.moveCursor 0, -1
+					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_line = @_lines[@_cursor.y]
+					@_cursor.x = @_line.length
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
-				else if keytoken in ['down', 'C^n'] and @_cursor.y < @numlines and @_cursor.y >= 0 and @numlines > 1
+					
+				else if keytoken in ['down', 'C^n'] and @_cursor.y < @numlines and @_cursor.y >= 0 and @numlines > 0
 					@_cursor.y++
 					@output.moveCursor 0, 1
+					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_line = @_lines[@_cursor.y]
+					@_cursor.x = @_line.length
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
 				
-				for i in [0...@numlines]
-					@output.cursorTo 0
-					@output.clearLine 0
-					@output.moveCursor 0,-1
+				
 					
 				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@historyIndex++
+					@output.moveCursor 0, @numlines
 				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
 					@historyIndex--
 				else if @historyIndex is 0
+					for i in [0...@numlines]
+						@output.cursorTo 0
+						@output.clearLine 0
+						@output.moveCursor 0,-1
+					@numlines = @_cursor.y = 0
+					@_lines=[]
 					@historyIndex = -1
 					@_cursor.x = 0
 					@_line = ""
@@ -358,30 +378,40 @@ class Shell
 					@refreshLine()
 					return
 				else return
+				
+				for i in [0...@numlines]
+					@output.cursorTo 0
+					@output.clearLine 0
+					@output.moveCursor 0,-1
 
 				@_line = @_code = ''
 				code = @history[@historyIndex]
-				lns = code.split('\n')
-				@numlines = lns.length-1
+				@_lines = code.split('\n')
+				@numlines = @_lines.length-1
 				@_cursor.y = @numlines
 				
-				for i in [0...lns.length]
+				for i in [0...@_lines.length]
 					@output.clearLine 0
 					@output.cursorTo 0
-					@_cursor.x = lns[i].length
+					@_cursor.x = @_lines[i].length
 					if i is 0
 						@setPrompt()
-						@_line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@_line = @_lines[i] + (if i < @numlines then '\n' else '')
 						@refreshLine()
 					else
 						@setPrompt @PROMPT_CONTINUATION
-						@_line = lns[i] + (if i < lns.length-1 then '\n' else '')
+						@_line = @_lines[i] + (if i < @numlines then '\n' else '')
 						@refreshLine()
-					if i < lns.length - 1
+					if i < @numlines
 						@_code += @_line
-						#@numlines = @_code.split('\n').length-1
-						#@_cursor.y = @numlines
-					#@_line = ''
+						
+				if keytoken in ['down', 'C^n']
+					@_cursor.y = 0
+					@output.moveCursor 0, - @numlines
+					@_prompt = @PROMPT()
+					@_line = @_lines[0]
+					@_cursor.x = @_line.length
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 
 		## Mouse stuff
 			when 'mousedownL' then
@@ -546,7 +576,7 @@ class Shell
 		@setPrompt()
 		@prompt()
 	
-	execute: (cmd) ->
+	run: (cmd) ->
 		fiber = Fiber.current
 		#@pause()
 		lastcmd = ''
@@ -565,7 +595,7 @@ class Shell
 		yield()
 		return lastcmd
 		
-	interactive: (cmd) ->
+	execute: (cmd) ->
 		fiber = Fiber.current
 		@pause()
 		cmdargs = ["-ic", "#{cmd}"]
