@@ -485,7 +485,7 @@ class Shell
 
 						@output.write "\r\n"
 
-					@output.moveCursor @_prompt.stripColors.length + @_cursor.x, -(rows+2)
+					@output.moveCursor @_prompt.stripColors.length + @_cursor.x, -(rows+1)
 
 					#prefix = ""
 					min = completions[0] 
@@ -513,7 +513,7 @@ class Shell
 		dir = if isdir then text else (path.dirname text) + "/"
 		filePrefix = (if isdir then	'' else path.basename text)
 		#echo [isdir,dir,filePrefix]
-		if path.existsSync dir then listing = fs.readdirSync dir
+		if path.existsSync dir then listing = (fs.readdirSync dir).filter((e) -> e[0] isnt '.') 
 		fileCompletions = []
 		for item in listing when item.toLowerCase().indexOf(filePrefix.toLowerCase()) is 0
 			fileCompletions.push(if fs.lstatSync(dir + item).isDirectory() then item + "/" else item)
