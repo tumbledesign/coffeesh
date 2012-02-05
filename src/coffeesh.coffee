@@ -11,20 +11,16 @@
 [os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('colors')]
 require 'fibers'
 
-
-
-
 class CoffeeShell
 	constructor: ->
 		# STDIO
 		@input = process.stdin
-		@output = process.stdout		
+		@output = process.stdout
 		@stderr = process.stderr
 		@user = process.env.USER
 		@home = process.env.HOME
 		@cwd = ''
-		process.on 'uncaughtException', -> @error
-		
+
 		#@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
 		#@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		@HOSTNAME = os.hostname()
@@ -41,15 +37,30 @@ class CoffeeShell
 			fgrep: 'fgrep --color=auto'
 		
 		
+
 	init: ->
 		# load history
 		# TODO: make loading history async so no hang on big files
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
-		@resetInternals()
-		process.on "SIGWINCH", => 
-			[@_columns, @_rows] = @output.getWindowSize()
+		#@resetInternals()
+		
+		@ttymgr()
+		@cLines[0] = 'mooooo'
+		@cLines[1] = 'AAAARRRRHGGGHSSS'
+		@cLines[2] = 'bbbbbb'
+		
+		@cTabs[0] = +0
+		@cTabs[1] = +1
+		@cTabs[2] = +2
+		@cy = 1
+		@cy = 3
+	
+	
+		@redrawPrompt()
+		return
+		
 		
 		#Load binaries and built-in shell commands
 		@binaries = {}
@@ -94,6 +105,9 @@ class CoffeeShell
 		root.echo = @builtin.echo
 		
 		Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+
+		@ttymgr()
+		return
 
 		# connect to tty
 		@resume()
@@ -160,21 +174,8 @@ class CoffeeShell
 		tty.setRawMode false
 		@input.destroy()
 		return
-				
-	insertString: (s) ->
-	
-		s = s.toString("utf-8") if Buffer.isBuffer(s)
-		beg = @_lines[@_cursor.y][0...@_cursor.x]
-		end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
-		@_lines[@_cursor.y] = beg + s + end
-		@_cursor.x += s.length
-		
-		@output.cursorTo 0
-		@output.clearLine 0
-		@output.write @_prompt + @_lines[@_cursor.y]
-		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-		
-	runline: ->
+
+runline: ->
 		@output.write "\r\n"
 		#for i in [0...@_lines.length-1]
 		#	@output.cursorTo 0
@@ -262,6 +263,7 @@ class CoffeeShell
 
 root.shl = new CoffeeShell()
 
+extend root.shl, require('./ttymgr')
 extend root.shl, require('./tabcomplete')
 extend root.shl, require('./keypress')
 

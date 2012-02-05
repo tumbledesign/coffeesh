@@ -20,6 +20,7 @@ colors =
 
 
 	'grey'      : ['\033[90m', '\033[39m']
+###
 	
 addProperty = (color, func) ->
 	module.exports[color] = (str) => func(str) 
@@ -80,3 +81,4 @@ exports.setTheme = function (theme) {
 addProperty('stripColors', function() {
 	return ("" + this).replace(/\u001b\[\d+m/g,'');
 });
+###

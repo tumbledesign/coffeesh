@@ -302,20 +302,3 @@ module.exports =
 					#			when 'scrolldown' then
 					#			when 'scrollup'
 					## Directly output char to terminal
-				
-			else
-				s = s.toString("utf-8") if Buffer.isBuffer(s)
-				beg = @_lines[@_cursor.y][0...@_cursor.x]
-				end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
-				@_lines[@_cursor.y] = beg + s + end
-				@_cursor.x += s.length
-				@output.cursorTo 0
-				@output.clearLine 0
-				@output.write @_prompt + @_lines[@_cursor.y]
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-				#				if s
-				#					lines = s.split /\r\n|\n|\r/
-				#					for i,line of lines
-				#						@runline() if i > 0
-				#						@insertString lines[i]
-
