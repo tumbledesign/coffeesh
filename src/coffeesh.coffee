@@ -29,7 +29,15 @@ class Shell
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		@PROMPT_CONTINUATION = => ('......> '.green)
+		@PROMPT_CONTINUATION = => 
+			p = "➜ ".green
+			for i in [0...@_tabs]
+				p += @PROMPT_TAB
+			p+=" "
+			(p)
+				
+		@PROMPT_TAB = "··>".blue.bold
+		@_tabs = 0
 		@PROMPT = => ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ")
 		@ALIASES = 
 			ls: 'ls -atr --color=auto'
@@ -111,6 +119,7 @@ class Shell
 		@_completions = []
 		@_lines[@_cursor.y] = ''
 		@_consecutive_tabs = 0
+		@_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 
 	error: (err) -> 
@@ -217,7 +226,32 @@ class Shell
 			when "C^d"
 				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0 and @_lines.length is 1
 
-			when "tab" then @tabComplete()
+			when "tab" 
+				if @_cursor.x is 0
+					@_cursor.x = 0
+					@_tabs++
+					
+					@output.cursorTo 0
+					@output.clearLine 0
+					@_prompt = @PROMPT_CONTINUATION()
+					@output.write @_prompt
+					@output.cursorTo @_prompt.stripColors.length
+					
+				else
+					@tabComplete()
+			when "S^tab"
+				if @_cursor.x is 0
+					return if @_tabs is 0
+					@_cursor.x = 0
+					@_tabs--
+					
+					@output.cursorTo 0
+					@output.clearLine 0
+					@_prompt = @PROMPT_CONTINUATION()
+					@output.write @_prompt
+					@output.cursorTo @_prompt.stripColors.length
+				else
+					@tabComplete()
 			#when "enter" then @runline()
 
 			# Clear line
