@@ -45,18 +45,10 @@ class Shell
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
-		@historyIndex = -1
 		
-		# internal variables
-		@_cursor = x:0, y:0
-		@_mouse = x:0, y:0
-		@_prompt = ''
-		@_lines = []
-		@_completions = []
-		@_lines[@_cursor.y] = ''
 		
-		@_consecutive_tabs = 0
-		[@_columns, @_rows] = @output.getWindowSize()
+		@resetInternals()
+		
 		process.on "SIGWINCH", => 
 			[@_columns, @_rows] = @output.getWindowSize()
 		
@@ -82,7 +74,10 @@ class Shell
 					@cwd =	'~'+newcwd.substr(@home.length)
 				else @cwd = newcwd
 				@_prompt = @PROMPT()
-				@refreshLine()
+				@output.cursorTo 0
+				@output.clearLine 0
+				@output.write @_prompt
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			echo: (vals...) ->
 				for v in vals
 					print inspect(v, true, 5, true) + "\n"
@@ -104,7 +99,22 @@ class Shell
 		# connect to tty
 		@resume()
 		@_prompt = @PROMPT()
-		@refreshLine()
+		@output.cursorTo 0
+		@output.clearLine 0
+		@output.write @_prompt
+		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+	
+	resetInternals: () ->
+		# internal variables
+		@_historyIndex = -1
+		@_cursor = x:0, y:0
+		@_mouse = x:0, y:0
+		@_prompt = ''
+		@_lines = []
+		@_completions = []
+		@_lines[@_cursor.y] = ''
+		@_consecutive_tabs = 0
+		[@_columns, @_rows] = @output.getWindowSize()
 
 	error: (err) -> 
 		process.stderr.write (err.stack or err.toString()) + '\n'
@@ -120,19 +130,12 @@ class Shell
 		tty.setRawMode true
 		@output.write @MOUSETRACK
 		@output.moveCursor - @MOUSETRACK.length
-		@historyIndex = -1
-		@_cursor = x:0, y:0
-		@_prompt = ''
-		@_lines[@_cursor.y]  = ''
-		@_consecutive_tabs = 0
+		
+		@resetInternals()
 		return
 
 	pause: ->
-		@historyIndex = -1
-		@_cursor = x:0, y:0
-		@_prompt = ''
-		@_lines[@_cursor.y]  = ''
-		@_consecutive_tabs = 0
+		@resetInternals()
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
@@ -150,14 +153,7 @@ class Shell
 		tty.setRawMode false
 		@input.destroy()
 		return
-
-	refreshLine: ->
-		@output.cursorTo 0
-		@output.write @_prompt
-		@output.write @_lines[@_cursor.y]
-		@output.clearLine 1
-		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-
+				
 	write: (s, key) ->
 		
 		#We need to handle mouse events, they are not provided by node's tty.js
@@ -187,17 +183,14 @@ class Shell
 		else if s is '\n'
 			@output.cursorTo 0
 			@output.clearLine 0
-			@output.write @_prompt
-			@output.write @_lines[@_cursor.y]
-			@output.write '\n'
+			@output.write @_prompt + @_lines[@_cursor.y] + '\n'
 			@_cursor.y++
 			@_lines[@_cursor.y] = ''
 			@_cursor.x = 0
 			@_prompt =  @PROMPT_CONTINUATION()
 			@output.cursorTo 0
 			@output.clearLine 0
-			@output.write @_prompt
-			@output.write @_lines[@_cursor.y]
+			@output.write @_prompt + @_lines[@_cursor.y]
 			@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			return
 			
@@ -228,93 +221,131 @@ class Shell
 
 			# Clear line
 			when "C^u"
+				@_lines[@_cursor.y] = ''
 				@_cursor.x = 0
-				@_line = ""
-				@refreshLine()
+				@output.cursorTo 0
+				@output.clearLine 0
+				@output.write @_prompt
+				@output.cursorTo @_prompt.stripColors.length
 
 		## Deletions
 
 			when "backspace", "C^h"
+				#console.log @_cursor.x, @_cursor.y, @_lines.length, (@_cursor.y < @_lines.length)
 				if @_cursor.x > 0 and @_lines[@_cursor.y].length > 0
+					@_cursor.x--
+					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x] + @_lines[@_cursor.y][@_cursor.x+1..]
+					
+					@output.clearLine 0
+					@output.cursorTo 0
+					@output.write @_prompt + @_lines[@_cursor.y]
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					
+				else if @_cursor.y isnt 0 and @_cursor.y is (+@_lines.length-1) and @_lines[@_cursor.y].length is 0
+					@_cursor.y--
+					@_lines.pop() unless @_cursor.y is 0
+					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					
+					#console.log @_cursor.x, @_cursor.y, @_lines
+					@_cursor.x = @_lines[@_cursor.y].length
+								
+					@output.clearLine 0
+					@output.moveCursor 0,-1
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				else if @_cursor.y is 0 and @_cursor.x is 0  and @_lines[0].length is 0
+					@_lines = ['']
+						
+			when "delete", "C^d"
+				if @_cursor.x < @_line.length
 					@_cursor.x--
 					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
 					@output.moveCursor -1
 					@output.clearLine 1
-					
-				else if @_cursor.y is @_lines.length
-					@_lines.pop()
-					@_cursor.y--
-					@_cursor.x = @_lines[@_cursor.y].length
-					@_prompt = if @_lines[@_cursor.y].length is 0 then @PROMPT() else @PROMPT_CONTINUATION()
-
-					@output.clearLine 0
-					@output.moveCursor 0,-1
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-						
-			when "delete", "C^d"
-				if @_cursor.x < @_line.length
-					@_line = @_line.slice(0, @_cursor.x) + @_line.slice(@_cursor.x + 1, @_line.length)
-					@refreshLine()
+					
 			# Word left
 			when "C^w", "C^backspace", "M^backspace"
 				if @_cursor.x > 0
-					leading = @_line.slice(0, @_cursor.x)
-					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
-					leading = leading.slice(0, leading.length - match[0].length)
-					@_line = leading + @_line.slice(@_cursor.x, @_line.length)
+					leading = @_lines[@_cursor.y][0...@_cursor.x]
+					match = leading.match(/// \S*\s* $ ///)
+					leading = leading[0...(leading.length - match[0].length)]
+					@_lines[@_cursor.y] = leading + @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
 					@_cursor.x = leading.length
-					@refreshLine()
+					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@output.clearLine 0
+					@output.cursorTo 0
+					@output.write @_prompt + @_lines[@_cursor.y]
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					
+				else if @_cursor.y is 0 and @_cursor.x is 0 and @_lines[0].length is 0
+					@_lines = ['']
+					
+					
 			# Word right
 			when "C^delete", "M^d", "M^delete"
-				if @_cursor.x < @_line.length
-					trailing = @_line.slice(@_cursor.x)
-					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-					@_line = @_line.slice(0, @_cursor.x) + trailing.slice(match[0].length)
-					@refreshLine()
+				if @_cursor.x < @_lines[@_cursor.y].length
+					trailing = @_lines[@_cursor.y][@_cursor.x...]
+					match = trailing.match(/// ^ \s*\S+ ///)
+					@_cursor.x = @_lines[@_cursor.y].length - trailing.length
+					
+					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x] + trailing[match[0].length...]
+					
+					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@output.clearLine 0
+					@output.cursorTo 0
+					@output.write @_prompt + @_lines[@_cursor.y]
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					
+					#if @_cursor.y is 0 and @_cursor.x is 0 and @_lines is []
+					#	@_lines = ['']
 			# Line right
 			when "C^k", "C^S^delete"
-				@_line = @_line.slice(0, @_cursor.x)
-				@refreshLine()
+				@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
+				@output.clearLine 1
 			# Line left
-			when "C^S^backspace"
-				@_line = @_line.slice(@_cursor.x)
+			when "C^S^backspace", "M^S^d"
+				@_lines[@_cursor.y] = @_lines[@_cursor.y][@_cursor.x...]
 				@_cursor.x = 0
-				@refreshLine()
-
+				@output.clearLine 0
+				@output.cursorTo 0
+				@output.write @_prompt + @_lines[@_cursor.y]
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				
 		## Cursor Movements
 
 			when "home", "C^a"
 				@_cursor.x = 0
-				@refreshLine()
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			when "end", "C^e"
-				@_cursor.x = @_line.length
-				@refreshLine()
+				@_cursor.x = @_lines[@_cursor.y].length
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			when "left", "C^b"
 				if @_cursor.x > 0
 					@_cursor.x--
 					@output.moveCursor -1, 0
 			when "right", "C^f"
-				unless @_cursor.x is @_line.length
+				unless @_cursor.x is @_lines[@_cursor.y].length
 					@_cursor.x++
 					@output.moveCursor 1, 0
 			# Word left
 			when "C^left", "M^b"
 				if @_cursor.x > 0
-					leading = @_line.slice(0, @_cursor.x)
-					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
+					leading = @_lines[@_cursor.y][0...@_cursor.x]
+					match = leading.match(/// \S*\s* $ ///)
 					@_cursor.x -= match[0].length
-					@refreshLine()
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			# Word right
 			when "C^right", "M^f"
-				if @_cursor.x < @_line.length
-					trailing = @_line.slice(@_cursor.x)
-					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
+				if @_cursor.x < @_lines[@_cursor.y].length
+					trailing = @_lines[@_cursor.y][@_cursor.x...]
+					match = trailing.match(/// ^ \s*\S+ ///)
 					@_cursor.x += match[0].length
-					@refreshLine()
+					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 
 
 		## History
 			when "up", "C^p", "down", "C^n"
+				
 				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_lines.length and @_lines.length > 0
 					@_cursor.y--
 					@output.moveCursor 0, -1
@@ -330,25 +361,25 @@ class Shell
 					@_cursor.x = @_lines[@_cursor.y].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
-									
-				if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
-					@historyIndex++
+				
+				if @_historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
+					@_historyIndex++
 					@output.moveCursor 0, @_lines.length-1
 					
-				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
-					@historyIndex--
+				else if @_historyIndex > 0 and keytoken in ['down', 'C^n']
+					@_historyIndex--
 					
-				else if @historyIndex is 0
+				else if @_historyIndex is 0
 					for i in [0...@_lines.length-1]
 						@output.cursorTo 0
 						@output.clearLine 0
 						@output.moveCursor 0,-1
-					@historyIndex = -1
-					@_cursor = x:0, y:0
-					@_lines[@_cursor.y]  = ''
-					@_consecutive_tabs = 0
+					@output.cursorTo 0
+					@output.clearLine 0
+					@resetInternals()
 					@_prompt = @PROMPT()
-					@refreshLine()
+					@output.write @_prompt
+					@output.cursorTo @_prompt.stripColors.length
 					return
 				else return
 				
@@ -357,7 +388,7 @@ class Shell
 					@output.clearLine 0
 					@output.moveCursor 0,-1
 
-				@_lines = (@history[@historyIndex]).split('\n')
+				@_lines = (@history[@_historyIndex]).split('\n')
 				@_cursor.y = @_lines.length
 				
 				for i in [0...@_lines.length]
@@ -391,33 +422,29 @@ class Shell
 		## Directly output char to terminal
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
-				@_lines[@_cursor.y]+=s
-				@_cursor.x = @_lines[@_cursor.y].length
-				@refreshLine()
-#				if s
-#					lines = s.split /\r\n|\n|\r/
-#					for i,line of lines
-#						@runline() if i > 0
-#						@insertString lines[i]
+				beg = @_lines[@_cursor.y][0...@_cursor.x]
+				end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
+				@_lines[@_cursor.y] = beg + s + end
+				@_cursor.x += s.length
+				@output.cursorTo 0
+				@output.clearLine 0
+				@output.write @_prompt + @_lines[@_cursor.y]
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 
 	insertString: (s) ->
 		s = s.toString("utf-8") if Buffer.isBuffer(s)
-		@_lines[@_cursor.y]+=s
-		@_cursor.x = @_lines[@_cursor.y].length
-		@refreshLine()
-#		if @_cursor.x < @_line.length
-#			beg = @_line.slice(0, @_cursor.x)
-#			end = @_line.slice(@_cursor.x, @_line.length)
-#			@_line = beg + c + end
-#			@_cursor.x += c.length
-#			@refreshLine()
-#		else
-#			@_line += c
-#			@_cursor.x += c.length
-#			@output.write c
+		beg = @_lines[@_cursor.y][0...@_cursor.x]
+		end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
+		@_lines[@_cursor.y] = beg + s + end
+		@_cursor.x += s.length
+		@output.cursorTo 0
+		@output.clearLine 0
+		@output.write @_prompt + @_lines[@_cursor.y]
+		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+
 
 	tabComplete: ->
-		@autocomplete( @_line.slice(0, @_cursor.x).split(' ').pop(), ( (completions, completeOn) =>
+		@autocomplete( (@_lines[@_cursor.y][0...@_cursor.x]).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
 					@insertString completions[0].slice(completeOn.length)
@@ -447,9 +474,7 @@ class Shell
 
 						@output.write "\r\n"
 
-					#@output.write "\r\n"
-
-					@output.moveCursor 0, -(rows+2)
+					@output.moveCursor @_prompt.stripColors.length + @_cursor.x, -(rows+2)
 
 					#prefix = ""
 					min = completions[0] 
@@ -461,8 +486,6 @@ class Shell
 						prefix = min
 
 					@insertString prefix.slice(completeOn.length) if prefix.length > completeOn.length
-				
-				@refreshLine()
 			)
 		)
 							
@@ -525,18 +548,27 @@ class Shell
 	## Eval and Execute
 	
 	runline: ->
-		if !@_lines.length
-			@historyIndex = -1
-			@_cursor = x:0, y:0
-			@_lines[@_cursor.y]  = ''
-			@_consecutive_tabs = 0
+		@output.write "\r\n"
+		for i in [0...@_lines.length-1]
+			@output.cursorTo 0
+			@output.clearLine 0
+			@output.moveCursor 0,-1
+		@output.cursorTo 0
+		@output.clearLine 0
+		
+			
+		if @_lines.length is 1 and @_lines[0] is ''
+			@resetInternals()
 			@_prompt =  @PROMPT()
-			@refreshLine()
+			@output.write @_prompt
+			@output.cursorTo @_prompt.stripColors.length
 			return
+		
+		
 			
 		code = @_lines.join("\n")
-			
-		@historyIndex = -1
+		@resetInternals()
+		
 		@history.unshift code
 		@history.pop() if @history.length > @HISTORY_SIZE
 		fs.write @history_fd, code+"\r\n"
@@ -544,32 +576,24 @@ class Shell
 		rcode = Recode code
 		echo "Recoded: #{rcode}"
 		
-		@_cursor = x:0, y:0
-		@_prompt = ''
-		@_lines[@_cursor.y]  = ''
-		@_consecutive_tabs = 0
-		
 		try
 			Fiber(=>
 				_ = global._
-				returnValue = coffee.eval "_=(#{rcode})"
+				returnValue = coffee.eval "_=(#{rcode}\n)"
 				if returnValue is undefined
 					global._ = _
 				else
 					echo returnValue
 				@_prompt =  @PROMPT()
-				@refreshLine()
+				@output.write @_prompt
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			).run()
 		catch err
 			@error err
 	
 	run: (cmd) ->
 		fiber = Fiber.current
-		@historyIndex = -1
-		@_cursor = x:0, y:0
-		@_prompt = ''
-		@_lines[@_cursor.y]  = ''
-		@_consecutive_tabs = 0
+		@resetInternals()
 		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
