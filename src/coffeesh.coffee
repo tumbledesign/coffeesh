@@ -87,7 +87,7 @@ class Shell
 			which: (val) =>
 				if @builtin[val]? then console.log 'built-in shell command'.green 
 				else if @binaries[val]? then console.log "#{@binaries[val]}/#{val}".white
-				else console.log "command '#{val}'' not found".red
+				else console.log "command '#{val}' not found".red
 
 		root.aliases = @ALIASES
 		root.binaries = @binaries
@@ -171,6 +171,8 @@ class Shell
 					when 2 then key.name ?= 'mousedownR'
 					when 3 then key.name ?= 'mouseup'
 					#else return
+			#Disable mouse events for now
+			if key.name? then return
 
 		key ?= {}
 
@@ -204,17 +206,23 @@ class Shell
 		## Utility functions
 
 			# SIGINT
+			# TODO: fix
 			when "C^c"
-				console.log()
-				@pause()
-				@resume()
+				@output.write "\r\n"
+				@_cursor = x:0, y:0
+				@_lines = []
+				@_lines[@_cursor.y] = ""
+				@refreshLine()
+				#@output.clearLine 1
+				# @pause()
+				# @resume()
 
 			# Background
 			when "C^z" then	return process.kill process.pid, "SIGTSTP"
 
 			# Logout
 			when "C^d"
-				@close() if @_cursor.x is 0 and @_line.length is 0
+				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0
 
 			when "tab" then @tabComplete()
 			#when "enter" then @runline()
@@ -413,7 +421,8 @@ class Shell
 		## Mouse stuff
 			when 'mousedownL' then
 			when 'mousedownM' then
-			when 'mousedownR' then
+			# Right click is captured by gnome-terminal, but C^rightclick and S^rightclick are available
+			when 'C^mousedownR' then
 			when 'mouseup' then
 			when 'mousemove' then
 			when 'scrolldown' then
@@ -430,6 +439,11 @@ class Shell
 				@output.clearLine 0
 				@output.write @_prompt + @_lines[@_cursor.y]
 				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+#				if s
+#					lines = s.split /\r\n|\n|\r/
+#					for i,line of lines
+#						@runline() if i > 0
+#						@insertString lines[i]
 
 	insertString: (s) ->
 		s = s.toString("utf-8") if Buffer.isBuffer(s)
@@ -549,12 +563,12 @@ class Shell
 	
 	runline: ->
 		@output.write "\r\n"
-		for i in [0...@_lines.length-1]
-			@output.cursorTo 0
-			@output.clearLine 0
-			@output.moveCursor 0,-1
-		@output.cursorTo 0
-		@output.clearLine 0
+		#for i in [0...@_lines.length-1]
+		#	@output.cursorTo 0
+		#	@output.clearLine 0
+		#	@output.moveCursor 0,-1
+		#@output.cursorTo 0
+		#@output.clearLine 0
 		
 			
 		if @_lines.length is 1 and @_lines[0] is ''
@@ -585,6 +599,8 @@ class Shell
 				else
 					echo returnValue
 				@_prompt =  @PROMPT()
+				@output.clearLine 0
+				@output.cursorTo 0
 				@output.write @_prompt
 				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			).run()
