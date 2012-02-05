@@ -189,9 +189,7 @@ class Lexer
 			arg = prev[0]+id
 			@tokens.pop()
 			@token 'ARG', arg
-			return id.length
-		
-		
+			return id.length	
 		
 		if prev?[0] in ['.'] and @tokens[@tokens.length-2]?[0] in ['BINARIES', 'BUILTIN', 'FILEPATH', 'ARG']
 			arg = @tokens[@tokens.length-2][1]+prev[0]+id
@@ -230,7 +228,6 @@ class Lexer
 			@token 'PIPE', prev[1]
 			@token 'ARG', id
 			return id.length
-			
 			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id

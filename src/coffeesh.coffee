@@ -137,7 +137,7 @@ class Shell
 			@write s, key
 		).resume()
 		tty.setRawMode true
-		@output.write @MOUSETRACK
+		#@output.write @MOUSETRACK
 		return
 
 	pause: ->
@@ -145,7 +145,7 @@ class Shell
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
-		@output.write @MOUSEUNTRACK
+		#@output.write @MOUSEUNTRACK
 		tty.setRawMode false
 		@input.pause()
 		
@@ -161,6 +161,7 @@ class Shell
 		
 		#We need to handle mouse events, they are not provided by node's tty.js
 		if not key? and (s.indexOf("\u001b[M") is 0)
+			
 			modifier = s.charCodeAt(3)
 			key ?= shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
 			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
@@ -175,7 +176,7 @@ class Shell
 					when 3 then key.name ?= 'mouseup'
 					#else return
 			#Disable mouse events for now
-			if key.name? then return
+			#if key.name? then return
 
 		key ?= {}
 
@@ -454,7 +455,8 @@ class Shell
 			when 'mouseup' then
 			when 'mousemove' then
 			when 'scrolldown' then
-			when 'scrollup' then
+			when 'scrollup'
+				@output.moveCursor 0,-1
 
 		## Directly output char to terminal
 			else
@@ -651,8 +653,9 @@ class Shell
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
 		proc.stdout.on 'data', (data) =>
 			lastcmd = data.toString().trim()
+			console.log data.toString()
 		proc.stderr.on 'data', (data) =>
-			console.log data.toString()		
+			console.log data
 		proc.on 'exit', (exitcode, signal) =>
 			fiber.run()
 		yield()
