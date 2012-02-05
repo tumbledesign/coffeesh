@@ -190,9 +190,8 @@ class Shell
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
 
-		if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
+		#if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
 
-		
 		switch keytoken
 			
 		## Utility functions
@@ -217,7 +216,13 @@ class Shell
 			when "C^d"
 				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0 and @_lines.length is 1
 
-			when "tab" then @tabComplete()
+			when "tab" 
+				if @_lines[@_cursor.y].match(/\t*/)
+					@_cursor.x++
+					@_lines[@_cursor.y] += "\t"
+					@output.write "\t"
+				else
+					@tabComplete()
 			#when "enter" then @runline()
 
 			# Clear line
