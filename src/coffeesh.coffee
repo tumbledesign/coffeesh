@@ -146,11 +146,6 @@ class Shell
 		return 
 
 	close: ->
-		@input.removeAllListeners 'keypress'
-		@input.removeAllListeners 'data'
-		@output.write @MOUSEUNTRACK
-		#@output.moveCursor - @MOUSEUNTRACK.length
-		tty.setRawMode false
 		@input.destroy()
 		return
 				
@@ -208,22 +203,22 @@ class Shell
 			# SIGINT
 			# TODO: fix
 			when "C^c"
-				#@output.write "\r\n"
-				#@_cursor = x:0, y:0
-				#@_lines = []
-				#@_lines[@_cursor.y] = ""
-				#@refreshLine()
-				#@output.clearLine 1
+				@output.write "\r\n"
 				@pause()
 				@resume()
-
+				@output.cursorTo 0
+				@output.clearLine 0
+				@output.write @_prompt
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				
+				
 			# Background
 			when "C^z" 
 				return process.kill process.pid, "SIGTSTP"
 			
 			# Logout
 			when "C^d"
-				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0
+				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0 and @_lines.length is 1
 
 			when "tab" then @tabComplete()
 			#when "enter" then @runline()
