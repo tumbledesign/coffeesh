@@ -1,7 +1,7 @@
 {helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
 {inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
 {dirname,basename,extname,exists,existsSync} = path = require('path')
-[os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('colors')]
+[os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('./colors')]
 require 'fibers'
 module.exports = 
 

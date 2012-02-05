@@ -8,7 +8,7 @@
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
 {Recode} = require './recode'
-[os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('colors')]
+[os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('./colors')]
 require 'fibers'
 
 class CoffeeShell
@@ -20,7 +20,8 @@ class CoffeeShell
 		@user = process.env.USER
 		@home = process.env.HOME
 		@cwd = ''
-
+		process.on 'uncaughtException', -> @error
+		
 		#@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
 		#@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		@HOSTNAME = os.hostname()
@@ -44,23 +45,9 @@ class CoffeeShell
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
-		#@resetInternals()
-		
-		@ttymgr()
-		@cLines[0] = 'mooooo'
-		@cLines[1] = 'AAAARRRRHGGGHSSS'
-		@cLines[2] = 'bbbbbb'
-		
-		@cTabs[0] = +0
-		@cTabs[1] = +1
-		@cTabs[2] = +2
-		@cy = 1
-		@cy = 3
-	
-	
-		@redrawPrompt()
-		return
-		
+		@resetInternals()
+		process.on "SIGWINCH", => 
+			[@_columns, @_rows] = @output.getWindowSize()
 		
 		#Load binaries and built-in shell commands
 		@binaries = {}
@@ -107,8 +94,12 @@ class CoffeeShell
 		Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
 
 		@ttymgr()
-		return
-
+		
+		@cLines = ['a =', 'b:3']
+		@cTabs = [0,1]
+		@cx = @cy = 1
+		@redrawPrompt()
+	
 		# connect to tty
 		@resume()
 		@_prompt = @PROMPT()
@@ -175,7 +166,7 @@ class CoffeeShell
 		@input.destroy()
 		return
 
-runline: ->
+	runline: ->
 		@output.write "\r\n"
 		#for i in [0...@_lines.length-1]
 		#	@output.cursorTo 0
