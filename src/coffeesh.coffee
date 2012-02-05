@@ -46,7 +46,7 @@ class Shell
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
 		@historyIndex = -1
-		
+
 		# internal variables
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
@@ -54,7 +54,6 @@ class Shell
 		@_lines = []
 		@_completions = []
 		@_lines[@_cursor.y] = ''
-		
 		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 		process.on "SIGWINCH", => 
@@ -92,7 +91,7 @@ class Shell
 			which: (val) =>
 				if @builtin[val]? then console.log 'built-in shell command'.green 
 				else if @binaries[val]? then console.log "#{@binaries[val]}/#{val}".white
-				else console.log "command '#{val}'' not found".red
+				else console.log "command '#{val}' not found".red
 
 		root.aliases = @ALIASES
 		root.binaries = @binaries
@@ -175,6 +174,8 @@ class Shell
 					when 2 then key.name ?= 'mousedownR'
 					when 3 then key.name ?= 'mouseup'
 					#else return
+			#Disable mouse events for now
+			if key.name? then return
 
 		key ?= {}
 
@@ -211,17 +212,23 @@ class Shell
 		## Utility functions
 
 			# SIGINT
+			# TODO: fix
 			when "C^c"
-				console.log()
-				@pause()
-				@resume()
+				@output.write "\r\n"
+				@_cursor = x:0, y:0
+				@_lines = []
+				@_lines[@_cursor.y] = ""
+				@refreshLine()
+				#@output.clearLine 1
+				# @pause()
+				# @resume()
 
 			# Background
 			when "C^z" then	return process.kill process.pid, "SIGTSTP"
 
 			# Logout
 			when "C^d"
-				@close() if @_cursor.x is 0 and @_line.length is 0
+				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0
 
 			when "tab" then @tabComplete()
 			#when "enter" then @runline()
@@ -229,7 +236,7 @@ class Shell
 			# Clear line
 			when "C^u"
 				@_cursor.x = 0
-				@_line = ""
+				@_lines[@_cursor.y] = ""
 				@refreshLine()
 
 		## Deletions
@@ -252,32 +259,32 @@ class Shell
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 						
 			when "delete", "C^d"
-				if @_cursor.x < @_line.length
-					@_line = @_line.slice(0, @_cursor.x) + @_line.slice(@_cursor.x + 1, @_line.length)
+				if @_cursor.x < @_lines[@_cursor.y].length
+					@_lines[@_cursor.y] = @_lines[@_cursor.y].slice(0, @_cursor.x) + @_lines[@_cursor.y].slice(@_cursor.x + 1, @_lines[@_cursor.y].length)
 					@refreshLine()
 			# Word left
 			when "C^w", "C^backspace", "M^backspace"
 				if @_cursor.x > 0
-					leading = @_line.slice(0, @_cursor.x)
+					leading = @_lines[@_cursor.y].slice(0, @_cursor.x)
 					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
 					leading = leading.slice(0, leading.length - match[0].length)
-					@_line = leading + @_line.slice(@_cursor.x, @_line.length)
+					@_lines[@_cursor.y] = leading + @_lines[@_cursor.y].slice(@_cursor.x, @_lines[@_cursor.y].length)
 					@_cursor.x = leading.length
 					@refreshLine()
 			# Word right
 			when "C^delete", "M^d", "M^delete"
-				if @_cursor.x < @_line.length
-					trailing = @_line.slice(@_cursor.x)
+				if @_cursor.x < @_lines[@_cursor.y].length
+					trailing = @_lines[@_cursor.y].slice(@_cursor.x)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
-					@_line = @_line.slice(0, @_cursor.x) + trailing.slice(match[0].length)
+					@_lines[@_cursor.y] = @_lines[@_cursor.y].slice(0, @_cursor.x) + trailing.slice(match[0].length)
 					@refreshLine()
 			# Line right
 			when "C^k", "C^S^delete"
-				@_line = @_line.slice(0, @_cursor.x)
+				@_lines[@_cursor.y] = @_lines[@_cursor.y].slice(0, @_cursor.x)
 				@refreshLine()
 			# Line left
 			when "C^S^backspace"
-				@_line = @_line.slice(@_cursor.x)
+				@_lines[@_cursor.y] = @_lines[@_cursor.y].slice(@_cursor.x)
 				@_cursor.x = 0
 				@refreshLine()
 
@@ -287,27 +294,27 @@ class Shell
 				@_cursor.x = 0
 				@refreshLine()
 			when "end", "C^e"
-				@_cursor.x = @_line.length
+				@_cursor.x = @_lines[@_cursor.y].length
 				@refreshLine()
 			when "left", "C^b"
 				if @_cursor.x > 0
 					@_cursor.x--
 					@output.moveCursor -1, 0
 			when "right", "C^f"
-				unless @_cursor.x is @_line.length
+				unless @_cursor.x is @_lines[@_cursor.y].length
 					@_cursor.x++
 					@output.moveCursor 1, 0
 			# Word left
 			when "C^left", "M^b"
 				if @_cursor.x > 0
-					leading = @_line.slice(0, @_cursor.x)
+					leading = @_lines[@_cursor.y].slice(0, @_cursor.x)
 					match = leading.match(/([^\w\s]+|\w+|)\s*$/)
 					@_cursor.x -= match[0].length
 					@refreshLine()
 			# Word right
 			when "C^right", "M^f"
-				if @_cursor.x < @_line.length
-					trailing = @_line.slice(@_cursor.x)
+				if @_cursor.x < @_lines[@_cursor.y].length
+					trailing = @_lines[@_cursor.y].slice(@_cursor.x)
 					match = trailing.match(/^(\s+|\W+|\w+)\s*/)
 					@_cursor.x += match[0].length
 					@refreshLine()
@@ -382,7 +389,8 @@ class Shell
 		## Mouse stuff
 			when 'mousedownL' then
 			when 'mousedownM' then
-			when 'mousedownR' then
+			# Right click is captured by gnome-terminal, but C^rightclick and S^rightclick are available
+			when 'C^mousedownR' then
 			when 'mouseup' then
 			when 'mousemove' then
 			when 'scrolldown' then
@@ -393,7 +401,11 @@ class Shell
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				@_lines[@_cursor.y]+=s
 				@_cursor.x = @_lines[@_cursor.y].length
-				@refreshLine()
+				@_prompt =  @PROMPT()
+				@output.clearLine 0
+				@output.cursorTo 0
+				@output.write @_prompt + @_lines[@_cursor.y]
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 #				if s
 #					lines = s.split /\r\n|\n|\r/
 #					for i,line of lines
@@ -405,19 +417,19 @@ class Shell
 		@_lines[@_cursor.y]+=s
 		@_cursor.x = @_lines[@_cursor.y].length
 		@refreshLine()
-#		if @_cursor.x < @_line.length
-#			beg = @_line.slice(0, @_cursor.x)
-#			end = @_line.slice(@_cursor.x, @_line.length)
-#			@_line = beg + c + end
+#		if @_cursor.x < @_lines[@_cursor.y].length
+#			beg = @_lines[@_cursor.y].slice(0, @_cursor.x)
+#			end = @_lines[@_cursor.y].slice(@_cursor.x, @_lines[@_cursor.y].length)
+#			@_lines[@_cursor.y] = beg + c + end
 #			@_cursor.x += c.length
 #			@refreshLine()
 #		else
-#			@_line += c
+#			@_lines[@_cursor.y] += c
 #			@_cursor.x += c.length
 #			@output.write c
 
 	tabComplete: ->
-		@autocomplete( @_line.slice(0, @_cursor.x).split(' ').pop(), ( (completions, completeOn) =>
+		@autocomplete( @_lines[@_cursor.y].slice(0, @_cursor.x).split(' ').pop(), ( (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
 					@insertString completions[0].slice(completeOn.length)
@@ -558,7 +570,11 @@ class Shell
 				else
 					echo returnValue
 				@_prompt =  @PROMPT()
-				@refreshLine()
+				@_cursor = x:0, y:0
+				@output.clearLine 0
+				@output.cursorTo 0
+				@output.write @_prompt
+				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 			).run()
 		catch err
 			@error err
