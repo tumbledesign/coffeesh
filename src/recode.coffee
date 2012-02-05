@@ -37,7 +37,7 @@ exports.Recode = (code) ->
 					exectmp = ''
 				else exectmp += " "
 			when 'CALL_START', 'CALL_END'
-				if tokens[i-1]?[0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE', 'CALL_END']
+				if tokens[i-1]?[0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE']
 					output.push val
 			#			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
 			#					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
