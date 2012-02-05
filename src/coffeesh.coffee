@@ -109,7 +109,7 @@ class Shell
 		@_historyIndex = -1
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
-		@_prompt = ''
+		@_prompt = @PROMPT()
 		@_lines = []
 		@_completions = []
 		@_lines[@_cursor.y] = ''
@@ -208,18 +208,19 @@ class Shell
 			# SIGINT
 			# TODO: fix
 			when "C^c"
-				@output.write "\r\n"
-				@_cursor = x:0, y:0
-				@_lines = []
-				@_lines[@_cursor.y] = ""
-				@refreshLine()
+				#@output.write "\r\n"
+				#@_cursor = x:0, y:0
+				#@_lines = []
+				#@_lines[@_cursor.y] = ""
+				#@refreshLine()
 				#@output.clearLine 1
-				# @pause()
-				# @resume()
+				@pause()
+				@resume()
 
 			# Background
-			when "C^z" then	return process.kill process.pid, "SIGTSTP"
-
+			when "C^z" 
+				return process.kill process.pid, "SIGTSTP"
+			
 			# Logout
 			when "C^d"
 				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0
@@ -435,7 +436,6 @@ class Shell
 				end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
 				@_lines[@_cursor.y] = beg + s + end
 				@_cursor.x += s.length
-				@_prompt = @PROMPT() if @_prompt is ''
 				@output.cursorTo 0
 				@output.clearLine 0
 				@output.write @_prompt + @_lines[@_cursor.y]
