@@ -45,10 +45,7 @@ class Shell
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
-		
-		
 		@resetInternals()
-		
 		process.on "SIGWINCH", => 
 			[@_columns, @_rows] = @output.getWindowSize()
 		

@@ -47,7 +47,8 @@ exports.Recode = (code) ->
 			#when 'IDENTIFIER'
 			#	output.push val
 			when 'TERMINATOR'
-				output.push ""
+					output.push ""
+					tokens[i].spaced = null
 			when 'INDENT'
 				if tokens[i].fromThen
 					output.push "then " 
@@ -118,6 +119,13 @@ class Lexer
 		NOT_FILEPATH = ['NUMBER', 'REGEX', 'BOOL', '++', '--', '(']
 		NOT_SPACED_FILEPATH = NOT_FILEPATH.concat ']', ')', '}', 'THIS', 'STRING', 'IDENTIFIER'
 		
+		
+		if @tokens[@tokens.length-1]?[1] in [';'] 
+			@tokens.pop()
+			@token 'TERMINATOR', "\n"
+			@tokens[@tokens.length-2]?.newLine = true
+			@tokens[@tokens.length-2]?.spaced = null
+		
 		prev = last @tokens
 		return 0 if prev and (prev[0] in (if prev.spaced then NOT_FILEPATH else NOT_SPACED_FILEPATH))
 		if @chunk in ['.', '..']
@@ -157,6 +165,13 @@ class Lexer
 		RELATION = ['IN', 'OF', 'INSTANCEOF']
 		LINE_BREAK = ['INDENT', 'OUTDENT', 'TERMINATOR']
 		UNARY   = ['!', '~', 'NEW', 'TYPEOF', 'DELETE', 'DO']
+		
+		if @tokens[@tokens.length-1]?[1] in [';'] 
+			@tokens.pop()
+			@token 'TERMINATOR', "\n"
+			@tokens[@tokens.length-2]?.newLine = true
+			@tokens[@tokens.length-2]?.spaced = null
+			
 		return 0 unless match = IDENTIFIER.exec @chunk
 		[input, id, colon] = match
 
@@ -196,6 +211,7 @@ class Lexer
 				if prev?[1] in ['|', '<', '>', '<<', '>>', '&']
 					@tokens.pop()
 					@token 'PIPE', prev[1]
+					
 				cmd = "#{binaries[alias]}/#{aliases[id]}"
 				@token 'BINARIES', cmd
 				return id.length
@@ -204,7 +220,7 @@ class Lexer
 			if prev?[1] in ['|', '<', '>', '<<', '>>', '&']
 				@tokens.pop()
 				@token 'PIPE', prev[1]
-
+				
 			cmd = "#{binaries[id]}/#{id}"
 			@token 'BINARIES', cmd
 			return id.length
@@ -214,6 +230,7 @@ class Lexer
 			@token 'PIPE', prev[1]
 			@token 'ARG', id
 			return id.length
+			
 			
 		if id is 'own' and @tag() is 'FOR'
 			@token 'OWN', id
@@ -473,7 +490,7 @@ class Lexer
 				prev[0] = 'COMPOUND_ASSIGN'
 				prev[1] += '='
 				return value.length
-		if      value is ';'             then tag = 'TERMINATOR'
+		if value is ';'	then tag = 'TERMINATOR'
 		else if value in MATH            then tag = 'MATH'
 		else if value in COMPARE         then tag = 'COMPARE'
 		else if value in COMPOUND_ASSIGN then tag = 'COMPOUND_ASSIGN'
