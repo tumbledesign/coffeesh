@@ -29,16 +29,8 @@ class Shell
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		@PROMPT_CONTINUATION = => 
-			p = "➜ ".green
-			for i in [0...@_tabs]
-				p += @PROMPT_TAB
-			p+=" "
-			(p)
-				
-		@PROMPT_TAB = "··>".blue.bold
-		@_tabs = 0
-		@PROMPT = => ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ")
+		
+		@TABSTOP = 2
 		@ALIASES = 
 			ls: 'ls -atr --color=auto'
 			l: 'ls --color=auto'
@@ -114,11 +106,22 @@ class Shell
 		@_historyIndex = -1
 		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
-		@_prompt = @PROMPT()
+		
 		@_lines = []
+		@_tabs = []
 		@_completions = []
 		@_lines[@_cursor.y] = ''
-		@_tabs = 0
+		@_tabs[@_cursor.y] = 0
+		@PROMPT = => 
+			return ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ") if @_cursor.y is 0 and @_lines.length is 1 and @_tabs[0] is 0
+			p = "➜ ".green
+			for i in [0...@_tabs[@_cursor.y]]
+				p+='|'.grey
+				p+='·'.grey for j in [0...@TABSTOP]
+			(p)
+		
+		@_prompt = @PROMPT()
+		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 
 	error: (err) -> 
@@ -188,8 +191,9 @@ class Shell
 			@output.write @_prompt + @_lines[@_cursor.y] + '\n'
 			@_cursor.y++
 			@_lines[@_cursor.y] = ''
+			@_tabs[@_cursor.y] = 0
 			@_cursor.x = 0
-			@_prompt =  @PROMPT_CONTINUATION()
+			@_prompt =  @PROMPT()
 			@output.cursorTo 0
 			@output.clearLine 0
 			@output.write @_prompt + @_lines[@_cursor.y]
@@ -213,6 +217,7 @@ class Shell
 				@output.write @_prompt
 				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 				
+				
 			# Background
 			when "C^z" 
 				return process.kill process.pid, "SIGTSTP"
@@ -223,24 +228,24 @@ class Shell
 
 			when "tab" 
 				if @_cursor.x is 0
-					@_cursor.x = 0
-					@_tabs++
+					@_tabs[@_cursor.y]++
+					@_prompt = @PROMPT()
+					
 					@output.cursorTo 0
 					@output.clearLine 0
-					@_prompt = @PROMPT_CONTINUATION()
 					@output.write @_prompt
 					@output.cursorTo @_prompt.stripColors.length
 				else
 					@tabComplete()
+			
 			when "S^tab"
 				if @_cursor.x is 0
-					return if @_tabs is 0
-					@_cursor.x = 0
-					@_tabs--
+					if @_tabs[@_cursor.y] > 0
+						@_tabs[@_cursor.y]--
 					
+					@_prompt = @PROMPT()
 					@output.cursorTo 0
 					@output.clearLine 0
-					@_prompt = @PROMPT_CONTINUATION()
 					@output.write @_prompt
 					@output.cursorTo @_prompt.stripColors.length
 				else
@@ -272,7 +277,7 @@ class Shell
 				else if @_cursor.y isnt 0 and @_cursor.y is (+@_lines.length-1) and @_lines[@_cursor.y].length is 0
 					@_cursor.y--
 					@_lines.pop() unless @_cursor.y is 0
-					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@_prompt = @PROMPT()
 					
 					#console.log @_cursor.x, @_cursor.y, @_lines
 					@_cursor.x = @_lines[@_cursor.y].length
@@ -299,7 +304,7 @@ class Shell
 					leading = leading[0...(leading.length - match[0].length)]
 					@_lines[@_cursor.y] = leading + @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
 					@_cursor.x = leading.length
-					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@_prompt = @PROMPT()
 					@output.clearLine 0
 					@output.cursorTo 0
 					@output.write @_prompt + @_lines[@_cursor.y]
@@ -318,7 +323,7 @@ class Shell
 					
 					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x] + trailing[match[0].length...]
 					
-					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@_prompt = @PROMPT()
 					@output.clearLine 0
 					@output.cursorTo 0
 					@output.write @_prompt + @_lines[@_cursor.y]
@@ -377,7 +382,7 @@ class Shell
 				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_lines.length and @_lines.length > 0
 					@_cursor.y--
 					@output.moveCursor 0, -1
-					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_prompt = @PROMPT()
 					@_cursor.x = @_lines[@_cursor.y].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
@@ -385,7 +390,7 @@ class Shell
 				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_lines.length-1 and @_cursor.y >= 0 and @_lines.length > 0
 					@_cursor.y++
 					@output.moveCursor 0, 1
-					@_prompt = (if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION())
+					@_prompt = @PROMPT()
 					@_cursor.x = @_lines[@_cursor.y].length
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 					return
@@ -417,20 +422,23 @@ class Shell
 					@output.moveCursor 0,-1
 
 				@_lines = (@history[@_historyIndex]).split('\n')
+				
 				@_cursor.y = @_lines.length
 				
 				for i in [0...@_lines.length]
+					match = @_lines[i].match(/// ^ ([\t]*)([^\t]*) ///)
+					@_tabs[i] = match[1].split('\t').length-1
+					@_lines[i] = match[2]
 					@_cursor.y = i
 					@_cursor.x = @_lines[@_cursor.y].length
-					@_prompt = if @_cursor.y is 0 then @PROMPT() else @PROMPT_CONTINUATION()
+					@_prompt = @PROMPT()
 					@output.clearLine 0
 					@output.cursorTo 0
 					@output.write @_prompt
 					@output.write @_lines[@_cursor.y]
 					@output.write '\n' if i < @_lines.length-1
 					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-
-						
+					
 				if keytoken in ['down', 'C^n']
 					@_cursor.y = 0
 					@output.moveCursor 0, -1*(@_lines.length-1)
@@ -599,9 +607,15 @@ class Shell
 			@output.cursorTo @_prompt.stripColors.length
 			return
 		
-		
+		lines = []
+		for i in [0...@_lines.length]
+			tabs = ''
+			tabs += "\t" for j in [0...@_tabs[i]]
 			
-		code = @_lines.join("\n")
+			lines[i] = tabs + @_lines[i]
+			console.log @_tabs[i], tabs, lines[i]
+		code = lines.join("\n")
+		console.log code
 		@resetInternals()
 		
 		@history.unshift code
