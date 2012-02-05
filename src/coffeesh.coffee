@@ -120,6 +120,7 @@ class Shell
 		process.stderr.write (err.stack or err.toString()) + '\n'
 
 	resume: ->
+		@resetInternals()
 		@input.setEncoding('utf8')
 		@_data_listener = (s) =>
 			if (s.indexOf("\u001b[M") is 0) then @write s
@@ -129,9 +130,7 @@ class Shell
 		).resume()
 		tty.setRawMode true
 		@output.write @MOUSETRACK
-		@output.moveCursor - @MOUSETRACK.length
-		
-		@resetInternals()
+		#@output.moveCursor -1 * @MOUSETRACK.length
 		return
 
 	pause: ->
@@ -140,16 +139,17 @@ class Shell
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
 		@output.write @MOUSEUNTRACK
-		@output.moveCursor - @MOUSEUNTRACK.length
-		@input.pause()
+		#@output.moveCursor - @MOUSEUNTRACK.length
 		tty.setRawMode false
+		@input.pause()
+		
 		return 
 
 	close: ->
 		@input.removeAllListeners 'keypress'
 		@input.removeAllListeners 'data'
 		@output.write @MOUSEUNTRACK
-		@output.moveCursor - @MOUSEUNTRACK.length
+		#@output.moveCursor - @MOUSEUNTRACK.length
 		tty.setRawMode false
 		@input.destroy()
 		return
@@ -435,6 +435,7 @@ class Shell
 				end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
 				@_lines[@_cursor.y] = beg + s + end
 				@_cursor.x += s.length
+				@_prompt = @PROMPT() if @_prompt is ''
 				@output.cursorTo 0
 				@output.clearLine 0
 				@output.write @_prompt + @_lines[@_cursor.y]
@@ -451,6 +452,7 @@ class Shell
 		end = @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
 		@_lines[@_cursor.y] = beg + s + end
 		@_cursor.x += s.length
+		
 		@output.cursorTo 0
 		@output.clearLine 0
 		@output.write @_prompt + @_lines[@_cursor.y]
@@ -598,6 +600,7 @@ class Shell
 					global._ = _
 				else
 					echo returnValue
+				@resetInternals()
 				@_prompt =  @PROMPT()
 				@output.clearLine 0
 				@output.cursorTo 0
