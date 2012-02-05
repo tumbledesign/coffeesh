@@ -16,52 +16,56 @@ exports.Recode = (code) ->
 	for i in [0...tokens.length]
 		[lex,val] = tokens[i]
 		echo tokens[i]
+		
 		if tokens[i-1]?[0] in ['TERMINATOR', 'INDENT', 'OUTDENT']
 			output.push('\t') for t in [0...indented] 
 		
 		switch lex
 			when 'BUILTIN'
-				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '()' else ''}"
+				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '(	)' else '('}"
+				
 			when 'PARAM'
-				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ')'] then '' else ','}"
+				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'OUTDENt', 'CALL_END', ')'] then ')' else ','}"
+				
 			when 'BINARIES', 'FILEPATH'
 				exectmp += val
 				if tokens[i+1]?[0] in ['TERMINATOR', 'OUTDENT', 'CALL_END']
 					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
 					exectmp = ''
 				else exectmp += " "
+				
 			when 'ARG', 'PIPE'
 				exectmp += val
 				if tokens[i+1]?[0] in ['TERMINATOR', 'CALL_END', ")"]
 					output.push "shl.execute(#{Lexer.prototype.makeString(exectmp, '"', no)})"
 					exectmp = ''
 				else exectmp += " "
+			
 			when 'CALL_START', 'CALL_END'
-				if tokens[i-1]?[0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE']
+				if tokens[i-1]?[0] not in ['BINARIES', 'FILEPATH', 'ARG', 'PIPE', 'BUILTIN', 'PARAM']
 					output.push val
-			#			when '=', '(', ')', '{', '}', '[', ']', ':', '.', '->', ',', '..', '...', '-', '+'
-			#					, 'BOOL', 'NUMBER', 'MATH', 'STRING', 'IDENTIFIER', 'THIS', '@'
-			#					, 'INDEX_START', 'INDEX_END', 'CALL_START', 'CALL_END', 'PARAM_START', 'PARAM_END'
-			#					, 'FOR', 'FORIN', 'FOROF', 'OWN', 'IF', 'POST_IF', 'SWITCH', 'WHEN', 'EXTENDS'
-			#				output.push val
-			#when 'IDENTIFIER'
-			#	output.push val
+			
 			when 'TERMINATOR'
 					output.push ""
 					tokens[i].spaced = null
+					
 			when 'INDENT'
 				if tokens[i].fromThen
 					output.push "then " 
 				indented += tokens[i][1]
+				
 			when 'OUTDENT'
 				indented -= tokens[i][1]
+				
 			else 
 				output.push val
 		
 		if tokens[i+1]?[0] not in ['CALL_START'] and tokens[i].spaced?
 			output.push ' '
+			
 		if tokens[i].newLine?
-			output.push '\n' 
+			output.push '\n'  
+			
 	(output.join(''))
 
 
@@ -81,7 +85,8 @@ class Lexer
 		
 		i = 0
 		while @chunk = code.slice i
-			i += @pathToken() or
+			i += @nestedCoffeeToken() or 
+				@pathToken() or
 				@identifierToken() or
 				@commentToken() or
 				@whitespaceToken() or
@@ -106,7 +111,23 @@ class Lexer
 			@rewriteClosingParens()
 		
 		(@tokens)
+		
+	nestedCoffeeToken: ->
+		BACKTICKS = /// ^ (?: `` )(.*)(?: ``) ///
+		return 0 unless match = BACKTICKS.exec @chunk
+		console.log match
+		[input, nestedCoffee] = match
 
+		prev = last @tokens
+		if prev?[0] in ['BINARIES', 'FILEPATH', 'ARG']
+			@token 'ARG', '#{'+nestedCoffee+'}'
+			return input.length
+			
+		if prev?[0] in ['BUILTIN', 'PARAM']
+			@token 'PARAM', nestedCoffee
+			return input.length
+			
+			
 	pathToken: ->
 		FILEPATH = /// ^
 			(?:
