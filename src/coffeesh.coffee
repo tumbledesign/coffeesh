@@ -118,7 +118,6 @@ class Shell
 		@_lines = []
 		@_completions = []
 		@_lines[@_cursor.y] = ''
-		@_consecutive_tabs = 0
 		@_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 
@@ -136,7 +135,6 @@ class Shell
 		).resume()
 		tty.setRawMode true
 		@output.write @MOUSETRACK
-		#@output.moveCursor -1 * @MOUSETRACK.length
 		return
 
 	pause: ->
@@ -145,13 +143,14 @@ class Shell
 		@input.removeAllListeners 'keypress'
 		@input.removeListener 'data', @_data_listener
 		@output.write @MOUSEUNTRACK
-		#@output.moveCursor - @MOUSEUNTRACK.length
 		tty.setRawMode false
 		@input.pause()
 		
 		return 
 
 	close: ->
+		@output.write "\r\n#{@MOUSEUNTRACK}"
+		tty.setRawMode false
 		@input.destroy()
 		return
 				
@@ -199,8 +198,6 @@ class Shell
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
 
-		#if keytoken is "tab" then @_consecutive_tabs++ else @_consecutive_tabs = 0
-
 		switch keytoken
 			
 		## Utility functions
@@ -216,7 +213,6 @@ class Shell
 				@output.write @_prompt
 				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
 				
-				
 			# Background
 			when "C^z" 
 				return process.kill process.pid, "SIGTSTP"
@@ -229,13 +225,11 @@ class Shell
 				if @_cursor.x is 0
 					@_cursor.x = 0
 					@_tabs++
-					
 					@output.cursorTo 0
 					@output.clearLine 0
 					@_prompt = @PROMPT_CONTINUATION()
 					@output.write @_prompt
 					@output.cursorTo @_prompt.stripColors.length
-					
 				else
 					@tabComplete()
 			when "S^tab"
@@ -290,7 +284,7 @@ class Shell
 					@_lines = ['']
 						
 			when "delete", "C^d"
-				if @_cursor.x < @_line.length
+				if @_cursor.x < @_lines[@_cursor.y].length
 					@_cursor.x--
 					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
 					@output.moveCursor -1
