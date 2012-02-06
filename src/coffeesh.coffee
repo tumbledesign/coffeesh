@@ -129,30 +129,30 @@ class CoffeeShell
 		@resetInternals()
 		@input.setEncoding('utf8')
 		
-		#@_data_listener = (s) =>
-		#	if (s.indexOf("\u001b[M") is 0) then @keypress s
-		#@input.on("data", @_data_listener)
+		@_data_listener = (s) =>
+			if (s.indexOf("\u001b[M") is 0) then @keypress s
+		@input.on("data", @_data_listener)
 		
 		@input.on("keypress", (s, key) =>
 			@keypress s, key
 		).resume()
 		tty.setRawMode true
-		#@output.write @MOUSETRACK
+		@mouseTracking on
 		return
 
 	pause: ->
 		@resetInternals()
 		@output.clearLine 0
 		@input.removeAllListeners 'keypress'
-		#@input.removeListener 'data', @_data_listener
-		#@output.write @MOUSEUNTRACK
+		@input.removeListener 'data', @_data_listener
+		@mouseTracking off
 		tty.setRawMode false
 		@input.pause()
 		
 		return 
 
 	close: ->
-		#@output.write "\r\n#{@MOUSEUNTRACK}"
+		@mouseTracking off
 		tty.setRawMode false
 		@input.destroy()
 		return
@@ -222,8 +222,8 @@ class CoffeeShell
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
 			@input.removeAllListeners 'keypress'
-			#@input.removeListener 'data', @_data_listener
-			#@output.write(@MOUSEUNTRACK)
+			@input.removeListener 'data', @_data_listener
+			@mouseTranking off
 			fiber.run()
 			@resume()
 		yield()

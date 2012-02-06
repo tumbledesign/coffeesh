@@ -7,23 +7,23 @@ module.exports =
 	keypress: (s, key) ->
 	
 		#We need to handle mouse events, they are not provided by node's tty.js
-		#		if not key? and (s.indexOf("\u001b[M") is 0)
-		#			
-		#			modifier = s.charCodeAt(3)
-		#			key ?= shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
-		#			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
-		#			if ((modifier & 96) is 96)
-		#				key.name ?= if modifier & 1 then 'scrolldown' else 'scrollup'
-		#			else if modifier & 64 then key.name ?= 'mousemove'
-		#			else
-		#				switch (modifier & 3)
-		#					when 0 then key.name ?= 'mousedownL'
-		#					when 1 then key.name ?= 'mousedownM'
-		#					when 2 then key.name ?= 'mousedownR'
-		#					when 3 then key.name ?= 'mouseup'
-		#					#else return
-		#			#Disable mouse events for now
-		#			if key.name? then return
+		if not key? and (s.indexOf("\u001b[M") is 0)
+			
+			modifier = s.charCodeAt(3)
+			key ?= shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
+			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
+			if ((modifier & 96) is 96)
+				key.name ?= if modifier & 1 then 'scrolldown' else 'scrollup'
+			else if modifier & 64 then key.name ?= 'mousemove'
+			else
+				switch (modifier & 3)
+					when 0 then key.name ?= 'mousedownL'
+					when 1 then key.name ?= 'mousedownM'
+					when 2 then key.name ?= 'mousedownR'
+					when 3 then key.name ?= 'mouseup'
+					#else return
+			#Disable mouse events for now
+			#if key.name? then return
 
 		key ?= {}
 
@@ -229,16 +229,6 @@ module.exports =
 					@cy = 0
 					@redrawPrompt()
 
-					## Mouse stuff
-					#			when 'mousedownL' then
-					#			when 'mousedownM' then
-					#			# Right click is captured by gnome-terminal, but C^rightclick and S^rightclick are available
-					#			when 'C^mousedownR' then
-					#			when 'mouseup' then
-					#			when 'mousemove' then
-					#			when 'scrolldown' then
-					#			when 'scrollup'
-					## Directly output char to terminal
 				
 		# Scrolling
 			when "pageup"
@@ -247,7 +237,25 @@ module.exports =
 			when "pagedown"
 				@scrollDown(@promptRow() - 2)
 
+			when "scrollup"
+				@scrollUp(1)
+
+			when "scrolldown"
+				@scrollDown(1)
+
+		## Mouse stuff
+			# when 'mousedownL' then
+			# when 'mousedownM' then
+			# # Right click is captured by gnome-terminal, but C^rightclick and S^rightclick are available
+			# when 'C^mousedownR' then
+			# when 'mouseup' then
+			# when 'mousemove' then
+			# when 'scrolldown' then
+			# when 'scrollup'
+				
+
 			else
+				return if keytoken.indexOf('scroll') isnt -1 or keytoken.indexOf('mouse') isnt -1
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				beg = @cLines[@cy][0...@cx]
 				end = @cLines[@cy][@cx...@cLines[@cy].length]

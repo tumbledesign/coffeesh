@@ -18,10 +18,6 @@ module.exports =
 		@cLines = ['']
 		
 		
-		#@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
-		#@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
-		
-		
 		[@numcols, @numrows] = @output.getWindowSize()
 		@numrows-- unless @STATUSBAR is off
 
@@ -45,6 +41,9 @@ module.exports =
 	# When I'm done stealing the cursor to write output, replace it to the prompt
 	replaceCursor: -> @output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
 
+	mouseTracking: (e = on) ->
+		if e then @output.write "\x1b[?1003h\x1b[?1005h"
+		else @output.write "\x1b[?1003l\x1b[?1005l"
 
 	drawShell: ->
 		@output.cursorTo 0, 0
@@ -98,13 +97,11 @@ module.exports =
 		@output.write colors.reset
 		for r in [0..@promptRow()]
 			@output.cursorTo 0, r
-			if @buffer.length <= r + @scrollOffset
-				@output.clearLine(0)
-			else
-				if @buffer[r + @scrollOffset].length > @numcols
-					@output.write "#{@buffer[r + @scrollOffset][..@numcols-1]}…"
-				else 
-					@output.write @buffer[r + @scrollOffset]
+			@output.clearLine(0)
+			if r + @scrollOffset < @buffer.length
+				@output.write @buffer[r + @scrollOffset][..@numcols-1]
+				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
+
 		@replaceCursor()
 
 			
@@ -117,28 +114,25 @@ module.exports =
 		# Scroll to bottom
 		if not n? or @buffer.length - (@scrollOffset + n) <= @numrows
 			@scrollOffset = @buffer.length - @numrows
-			@row = @buffer.length
 
 		# Scroll n lines
 		else
 			@scrollOffset += n
-			@row +=n
 
 		@redrawOutput()
 
 	scrollUp: (n) ->
 		return if n? and n < 1
 
-		# Can't scroll down if not enough lines have been output
+		# Can't scroll up if not enough lines have been output
 		return if @buffer.length < @numrows
 
 		#Scroll to top
-		if not n? or @scrollOffset - n <=0
+		if not n? or @scrollOffset - n <= 0
 			@scrollOffset = 0
-			@row = 0
+
 		else
 			@scrollOffset -= n
-			@row -= n
 
 		@redrawOutput()
 
@@ -185,5 +179,6 @@ module.exports =
 
 		if @row + numbuffered > @promptRow() - 1
 			@scrollDown()
-		else @row += numbuffered
+
+		@row += numbuffered
 		
