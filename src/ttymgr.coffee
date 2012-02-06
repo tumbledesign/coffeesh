@@ -131,8 +131,16 @@ module.exports =
 		@col = 1
 		@output.write "\r\n"
 
-	write: (str) ->
-		# TODO: handle \r, \n, \t, \v, \b
+	displayOutput: (output) ->
+		for c in str
+			@buffer[@row][@col] = c
+			if @col is @numcols
+				@col = 1
+				@newLine()
+			else @col++
+			@output.write c
+
+	displayInput: (input) ->
 		for c in str
 			@buffer[@row][@col] = c
 			if @col is @numcols
