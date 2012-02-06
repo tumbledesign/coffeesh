@@ -56,7 +56,7 @@ module.exports =
 			when "C^c"
 				@pause()
 				@resume()
-				@reDraw()				
+				@redrawPrompt()		
 				
 			# Background
 			when "C^z" 
@@ -101,7 +101,12 @@ module.exports =
 					
 					@redrawPrompt()
 					
+				else if @cTabs[@cy] isnt 0 and @cx is 0
+						@cTabs[@cy]--
+						@redrawPrompt()
+					
 				else if @cy isnt 0 and @cy is (+@cLines.length-1) and @cLines[@cy].length is 0
+				
 					@cy--
 					@cLines.pop() unless @cy is 0
 					@redrawPrompt()
@@ -112,27 +117,6 @@ module.exports =
 					@redrawPrompt()
 				else if @cy is 0 and @cx is 0  and @cLines[0].length is 0
 					@cLines = ['']
-						
-			when "delete", "C^d"
-				if @cx < @cLines[@cy].length
-					@cx--
-					@redrawPrompt()
-					
-			# Word left
-			when "C^w", "C^backspace", "M^backspace"
-				if @cx > 0
-					leading = @cLines[@cy][0...@cx]
-					match = leading.match(/// \S*\s* $ ///)
-					leading = leading[0...(leading.length - match[0].length)]
-					@cLines[@cy] = leading + @cLines[@cy][@cx...@cLines[@cy].length]
-					@cx = leading.length
-					@redrawPrompt()
-					
-				else if @cy is 0 and @cx is 0 and @cLines[0].length is 0
-					@cLines = ['']
-					@cTabs = [0]
-					@redrawPrompt()
-					
 					
 			# Word right
 			when "C^delete", "M^d", "M^delete"
@@ -194,11 +178,13 @@ module.exports =
 				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
 					@cy--
 					@redrawPrompt()
+					@cx = @cLines[@cy].length
 					return
 					
 				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
 					@cy++
 					@redrawPrompt()
+					@cx = @cLines[@cy].length
 					return
 				
 				if @_historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
