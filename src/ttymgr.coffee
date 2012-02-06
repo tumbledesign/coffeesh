@@ -34,8 +34,6 @@ module.exports =
 			@buffer.push line
 
 		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
-		@outputRow = => (@row - @topRow)
-		@numoutputrows = => Math.max(@MINPROMPTHEIGHT, @cLines.length)
 		@topRow = 0
 		@scrollOffset = 0
 		[@col, @row] = [0, 0]
@@ -117,14 +115,14 @@ module.exports =
 		newrow += " " for i in [0...@numcols]
 		@buffer.push newrow
 
-		if @row is @numoutputrows
+		if @row is @promptRow() - 1
 			@scrollDown()
 		else @row++
 		@col = 1
 		@output.write "\r\n"
 
 	displayOutput: (output) ->
-		@output.cursorTo
+		@output.cursorTo @col, @row
 		for c in output
 			@buffer[@row][@col] = c
 			if @col is @numcols
@@ -134,6 +132,7 @@ module.exports =
 			@output.write c
 
 	displayInput: (input) ->
+		@output.cursorTo @col, @row
 		for c in input
 			@buffer[@row][@col] = c
 			if @col is @numcols
