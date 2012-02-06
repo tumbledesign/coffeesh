@@ -29,11 +29,9 @@ module.exports =
 
 		# enter
 		if s is '\r'
-			@runline()
-			return
-			
-		# ctrl enter
-		else if s is '\n'
+			if @cy > 0 and @cLines[@cLines.length-1] is ''
+				@runline()
+				
 			@cy++
 			@cx = 0
 			@cLines[@cy] = ''
@@ -41,10 +39,16 @@ module.exports =
 			@redrawPrompt()
 			return
 			
+		# ctrl enter
+		else if s is '\n'
+			@runline()
+			return
+			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
-
-		switch keytoken
 		
+	
+		switch keytoken
+				
 			# SIGINT
 			# TODO: fix
 			when "C^c"
@@ -63,7 +67,9 @@ module.exports =
 				@close() if @cx is 0 and @cLines[@cy].length is 0 and @cLines.length is 1
 
 			when "tab" 
+					
 				if @cx is 0
+					@cTabs[@cy] ?= 0
 					@cTabs[@cy]++
 					@redrawPrompt()
 				else

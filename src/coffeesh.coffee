@@ -108,10 +108,10 @@ class CoffeeShell
 		@_mouse = x:0, y:0
 		@_completions = []
 		
-#		@cx = @cy = 0
-#		@cTabs = [0]
-#		@cLines = ['']
-#		@redrawPrompt()
+		@cx = @cy = 0
+		@cTabs = [0]
+		@cLines = ['']
+
 
 		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
@@ -151,30 +151,17 @@ class CoffeeShell
 		@input.destroy()
 		return
 
-	runline: ->
-		@output.write "\r\n"
-		#for i in [0...@_lines.length-1]
-		#	@output.cursorTo 0
-		#	@output.clearLine 0
-		#	@output.moveCursor 0,-1
-		#@output.cursorTo 0
-		#@output.clearLine 0
-		
-			
-		if @_lines.length is 1 and @_lines[0] is ''
-			@resetInternals()
-			@redrawPrompt()
-			return
+	runline: ->		
 		
 		lines = []
-		for i in [0...@_lines.length]
+		for i in [0...@cLines.length]
 			tabs = ''
-			tabs += "\t" for j in [0...@_tabs[i]]
+			tabs += "\t" for j in [0...@cTabs[i]]
 			
-			lines[i] = tabs + @_lines[i]
-			console.log @_tabs[i], tabs, lines[i]
+			lines[i] = tabs + @cLines[i]
+			console.log @cTabs[i], tabs, lines[i]
+		
 		code = lines.join("\n")
-		console.log code
 		@resetInternals()
 		
 		@history.unshift code
@@ -182,7 +169,7 @@ class CoffeeShell
 		fs.write @history_fd, code+"\r\n"
 		
 		rcode = Recode code
-		echo "Recoded: #{rcode}"
+		echo "Recoded: #{rcode}\n"
 		
 		try
 			Fiber(=>

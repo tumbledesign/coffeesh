@@ -2,9 +2,9 @@ colors = require './colors'
 
 module.exports =
 	'ttymgr': ->
-	# Command Prompt Area
+		# Command Prompt Area
 		@STATUSBAR = (width = 80) -> "                                   Coffeeshell                                    ".bgblack.red
-		@PROMPT = => "#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then '➜'.red else '➜'.green}"
+		@PROMPT = => "#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then '➜'.red else "➜ ".green}"
 		@MULTIPROMPT = => "➜ ".green
 		@TABSTOP = 2
 		@PROMPTHEIGHT = 6
@@ -50,24 +50,17 @@ module.exports =
 		@cursorTo @col, @row
 
 	redrawPrompt: ->
+		
 		for y,l of @cLines
 			y = +y
 			@output.cursorTo 0, (@numrows - @PROMPTHEIGHT + y)
 			@output.clearLine 0
-			if y is 0
-				p = @PROMPT()
-				@output.write @PROMPT() + l
-					
-			else if y > 0
-				p = @MULTIPROMPT()
-				for t in @cTabs[y]
-					p +='|'
-					p += '·' for i in [0...@TABSTOP]
-			
-				@ouptut.write p + l
-				#@output.cursorTo p[y].length + l.length
-				
-			@output.cursorTo(p.removeStyle.length + @cx, @numrows - @PROMPTHEIGHT + @cy)
+			p = @MULTIPROMPT()
+			for t in [0...@cTabs[y]]
+				p +='|'
+				p += '·' for i in [0...@TABSTOP]
+			@output.write p + l
+		@output.cursorTo(p.removeStyle.length + @cx, @numrows - @PROMPTHEIGHT + @cy)
 				
 	scrollDown: (n = 1) ->
 	
