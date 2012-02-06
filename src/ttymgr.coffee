@@ -29,19 +29,16 @@ module.exports =
 
 		# TODO: likely don't need to fill buffer with blanks. try removing when get a chance
 		@buffer = []
-		for r in [0...@numrows]
-			line = ""
-			line += " " for c in [0...@numcols]
-			@buffer.push line
+		# for r in [0...@numrows]
+		# 	line = ""
+		# 	line += " " for c in [0...@numcols]
+		# 	@buffer.push line
 
 		# TODO: change to definegetter
 		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
 		
 		@scrollOffset = 0
 		[@col, @row] = [0, 0]
-
-	# When I'm done stealing the cursor to write output, replace it to the prompt
-	replaceCursor: -> @output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
 
 	mouseTracking: (e = on) ->
 		if e then @output.write "\x1b[?1003h\x1b[?1005h"
@@ -53,6 +50,7 @@ module.exports =
 		for r in [0..@promptRow()]
 			@output.cursorTo 0, r
 			@output.clearLine(0)
+		@redrawOutput()
 		@redrawStatus() unless @STATUSBAR is off
 		@redrawPrompt()
 
@@ -92,7 +90,7 @@ module.exports =
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
 			@output.write p + l
-		@replaceCursor()
+			@output.cursorTo((p.removeStyle).length + @cx, @promptRow() + @cy)
 
 	redrawOutput: ->
 		@output.cursorTo 0, 0
@@ -104,7 +102,7 @@ module.exports =
 				@output.write @buffer[r + @scrollOffset][..@numcols]
 				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
 
-		@replaceCursor()
+		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
 
 			
 	scrollDown: (n) ->
@@ -181,8 +179,12 @@ module.exports =
 				line = line[@numcols...]
 				numbuffered++
 
+		@row += numbuffered
+
 		if @row + numbuffered > @promptRow() - 1
 			@scrollDown()
+		else
+			@redrawOutput()
 
-		@row += numbuffered
+		
 		
