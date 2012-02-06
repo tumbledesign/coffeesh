@@ -122,7 +122,7 @@ module.exports =
 		@displayBuffer data
 
 		@redrawPrompt()
-		fs.write  @errlog, err
+		fs.write @errlog, err
 
 	displayOutput: (data) ->
 		@output.cursorTo 0, @row
@@ -131,7 +131,7 @@ module.exports =
 		@displayBuffer data
 
 		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
-		fs.write  @outlog, data
+		fs.write @outlog, data
 
 	displayInput: (data) ->
 		@output.cursorTo 0, @row
@@ -142,13 +142,13 @@ module.exports =
 
 		@redrawPrompt()
 
-		fs.write  @inlog, data
+		fs.write @inlog, data
 
 	displayBuffer: (str) ->
 		lines = str.split(/\r\n|\n|\r/)
 		for line in lines
 			while line.length > 0
-				@buffer.push = line[...@numrows]
+				@buffer.push line[...@numrows]
 				line = line[@numrows...]
 				if @row is @promptRow() - 1
 					@scrollDown()
