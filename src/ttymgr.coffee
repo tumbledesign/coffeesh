@@ -111,13 +111,6 @@ module.exports =
 		@scrollOffset += n
 		@reDraw()
 
-
-	clearLine: -> 
-		emptyline = ""
-		emptyline += " " for i in [1..@numcols]
-		@buffer[@absRow] = emptyline
-		@output.clearLine(0)
-
 	newLine: ->
 		return if @row isnt @buffer.length
 
@@ -132,7 +125,7 @@ module.exports =
 		@output.write "\r\n"
 
 	displayOutput: (output) ->
-		for c in str
+		for c in output
 			@buffer[@row][@col] = c
 			if @col is @numcols
 				@col = 1
@@ -141,7 +134,7 @@ module.exports =
 			@output.write c
 
 	displayInput: (input) ->
-		for c in str
+		for c in input
 			@buffer[@row][@col] = c
 			if @col is @numcols
 				@col = 1
