@@ -7,7 +7,6 @@ COFFEE_ALIAS_MAP = and: '&&', or: '||', is: '==', isnt: '!=', not: '!', yes: 'tr
 COFFEE_ALIASES  = ['and', 'or', 'is', 'isnt', 'not', 'yes', 'no', 'on', 'off']
 COFFEE_KEYWORDS = ['undefined', 'then', 'unless', 'until', 'loop', 'of', 'by', 'when', 'and', 'or', 'is', 'isnt', 'not', 'yes', 'no', 'on', 'off']
 
-
 exports.Recode = (code) ->
 	exectmp = ''
 	indented = 0
@@ -15,6 +14,7 @@ exports.Recode = (code) ->
 	output = []
 	for i in [0...tokens.length]
 		[lex,val] = tokens[i]
+		root.shl.displayDebug tokens[i].join("\r\n")
 		#echo tokens[i]
 		
 		if tokens[i-1]?[0] in ['TERMINATOR', 'INDENT', 'OUTDENT']

@@ -22,6 +22,12 @@ class CoffeeShell
 		@cwd = ''
 		process.on 'uncaughtException', -> @error
 		
+		@outlog = fs.openSync process.env.HOME + "/coffeesh.outlog", 'a+', '644'
+		@inlog = fs.openSync process.env.HOME + "/coffeesh.inlog", 'a+', '644'
+		@errlog = fs.openSync process.env.HOME + "/coffeesh.errlog", 'a+', '644'
+		@debuglog = fs.openSync process.env.HOME + "/coffeesh.debuglog", 'a+', '644'
+		
+		
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -170,7 +176,7 @@ class CoffeeShell
 		fs.write @history_fd, code+"\r\n"
 		
 		rcode = Recode code
-		#echo "Recoded: #{rcode}\n"
+		@displayDebug("Recoded: #{rcode}\n")
 		
 		try
 			Fiber(=>
@@ -198,7 +204,7 @@ class CoffeeShell
 			@displayOutput data.toString().trim()
 			
 		proc.stderr.on 'data', (data) =>
-			@displayOutput data.toString().trim()
+			@displayError data.toString().trim()
 			
 		proc.on 'exit', (exitcode, signal) =>
 			fiber.run()

@@ -1,4 +1,5 @@
 colors = require './colors'
+fs = require 'fs'
 
 module.exports =
 	'ttymgr': ->
@@ -111,14 +112,17 @@ module.exports =
 		@scrollOffset += n
 		@reDraw()
 
+	displayDebug: (debug) ->
+		fs.write  @debuglog, debug
+
 	displayError: (err) ->
 		@output.cursorTo 0, @row
 		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 		@output.write colors.red
-
 		@displayBuffer data
 
 		@redrawPrompt()
+		fs.write  @errlog, err
 
 	displayOutput: (data) ->
 		@output.cursorTo 0, @row
@@ -127,6 +131,7 @@ module.exports =
 		@displayBuffer data
 
 		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+		fs.write  @outlog, data
 
 	displayInput: (data) ->
 		@output.cursorTo 0, @row
@@ -136,6 +141,8 @@ module.exports =
 		@displayBuffer data
 
 		@redrawPrompt()
+
+		fs.write  @inlog, data
 
 	displayBuffer: (str) ->
 		lines = str.split(/\r\n|\n|\r/)
