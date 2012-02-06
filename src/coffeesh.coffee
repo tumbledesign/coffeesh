@@ -86,7 +86,7 @@ class CoffeeShell
 		root.builtin = @builtin
 		root.echo = @builtin.echo
 		
-		#Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+		Fiber(=> @cwd = @execute("/bin/pwd -L"); @builtin.cd(@cwd)).run()
 
 		# connect to tty
 		@resume()
@@ -163,13 +163,14 @@ class CoffeeShell
 		
 		code = lines.join("\n")
 		@resetInternals()
+		@displayInput code
 		
 		@history.unshift code
 		@history.pop() if @history.length > @HISTORY_SIZE
 		fs.write @history_fd, code+"\r\n"
 		
 		rcode = Recode code
-		echo "Recoded: #{rcode}\n"
+		#echo "Recoded: #{rcode}\n"
 		
 		try
 			Fiber(=>
@@ -178,30 +179,34 @@ class CoffeeShell
 				if returnValue is undefined
 					global._ = _
 				else
-					echo returnValue
-				@resetInternals()
-				@redrawPrompt()
+					@displayOutput returnValue
 			).run()
 		catch err
 			@error err
 	
-	run: (cmd) ->
+	
+	# Run command non interactively
+	execute: (cmd) ->
 		fiber = Fiber.current
 		@resetInternals()
 		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
+		
 		proc.stdout.on 'data', (data) =>
 			lastcmd = data.toString().trim()
-			console.log data.toString()
+			@displayOutput data.toString().trim()
+			
 		proc.stderr.on 'data', (data) =>
-			console.log data
+			@displayOutput data.toString().trim()
+			
 		proc.on 'exit', (exitcode, signal) =>
 			fiber.run()
 		yield()
 		return lastcmd
-		
-	execute: (cmd) ->
+	
+# Run command interactively	
+	run: (cmd) ->
 		fiber = Fiber.current
 		@pause()
 		@output.clearLine 0
