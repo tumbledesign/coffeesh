@@ -1,5 +1,6 @@
 colors = require './colors'
 fs = require 'fs'
+inspect = require('util').inspect
 
 module.exports =
 	'ttymgr': ->
