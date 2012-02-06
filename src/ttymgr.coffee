@@ -34,6 +34,7 @@ module.exports =
 			@buffer.push line
 
 		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
+		@outputRow = => (@row - @topRow)
 		@topRow = 0
 		@scrollOffset = 0
 		[@col, @row] = [0, 0]
@@ -49,8 +50,6 @@ module.exports =
 			d = new Date()
 			time = "#{(d.getHours() % 12)}:#{d.getMinutes()}:#{d.getSeconds()}"
 			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
-
-		#console.log s, @numrows
 
 		@output.cursorTo 0, @numrows
 
@@ -92,7 +91,6 @@ module.exports =
 		@output.cursorTo((p.removeStyle).length + @cx, @promptRow() + @cy)
 				
 	scrollDown: (n = 1) ->
-	
 		return if n < 1
 
 		return if (@buffer.length <= @numrows) or (@topRow is @numrows)
@@ -125,6 +123,7 @@ module.exports =
 		@output.write "\r\n"
 
 	displayOutput: (output) ->
+		@output.cursorTo
 		for c in output
 			@buffer[@row][@col] = c
 			if @col is @numcols
