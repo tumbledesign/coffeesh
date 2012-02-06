@@ -22,8 +22,6 @@ class CoffeeShell
 		@cwd = ''
 		process.on 'uncaughtException', -> @error
 		
-		#@MOUSETRACK = "\x1b[?1003h\x1b[?1005h"
-		#@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
@@ -88,12 +86,14 @@ class CoffeeShell
 		root.builtin = @builtin
 		root.echo = @builtin.echo
 		
-		Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+		#Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+
+		# connect to tty
+		@resume()
+		
 
 		@ttymgr()
 	
-		# connect to tty
-		@resume()
 		
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -193,11 +193,7 @@ class CoffeeShell
 				else
 					echo returnValue
 				@resetInternals()
-				@_prompt =  @PROMPT()
-				@output.clearLine 0
-				@output.cursorTo 0
-				@output.write @_prompt
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				@redrawPrompt()
 			).run()
 		catch err
 			@error err

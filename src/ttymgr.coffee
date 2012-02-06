@@ -4,8 +4,8 @@ module.exports =
 	'ttymgr': ->
 	# Command Prompt Area
 		@STATUSBAR = (width = 80) -> "                                   Coffeeshell                                    ".bgblack.red
-		@PROMPT = => return "#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then '➜'.red else '➜'.green}"
-		@MULTIPROMPT = => return "➜ ".green
+		@PROMPT = => "#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then '➜'.red else '➜'.green}"
+		@MULTIPROMPT = => "➜ ".green
 		@TABSTOP = 2
 		@PROMPTHEIGHT = 6
 		
@@ -19,11 +19,11 @@ module.exports =
 		#@MOUSEUNTRACK = "\x1b[?1003l\x1b[?1005l"
 		
 		
-		[@numcolumns, @numrows] = @output.getWindowSize()
+		[@numcols, @numrows] = @output.getWindowSize()
 		if @STATUSBAR then @numrows--
 
 		process.on "SIGWINCH", => 
-			[@numcolumns, @numrows] = @output.getWindowSize()
+			[@numcols, @numrows] = @output.getWindowSize()
 			if @STATUSBAR then @numrows--
 		@buffer = []
 		for r in [1..@numrows]
@@ -34,7 +34,7 @@ module.exports =
 		@promptRow = 1
 		@topRow = 1
 		@scrollOffset = 0
-		[@row, @col] = [1, 1]
+		[@col, @row] = [1, 1]
 
 
 	# We're using 1-based array
@@ -51,23 +51,23 @@ module.exports =
 
 	redrawPrompt: ->
 		for y,l of @cLines
-			@output.cursorTo 0, (@numrows -  @PROMPTHEIGHT) + y
+			y = +y
+			@output.cursorTo 0, (@numrows - @PROMPTHEIGHT + y)
 			@output.clearLine 0
 			if y is 0
-				@PROMPT()
+				p = @PROMPT()
 				@output.write @PROMPT() + l
-				@output.cursorTo p.removeStyle.length + l.length
 					
 			else if y > 0
 				p = @MULTIPROMPT()
 				for t in @cTabs[y]
-					p+='|'
+					p +='|'
 					p += '·' for i in [0...@TABSTOP]
 			
 				@ouptut.write p + l
-				@output.cursorTo p[y].length + l.length
+				#@output.cursorTo p[y].length + l.length
 				
-			@output.cursorTo(@cx,@cy)
+			@output.cursorTo(p.removeStyle.length + @cx, @numrows - @PROMPTHEIGHT + @cy)
 				
 	scrollDown: (n = 1) ->
 	
