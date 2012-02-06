@@ -93,8 +93,8 @@ module.exports =
 			
 			@output.write p + l
 			@output.cursorTo(p.removeStyle.length + @cx, @promptRow() + @cy)
+			
 		
-
 	redrawOutput: ->
 		@output.cursorTo 0, 0
 		@output.write colors.reset

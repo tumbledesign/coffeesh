@@ -1,4 +1,26 @@
-{dirname,basename,extname,exists,existsSync} = path = require('path')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{dirname,basename,extna
+
+
+me,exists,existsSync} = path = require('path')
 {helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
 {inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
 [os,tty,vm,fs,colors] = [require('os'), require('tty'), require('vm'), require('fs'), require('./colors')]
@@ -28,8 +50,12 @@ module.exports =
 		key ?= {}
 
 		# enter
+		
+		
+		
+		
 		if s is '\r'
-			if @cy > 0 and @cLines[@cLines.length-1] is ''
+			if @cy > 0 and @cLines[@cLines.length-1] is ''			
 				@cLines.pop()
 				@cy--
 				@runline()
@@ -45,8 +71,15 @@ module.exports =
 		# ctrl enter
 		else if s is '\n'
 			@runline()
-			return
+		
+		
+		
+		
+		
+			if @cx = @dx = 0
 			
+				return
+		
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""		
 	
 		switch keytoken
@@ -56,7 +89,7 @@ module.exports =
 			when "C^c"
 				@pause()
 				@resume()
-				@reDraw()				
+				@redrawPrompt()
 				
 			# Background
 			when "C^z" 
@@ -101,7 +134,12 @@ module.exports =
 					
 					@redrawPrompt()
 					
+				else if @cTabs[@cy] isnt 0 and @cx is 0
+						@cTabs[@cy]--
+						@redrawPrompt()
+					
 				else if @cy isnt 0 and @cy is (+@cLines.length-1) and @cLines[@cy].length is 0
+				
 					@cy--
 					@cLines.pop() unless @cy is 0
 					@redrawPrompt()
@@ -115,7 +153,7 @@ module.exports =
 						
 			when "delete", "C^d"
 				if @cx < @cLines[@cy].length
-					@cx--
+					@cLines[@cy] = @cLines[@cy][0...@cx] + @cLines[@cy][@cx+1...]
 					@redrawPrompt()
 					
 			# Word left
@@ -193,11 +231,13 @@ module.exports =
 				
 				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
 					@cy--
+					@cx = @cLines[@cy].length
 					@redrawPrompt()
 					return
 					
 				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
 					@cy++
+					@cx = @cLines[@cy].length
 					@redrawPrompt()
 					return
 				
