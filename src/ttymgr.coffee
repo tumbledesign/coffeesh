@@ -125,6 +125,8 @@ module.exports =
 		@output.write "\r\n"
 
 	displayError: (err) ->
+		
+		@displayOutput err.toString().red.bold
 
 	displayOutput: (output) ->
 		@output.cursorTo @col, @row
@@ -136,6 +138,7 @@ module.exports =
 				@newLine()
 			else @col++
 			@output.write c
+		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
 
 	displayInput: (input) ->
 		@output.cursorTo @col, @row

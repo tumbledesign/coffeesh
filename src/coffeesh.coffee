@@ -117,7 +117,7 @@ class CoffeeShell
 		[@_columns, @_rows] = @output.getWindowSize()
 
 	error: (err) -> 
-		process.stderr.write (err.stack or err.toString()) + '\n'
+		@displayError (err.stack or err.toString()).toString().trim()
 
 	resume: ->
 		@resetInternals()

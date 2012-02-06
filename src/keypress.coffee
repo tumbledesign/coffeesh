@@ -52,11 +52,9 @@ module.exports =
 			# SIGINT
 			# TODO: fix
 			when "C^c"
-				@output.write "\r\n"
 				@pause()
 				@resume()
-				@redrawPrompt()
-				
+				@reDraw()				
 				
 			# Background
 			when "C^z" 
