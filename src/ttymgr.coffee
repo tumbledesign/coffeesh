@@ -10,6 +10,7 @@ module.exports =
 		@TABSTOP = 2
 		@MINPROMPTHEIGHT = 6
 		@CMD_BACKGROUND = 'gray'
+		@OUTPUT_BACKGROUND = 'default'
 		
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -51,7 +52,7 @@ module.exports =
 			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
 
 		@output.cursorTo 0, @numrows
-
+		@output.write colors.reset
 		@output.write s
 
 
@@ -59,18 +60,20 @@ module.exports =
 		@output.cursorTo 0, 0
 		@output.write colors.reset
 		for r in [0..@promptRow()]
+			@output.cursorTo 0, r
 			row_in_buffer = @topRow - @scrollOffset + r
 			if @buffer.length <= row_in_buffer
 				@output.clearLine(0)
 			else
 				@output.write @buffer[row_in_buffer]
-			@output.cursorTo 0, r
+			
 
 		@redrawStatus() unless @STATUSBAR is off
 		@redrawPrompt()
 		
 
 	redrawPrompt: ->
+
 		@output.cursorTo 0, @promptRow()
 		@output.write colors["bg"+@CMD_BACKGROUND] or colors.bgdefault
 		#clear all of console
@@ -121,22 +124,28 @@ module.exports =
 		@col = 1
 		@output.write "\r\n"
 
+	displayError: (err) ->
+
 	displayOutput: (output) ->
-		#@output.cursorTo @col, @row
+		@output.cursorTo @col, @row
+		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 		for c in output
 			@buffer[@row][@col] = c
-			if @col is @numcols
-				@col = 1
+			if @col is @numcols - 1
+				@col = 0
 				@newLine()
 			else @col++
 			@output.write c
 
 	displayInput: (input) ->
-		#@output.cursorTo @col, @row
+		@output.cursorTo @col, @row
+		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 		for c in input
 			@buffer[@row][@col] = c
-			if @col is @numcols
-				@col = 1
+			if @col is @numcols - 1
+				@col = 0
 				@newLine()
 			else @col++
 			@output.write c
+
+		@redrawPrompt()

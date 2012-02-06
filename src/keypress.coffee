@@ -31,6 +31,7 @@ module.exports =
 		if s is '\r'
 			if @cy > 0 and @cLines[@cLines.length-1] is ''
 				@runline()
+				return
 				
 			@cy++
 			@cx = 0

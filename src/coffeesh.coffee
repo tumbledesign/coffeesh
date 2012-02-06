@@ -86,7 +86,7 @@ class CoffeeShell
 		root.builtin = @builtin
 		root.echo = @builtin.echo
 		
-		Fiber(=> @cwd = @execute("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+		Fiber(=> @cwd = @execute("/bin/pwd -L > /dev/null")).run()#@builtin.cd(@cwd)).run()
 
 		# connect to tty
 		@resume()
