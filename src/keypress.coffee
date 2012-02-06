@@ -240,6 +240,13 @@ module.exports =
 					#			when 'scrollup'
 					## Directly output char to terminal
 				
+		# Scrolling
+			when "pageup"
+				@scrollUp(@promptRow() - 2)
+
+			when "pagedown"
+				@scrollDown(@promptRow() - 2)
+
 			else
 				s = s.toString("utf-8") if Buffer.isBuffer(s)
 				beg = @cLines[@cy][0...@cx]

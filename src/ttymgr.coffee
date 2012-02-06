@@ -28,17 +28,33 @@ module.exports =
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
 			@numrows-- unless @STATUSBAR is off
+
+		# TODO: likely don't need to fill buffer with blanks. try removing when get a chance
 		@buffer = []
 		for r in [0...@numrows]
 			line = ""
-			for c in [0...@numcols]
-				line += " "
+			line += " " for c in [0...@numcols]
 			@buffer.push line
 
+		# TODO: change to definegetter
 		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
-		@topRow = 0
+		
 		@scrollOffset = 0
 		[@col, @row] = [0, 0]
+
+	# When I'm done stealing the cursor to write output, replace it to the prompt
+	replaceCursor: -> @output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+
+
+	drawShell: ->
+		@output.cursorTo 0, 0
+		@output.write colors.reset
+		for r in [0..@promptRow()]
+			@output.cursorTo 0, r
+			@output.clearLine(0)
+		@redrawStatus() unless @STATUSBAR is off
+		@redrawPrompt()
+
 
 	redrawStatus: ->
 		if @STATUSBAR is off then return
@@ -56,22 +72,6 @@ module.exports =
 		@output.write colors.reset
 		@output.write s
 
-
-	reDraw: ->
-		@output.cursorTo 0, 0
-		@output.write colors.reset
-		for r in [0..@promptRow()]
-			@output.cursorTo 0, r
-			row_in_buffer = @topRow - @scrollOffset + r
-			if @buffer.length <= row_in_buffer
-				@output.clearLine(0)
-			else
-				@output.write @buffer[row_in_buffer]
-			
-
-		@redrawStatus() unless @STATUSBAR is off
-		@redrawPrompt()
-		
 
 	redrawPrompt: ->
 
@@ -91,26 +91,57 @@ module.exports =
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
 			@output.write p + l
-		@output.cursorTo((p.removeStyle).length + @cx, @promptRow() + @cy)
-				
-	scrollDown: (n = 1) ->
-		return if n < 1
+		@replaceCursor()
 
-		return if (@buffer.length <= @numrows) or (@topRow is @numrows)
-		if @topRow - @scrollOffset is 1 then return
-		else if (@topRow - @scrollOffset) + n < 1 then n = (@scrollOffset - @topRow) + 1
-		@topRow -= n
-		@scrollOffset += n
-		@reDraw()
+	redrawOutput: ->
+		@output.cursorTo 0, 0
+		@output.write colors.reset
+		for r in [0..@promptRow()]
+			@output.cursorTo 0, r
+			if @buffer.length <= r + @scrollOffset
+				@output.clearLine(0)
+			else
+				if @buffer[r + @scrollOffset].length > @numcols
+					@output.write "#{@buffer[r + @scrollOffset][..@numcols-1]}…"
+				else 
+					@output.write @buffer[r + @scrollOffset]
+		@replaceCursor()
 
-	scrollUp: (n = 1) ->
-		return if n < 1 
+			
+	scrollDown: (n) ->
+		return if n? and n < 1
 
-		if @topRow - @scrollOffset is 1 then return
-		else if (@topRow - @scrollOffset) + n < 1 then n = (@scrollOffset - @topRow) + 1
-		@topRow -= n
-		@scrollOffset += n
-		@reDraw()
+		# Can't scroll down if not enough lines have been output
+		return if @buffer.length < @numrows
+
+		# Scroll to bottom
+		if not n? or @buffer.length - (@scrollOffset + n) <= @numrows
+			@scrollOffset = @buffer.length - @numrows
+			@row = @buffer.length
+
+		# Scroll n lines
+		else
+			@scrollOffset += n
+			@row +=n
+
+
+		@redrawOutput()
+
+	scrollUp: (n) ->
+		return if n? and n < 1
+
+		# Can't scroll down if not enough lines have been output
+		return if @buffer.length < @numrows
+
+		#Scroll to top
+		if not n? or @scrollOffset - n <=0
+			@scrollOffset = 0
+			@row = 0
+		else
+			@scrollOffset -= n
+			@row -= n
+
+		@redrawOutput()
 
 	displayDebug: (debug) ->
 		fs.write  @debuglog, debug
@@ -136,8 +167,8 @@ module.exports =
 	displayInput: (data) ->
 		@output.cursorTo 0, @row
 		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-		@output.write colors.bold
 
+		@displayDebug data
 		@displayBuffer data
 
 		@redrawPrompt()
@@ -145,12 +176,15 @@ module.exports =
 		fs.write @inlog, data
 
 	displayBuffer: (str) ->
+		numbuffered = 0
 		lines = str.split(/\r\n|\n|\r/)
 		for line in lines
 			while line.length > 0
-				@buffer.push line[...@numrows]
-				line = line[@numrows...]
-				if @row is @promptRow() - 1
-					@scrollDown()
-				else @row++
-				@output.write "#{line}\r\n"
+				@buffer.push line[...@numcols]
+				line = line[@numcols...]
+				numbuffered++
+
+		if @row + numbuffered > @promptRow() - 1
+			@scrollDown((@row + numbuffered)- (@promptRow() - 1))
+		else @row += 
+		if line.length < @numrows then @output.write "\r\n"

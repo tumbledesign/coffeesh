@@ -105,7 +105,7 @@ class CoffeeShell
 		@cTabs = [0]
 		@cLines = ['']
 		
-		@reDraw()
+		@drawShell()
 		
 	
 	resetInternals: () ->
