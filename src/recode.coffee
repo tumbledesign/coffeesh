@@ -15,7 +15,7 @@ exports.Recode = (code) ->
 	output = []
 	for i in [0...tokens.length]
 		[lex,val] = tokens[i]
-		echo tokens[i]
+		#echo tokens[i]
 		
 		if tokens[i-1]?[0] in ['TERMINATOR', 'INDENT', 'OUTDENT']
 			output.push('\t') for t in [0...indented] 
@@ -115,7 +115,7 @@ class Lexer
 	nestedCoffeeToken: ->
 		BACKTICKS = /// ^ (?: `` )(.*)(?: ``) ///
 		return 0 unless match = BACKTICKS.exec @chunk
-		console.log match
+		#console.log match
 		[input, nestedCoffee] = match
 
 		prev = last @tokens
