@@ -26,6 +26,7 @@ module.exports =
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
 			@numrows-- unless @STATUSBAR is off
+			@drawShell()
 
 		# TODO: likely don't need to fill buffer with blanks. try removing when get a chance
 		@buffer = []
