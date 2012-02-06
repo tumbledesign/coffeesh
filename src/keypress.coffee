@@ -34,6 +34,9 @@ module.exports =
 				@cy--
 				@runline()
 				return
+			
+			#if @cx 0 and @cy is 0 and @cLines[0].length is 0
+			#	return
 				
 			@cy++
 			@cx = 0
@@ -177,14 +180,16 @@ module.exports =
 				
 				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
 					@cy--
-					@redrawPrompt()
+					
 					@cx = @cLines[@cy].length
+					@redrawPrompt()
 					return
 					
 				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
 					@cy++
-					@redrawPrompt()
 					@cx = @cLines[@cy].length
+					@redrawPrompt()
+					
 					return
 				
 				if @_historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']

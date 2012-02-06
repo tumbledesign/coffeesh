@@ -54,7 +54,7 @@ class CoffeeShell
 		@binaries = {}
 		for pathname in (process.env.PATH.split ':') when path.existsSync(pathname) 
 			@binaries[file] = pathname for file in fs.readdirSync(pathname)
-
+			
 		@builtin = 
 			pwd: () =>
 				@cwd

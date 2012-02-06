@@ -25,6 +25,7 @@ module.exports =
 
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
+			
 			@numrows-- unless @STATUSBAR is off
 			@drawShell()
 
@@ -92,7 +93,7 @@ module.exports =
 				p += '·' for i in [0...@TABSTOP]
 			
 			@output.write p + l
-			@output.cursorTo(p.removeStyle.length + @cx, @promptRow() + @cy)
+		@output.cursorTo(@PROMPT().removeStyle.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow() + @cy)
 		
 
 	redrawOutput: ->
