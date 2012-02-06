@@ -60,7 +60,7 @@ module.exports =
 	reDraw: ->
 		@output.cursorTo 0, 0
 		@output.write colors.reset
-		for r in [0...@promptRow()]
+		for r in [0..@promptRow()]
 			row_in_buffer = @topRow - @scrollOffset + r
 			if @buffer.length <= row_in_buffer
 				@output.clearLine(0)
@@ -89,7 +89,7 @@ module.exports =
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
 			@output.write p + l
-		@output.cursorTo(p.removeStyle.length + @cx, @numrows - @PROMPTHEIGHT + @cy)
+		@output.cursorTo((p.removeStyle).length + @cx, @promptRow() + @cy)
 				
 	scrollDown: (n = 1) ->
 	
