@@ -43,6 +43,7 @@ module.exports =
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
 
+
 		switch keytoken
 		
 			# SIGINT
