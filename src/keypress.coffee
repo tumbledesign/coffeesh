@@ -30,6 +30,8 @@ module.exports =
 		# enter
 		if s is '\r'
 			if @cy > 0 and @cLines[@cLines.length-1] is ''
+				@cLines.pop()
+				@cy--
 				@runline()
 				return
 				

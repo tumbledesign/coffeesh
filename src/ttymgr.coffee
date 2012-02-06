@@ -91,8 +91,10 @@ module.exports =
 			for t in [0...@cTabs[y]]
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
+			
 			@output.write p + l
-		@replaceCursor()
+			@output.cursorTo(p.removeStyle.length + @cx, @promptRow() + @cy)
+		
 
 	redrawOutput: ->
 		@output.cursorTo 0, 0
@@ -142,10 +144,12 @@ module.exports =
 		fs.write  @debuglog, debug
 
 	displayError: (err) ->
+		if typeof err isnt 'string'
+			err = inspect(err, true, 2, true)
 		@output.cursorTo 0, @row
 		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 		@output.write colors.red
-		@displayBuffer data
+		@displayBuffer "ERROR"
 
 		@redrawPrompt()
 		fs.write @errlog, err
@@ -184,5 +188,5 @@ module.exports =
 		if @row + numbuffered > @promptRow() - 1
 			@scrollDown()
 
-		@row += numbuffered
+		#@row += numbuffered
 		
