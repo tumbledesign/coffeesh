@@ -122,7 +122,7 @@ module.exports =
 		@output.write "\r\n"
 
 	displayOutput: (output) ->
-		@output.cursorTo @col, @row
+		#@output.cursorTo @col, @row
 		for c in output
 			@buffer[@row][@col] = c
 			if @col is @numcols
@@ -132,7 +132,7 @@ module.exports =
 			@output.write c
 
 	displayInput: (input) ->
-		@output.cursorTo @col, @row
+		#@output.cursorTo @col, @row
 		for c in input
 			@buffer[@row][@col] = c
 			if @col is @numcols
