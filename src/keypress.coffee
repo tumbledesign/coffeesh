@@ -31,6 +31,7 @@ module.exports =
 		if s is '\r'
 			if @cy > 0 and @cLines[@cLines.length-1] is ''
 				@runline()
+				return
 				
 			@cy++
 			@cx = 0
@@ -51,11 +52,9 @@ module.exports =
 			# SIGINT
 			# TODO: fix
 			when "C^c"
-				@output.write "\r\n"
 				@pause()
 				@resume()
-				@redrawPrompt()
-				
+				@reDraw()				
 				
 			# Background
 			when "C^z" 

@@ -22,7 +22,11 @@ class CoffeeShell
 		@cwd = ''
 		process.on 'uncaughtException', -> @error
 		
-		@outlog = fs.openSync '/home/cobells/coffeesh.outlog', 'a+', '644'
+		@outlog = fs.openSync process.env.HOME + "/coffeesh.outlog", 'a+', '644'
+		@inlog = fs.openSync process.env.HOME + "/coffeesh.inlog", 'a+', '644'
+		@errlog = fs.openSync process.env.HOME + "/coffeesh.errlog", 'a+', '644'
+		@debuglog = fs.openSync process.env.HOME + "/coffeesh.debuglog", 'a+', '644'
+		
 		
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
@@ -88,7 +92,7 @@ class CoffeeShell
 		root.builtin = @builtin
 		root.echo = @builtin.echo
 		
-		Fiber(=> @cwd = @execute("/bin/pwd -L"); @builtin.cd(@cwd)).run()
+		Fiber(=> @cwd = @execute("/bin/pwd -L > /dev/null")).run()#@builtin.cd(@cwd)).run()
 
 		# connect to tty
 		@resume()
@@ -119,7 +123,7 @@ class CoffeeShell
 		[@_columns, @_rows] = @output.getWindowSize()
 
 	error: (err) -> 
-		process.stderr.write (err.stack or err.toString()) + '\n'
+		@displayError (err.stack or err.toString()).toString().trim()
 
 	resume: ->
 		@resetInternals()
@@ -172,7 +176,7 @@ class CoffeeShell
 		fs.write @history_fd, code+"\r\n"
 		
 		rcode = Recode code
-		#echo "Recoded: #{rcode}\n"
+		@displayDebug("Recoded: #{rcode}\n")
 		
 		try
 			Fiber(=>
@@ -200,7 +204,7 @@ class CoffeeShell
 			@displayOutput data.toString().trim()
 			
 		proc.stderr.on 'data', (data) =>
-			@displayOutput data.toString().trim()
+			@displayError data.toString().trim()
 			
 		proc.on 'exit', (exitcode, signal) =>
 			fiber.run()
