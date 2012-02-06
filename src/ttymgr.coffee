@@ -95,11 +95,11 @@ module.exports =
 	redrawOutput: ->
 		@output.cursorTo 0, 0
 		@output.write colors.reset
-		for r in [0..@promptRow()]
+		for r in [0...@promptRow()]
 			@output.cursorTo 0, r
 			@output.clearLine(0)
 			if r + @scrollOffset < @buffer.length
-				@output.write @buffer[r + @scrollOffset][..@numcols-1]
+				@output.write @buffer[r + @scrollOffset][..@numcols]
 				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
 
 		@replaceCursor()
