@@ -6,6 +6,7 @@ module.exports =
 	'ttymgr': ->
 	# Command Prompt Area
 
+
 		# user can override this with a function or set to "off" to disable
 		#@STATUSBAR = (width = 80) => "custom status ..."
 		@PROMPT = => "#{if @user is 'root' then '➜'.red else '➜'.green} "
