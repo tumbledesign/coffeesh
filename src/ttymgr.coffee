@@ -2,13 +2,14 @@ colors = require './colors'
 
 module.exports =
 	'ttymgr': ->
-		# Command Prompt Area
-		@STATUSBAR = (width = 80) -> "                                   Coffeeshell                                    ".bgblack.red
-		@PROMPT = => "#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then '➜'.red else "➜ ".green}"
-		@MULTIPROMPT = => "➜ ".green
+	# Command Prompt Area
+
+		# user can override this with a function or set to "off" to disable
+		#@STATUSBAR = (width = 80) => "custom status ..."
+		@PROMPT = => "#{if @user is 'root' then '➜'.red else '➜'.green} "
 		@TABSTOP = 2
-		@PROMPTHEIGHT = 6
-		
+		@MINPROMPTHEIGHT = 6
+		@CMD_BACKGROUND = 'gray'
 		
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -20,42 +21,70 @@ module.exports =
 		
 		
 		[@numcols, @numrows] = @output.getWindowSize()
-		if @STATUSBAR then @numrows--
+		@numrows-- unless @STATUSBAR is off
 
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
-			if @STATUSBAR then @numrows--
+			@numrows-- unless @STATUSBAR is off
 		@buffer = []
-		for r in [1..@numrows]
+		for r in [0...@numrows]
 			line = ""
-			for c in [1..@numcols]
+			for c in [0...@numcols]
 				line += " "
 			@buffer.push line
-		@promptRow = 1
-		@topRow = 1
+
+		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
+		@topRow = 0
 		@scrollOffset = 0
-		[@col, @row] = [1, 1]
+		[@col, @row] = [0, 0]
 
+	redrawStatus: ->
+		if @STATUSBAR is off then return
+		
+		if @STATUSBAR?()? and @STATUSBAR?().removeStyle.length <= @numcols
+			s = @STATUSBAR()
+		else if @STATUSBAR?
+			s = "custom status invalid"
+		else
+			d = new Date()
+			time = "#{(d.getHours() % 12)}:#{d.getMinutes()}:#{d.getSeconds()}"
+			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
 
-	# We're using 1-based array
-	cursorTo: (col,row) -> @output.cursorTo col+1, row+1
+		#console.log s, @numrows
+
+		@output.cursorTo 0, @numrows
+
+		@output.write s
+
 
 	reDraw: ->
-		@cursorTo 0, 0
-		for r in [1...@numrows]
-			if @buffer.length <= r
+		@output.cursorTo 0, 0
+		@output.write colors.reset
+		for r in [0...@promptRow()]
+			row_in_buffer = @topRow - @scrollOffset + r
+			if @buffer.length <= row_in_buffer
 				@output.clearLine(0)
 			else
-				@output.write @buffer[@topRow - @scrollOffset + r]
-		@cursorTo @col, @row
+				@output.write @buffer[row_in_buffer]
+			@output.cursorTo 0, r
+
+		@redrawStatus() unless @STATUSBAR is off
+		@redrawPrompt()
+		
 
 	redrawPrompt: ->
-		
+		@output.cursorTo 0, @promptRow()
+		@output.write colors["bg"+@CMD_BACKGROUND] or colors.bgdefault
+		#clear all of console
+		for i in [@promptRow()...@numrows]
+			@output.cursorTo 0, i
+			@output.clearLine 0
+
 		for y,l of @cLines
 			y = +y
-			@output.cursorTo 0, (@numrows - @PROMPTHEIGHT + y)
+			@output.cursorTo 0, @promptRow() + y
 			@output.clearLine 0
-			p = @MULTIPROMPT()
+			p = @PROMPT()
 			for t in [0...@cTabs[y]]
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]

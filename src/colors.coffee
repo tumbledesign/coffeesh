@@ -6,11 +6,16 @@ styles =
 	'inverse'     : (s) -> "\033[7m#{s}\033[27m"
 	'removeStyle' : (s) -> s.replace(/\u001b\[\d+m/g,'')
 
-for color, offset of {black: 0, red: 1, green: 2, yellow: 3, blue: 4, magenta: 5, cyan: 6, white: 7, grey: 60}
+for color, offset of {black: 0, red: 1, green: 2, yellow: 3, blue: 4, magenta: 5, cyan: 6, white: 7, default: 9, grey: 60, gray: 60}
 	do (offset)->
 		styles[color] = (s) -> "\033[#{offset+30}m#{s}\033[39m"
 		styles["bg#{color}"] = (s) -> "\033[#{offset+40}m#{s}\033[49m"
+		module.exports["#{color}"] = "\033[#{offset+30}m"
+		module.exports["bg#{color}"] = "\033[#{offset+40}m"
+
 for prop, func of styles
 	do (prop, func) =>
-		module.exports[prop] = (str) -> func(str)
+		#module.exports[prop] = (str) -> func(str)
 		String::__defineGetter__ prop, -> func(@)
+
+module.exports.reset = "\033[0m"
