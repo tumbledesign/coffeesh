@@ -156,6 +156,8 @@ module.exports =
 		fs.write @errlog, err
 
 	displayOutput: (data) ->
+		if typeof data isnt 'string'
+			data = inspect(data, true, 2, true)
 		@output.cursorTo 0, @row
 		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 
