@@ -124,7 +124,6 @@ module.exports =
 			@scrollOffset += n
 			@row +=n
 
-
 		@redrawOutput()
 
 	scrollUp: (n) ->
@@ -187,6 +186,6 @@ module.exports =
 				numbuffered++
 
 		if @row + numbuffered > @promptRow() - 1
-			@scrollDown((@row + numbuffered)- (@promptRow() - 1))
-		else @row += 
-		if line.length < @numrows then @output.write "\r\n"
+			@scrollDown()
+		else @row += numbuffered
+		
