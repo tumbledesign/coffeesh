@@ -55,8 +55,8 @@ module.exports =
 			@output.clearLine 0
 			if y is 0
 				@PROMPT()
-				@output.write @PROMPT() + @cLines[y].length
-				@output.cursorTo p.removeStyle.length + @cLines[y].length
+				@output.write @PROMPT() + l
+				@output.cursorTo p.removeStyle.length + l.length
 					
 			else if y > 0
 				p = @MULTIPROMPT()
@@ -64,7 +64,9 @@ module.exports =
 					p+='|'
 					p += '·' for i in [0...@TABSTOP]
 			
-				@output.cursorTo p[y].length + @cLines[y].length
+				@ouptut.write p + l
+				@output.cursorTo p[y].length + l.length
+				
 			@output.cursorTo(@cx,@cy)
 				
 	scrollDown: (n = 1) ->

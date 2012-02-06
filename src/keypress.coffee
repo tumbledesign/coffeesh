@@ -34,18 +34,11 @@ module.exports =
 			
 		# ctrl enter
 		else if s is '\n'
-			@output.cursorTo 0
-			@output.clearLine 0
-			@output.write @_prompt + @_lines[@_cursor.y] + '\n'
-			@_cursor.y++
-			@_lines[@_cursor.y] = ''
-			@_tabs[@_cursor.y] = 0
-			@_cursor.x = 0
-			@_prompt =  @PROMPT()
-			@output.cursorTo 0
-			@output.clearLine 0
-			@output.write @_prompt + @_lines[@_cursor.y]
-			@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+			@cy++
+			@cx = 0
+			@cLines[@cy] = ''
+			@cTabs[@cy] = 0
+			@redrawPrompt()
 			return
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""
@@ -58,10 +51,7 @@ module.exports =
 				@output.write "\r\n"
 				@pause()
 				@resume()
-				@output.cursorTo 0
-				@output.clearLine 0
-				@output.write @_prompt
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				@redrawPrompt()
 				
 				
 			# Background
@@ -70,227 +60,170 @@ module.exports =
 			
 			# Logout
 			when "C^d"
-				@close() if @_cursor.x is 0 and @_lines[@_cursor.y].length is 0 and @_lines.length is 1
+				@close() if @cx is 0 and @cLines[@cy].length is 0 and @cLines.length is 1
 
 			when "tab" 
-				if @_cursor.x is 0
-					@_tabs[@_cursor.y]++
-					@_prompt = @PROMPT()
-					
-					@output.cursorTo 0
-					@output.clearLine 0
-					@output.write @_prompt
-					@output.cursorTo @_prompt.stripColors.length
+				if @cx is 0
+					@cTabs[@cy]++
+					@redrawPrompt()
 				else
 					@tabcomplete()
 			
 			when "S^tab"
-				if @_cursor.x is 0
-					if @_tabs[@_cursor.y] > 0
-						@_tabs[@_cursor.y]--
+				if @cx is 0
+					if @cTabs[@cy] > 0
+						@cTabs[@cy]--
 					
-					@_prompt = @PROMPT()
-					@output.cursorTo 0
-					@output.clearLine 0
-					@output.write @_prompt
-					@output.cursorTo @_prompt.stripColors.length
+					@redrawPrompt()
 				else
 					@tabcomplete()
 			#when "enter" then @runline()
 
 			# Clear line
 			when "C^u"
-				@_lines[@_cursor.y] = ''
-				@_cursor.x = 0
-				@output.cursorTo 0
-				@output.clearLine 0
-				@output.write @_prompt
-				@output.cursorTo @_prompt.stripColors.length
+				@cLines[@cy] = ''
+				@cx = 0
+				@redrawPrompt()
 
 		## Deletions
 
 			when "backspace", "C^h"
-				#console.log @_cursor.x, @_cursor.y, @_lines.length, (@_cursor.y < @_lines.length)
-				if @_cursor.x > 0 and @_lines[@_cursor.y].length > 0
-					@_cursor.x--
-					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x] + @_lines[@_cursor.y][@_cursor.x+1..]
+				#console.log @cx, @cy, @cLines.length, (@cy < @cLines.length)
+				if @cx > 0 and @cLines[@cy].length > 0
+					@cx--
+					@cLines[@cy] = @cLines[@cy][0...@cx] + @cLines[@cy][@cx+1..]
 					
-					@output.clearLine 0
-					@output.cursorTo 0
-					@output.write @_prompt + @_lines[@_cursor.y]
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@redrawPrompt()
 					
-				else if @_cursor.y isnt 0 and @_cursor.y is (+@_lines.length-1) and @_lines[@_cursor.y].length is 0
-					@_cursor.y--
-					@_lines.pop() unless @_cursor.y is 0
-					@_prompt = @PROMPT()
+				else if @cy isnt 0 and @cy is (+@cLines.length-1) and @cLines[@cy].length is 0
+					@cy--
+					@cLines.pop() unless @cy is 0
+					@redrawPrompt()
 					
-					#console.log @_cursor.x, @_cursor.y, @_lines
-					@_cursor.x = @_lines[@_cursor.y].length
+					#console.log @cx, @cy, @cLines
+					@cx = @cLines[@cy].length
 								
-					@output.clearLine 0
-					@output.moveCursor 0,-1
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-				else if @_cursor.y is 0 and @_cursor.x is 0  and @_lines[0].length is 0
-					@_lines = ['']
+					@redrawPrompt()
+				else if @cy is 0 and @cx is 0  and @cLines[0].length is 0
+					@cLines = ['']
 						
 			when "delete", "C^d"
-				if @_cursor.x < @_lines[@_cursor.y].length
-					@_cursor.x--
-					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
-					@output.moveCursor -1
-					@output.clearLine 1
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				if @cx < @cLines[@cy].length
+					@cx--
+					@redrawPrompt()
 					
 			# Word left
 			when "C^w", "C^backspace", "M^backspace"
-				if @_cursor.x > 0
-					leading = @_lines[@_cursor.y][0...@_cursor.x]
+				if @cx > 0
+					leading = @cLines[@cy][0...@cx]
 					match = leading.match(/// \S*\s* $ ///)
 					leading = leading[0...(leading.length - match[0].length)]
-					@_lines[@_cursor.y] = leading + @_lines[@_cursor.y][@_cursor.x...@_lines[@_cursor.y].length]
-					@_cursor.x = leading.length
-					@_prompt = @PROMPT()
-					@output.clearLine 0
-					@output.cursorTo 0
-					@output.write @_prompt + @_lines[@_cursor.y]
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@cLines[@cy] = leading + @cLines[@cy][@cx...@cLines[@cy].length]
+					@cx = leading.length
+					@redrawPrompt()
 					
-				else if @_cursor.y is 0 and @_cursor.x is 0 and @_lines[0].length is 0
-					@_lines = ['']
+				else if @cy is 0 and @cx is 0 and @cLines[0].length is 0
+					@cLines = ['']
+					@cTabs = [0]
+					@redrawPrompt()
 					
 					
 			# Word right
 			when "C^delete", "M^d", "M^delete"
-				if @_cursor.x < @_lines[@_cursor.y].length
-					trailing = @_lines[@_cursor.y][@_cursor.x...]
+				if @cx < @cLines[@cy].length
+					trailing = @cLines[@cy][@cx...]
 					match = trailing.match(/// ^ \s*\S+ ///)
-					@_cursor.x = @_lines[@_cursor.y].length - trailing.length
+					@cx = @cLines[@cy].length - trailing.length
+
+					@cLines[@cy] = @cLines[@cy][0...@cx] + trailing[match[0].length...]
+					@redrawPrompt()
 					
-					@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x] + trailing[match[0].length...]
-					
-					@_prompt = @PROMPT()
-					@output.clearLine 0
-					@output.cursorTo 0
-					@output.write @_prompt + @_lines[@_cursor.y]
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-					
-					#if @_cursor.y is 0 and @_cursor.x is 0 and @_lines is []
-					#	@_lines = ['']
+					#if @cy is 0 and @cx is 0 and @cLines is []
+					#	@cLines = ['']
 			# Line right
 			when "C^k", "C^S^delete"
-				@_lines[@_cursor.y] = @_lines[@_cursor.y][0...@_cursor.x]
-				@output.clearLine 1
+				@cLines[@cy] = @cLines[@cy][0...@cx]
+				@redrawPrompt()
 			# Line left
 			when "C^S^backspace", "M^S^d"
-				@_lines[@_cursor.y] = @_lines[@_cursor.y][@_cursor.x...]
-				@_cursor.x = 0
-				@output.clearLine 0
-				@output.cursorTo 0
-				@output.write @_prompt + @_lines[@_cursor.y]
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				@cLines[@cy] = @cLines[@cy][@cx...]
+				@cx = 0
+				@redrawPrompt()
 				
 		## Cursor Movements
 
 			when "home", "C^a"
-				@_cursor.x = 0
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				@cx = 0
+				@redrawPrompt()
 			when "end", "C^e"
-				@_cursor.x = @_lines[@_cursor.y].length
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				@cx = @cLines[@cy].length
+				@redrawPrompt()
 			when "left", "C^b"
-				if @_cursor.x > 0
-					@_cursor.x--
-					@output.moveCursor -1, 0
+				if @cx > 0
+					@cx--
+					@redrawPrompt()
 			when "right", "C^f"
-				unless @_cursor.x is @_lines[@_cursor.y].length
-					@_cursor.x++
-					@output.moveCursor 1, 0
+				unless @cx is @cLines[@cy].length
+					@cx++
+					@redrawPrompt()
 			# Word left
 			when "C^left", "M^b"
-				if @_cursor.x > 0
-					leading = @_lines[@_cursor.y][0...@_cursor.x]
+				if @cx > 0
+					leading = @cLines[@cy][0...@cx]
 					match = leading.match(/// \S*\s* $ ///)
-					@_cursor.x -= match[0].length
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@cx -= match[0].length
+					@redrawPrompt()
 			# Word right
 			when "C^right", "M^f"
-				if @_cursor.x < @_lines[@_cursor.y].length
-					trailing = @_lines[@_cursor.y][@_cursor.x...]
+				if @cx < @cLines[@cy].length
+					trailing = @cLines[@cy][@cx...]
 					match = trailing.match(/// ^ \s*\S+ ///)
-					@_cursor.x += match[0].length
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@cx += match[0].length
+					@redrawPrompt()
 
 
 			## History
 			when "up", "C^p", "down", "C^n"
 				
-				if keytoken in ['up', 'C^p'] and @_cursor.y > 0 and @_cursor.y <= @_lines.length and @_lines.length > 0
-					@_cursor.y--
-					@output.moveCursor 0, -1
-					@_prompt = @PROMPT()
-					@_cursor.x = @_lines[@_cursor.y].length
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
+					@cy--
+					@redrawPrompt()
 					return
 					
-				else if keytoken in ['down', 'C^n'] and @_cursor.y < @_lines.length-1 and @_cursor.y >= 0 and @_lines.length > 0
-					@_cursor.y++
-					@output.moveCursor 0, 1
-					@_prompt = @PROMPT()
-					@_cursor.x = @_lines[@_cursor.y].length
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
+					@cy++
+					@redrawPrompt()
 					return
 				
 				if @_historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
 					@_historyIndex++
-					@output.moveCursor 0, @_lines.length-1
+					@redrawPrompt()
 					
 				else if @_historyIndex > 0 and keytoken in ['down', 'C^n']
 					@_historyIndex--
+					@redrawPrompt()
 					
 				else if @_historyIndex is 0
-					for i in [0...@_lines.length-1]
-						@output.cursorTo 0
-						@output.clearLine 0
-						@output.moveCursor 0,-1
-					@output.cursorTo 0
-					@output.clearLine 0
-					@resetInternals()
-					@_prompt = @PROMPT()
-					@output.write @_prompt
-					@output.cursorTo @_prompt.stripColors.length
+					@_historyIndex = -1
+					@redrawPrompt()
 					return
 				else return
 				
-				for i in [0...@_lines.length-1]
-					@output.cursorTo 0
-					@output.clearLine 0
-					@output.moveCursor 0,-1
-
-				@_lines = (@history[@_historyIndex]).split('\n')
+				@cLines = (@history[@_historyIndex]).split('\n')
+				@cy = @cLines.length
+				@redrawPrompt()
 				
-				@_cursor.y = @_lines.length
-				
-				for i in [0...@_lines.length]
-					match = @_lines[i].match(/// ^ ([\t]*)([^\t]*) ///)
-					@_tabs[i] = match[1].split('\t').length-1
-					@_lines[i] = match[2]
-					@_cursor.y = i
-					@_cursor.x = @_lines[@_cursor.y].length
-					@_prompt = @PROMPT()
-					@output.clearLine 0
-					@output.cursorTo 0
-					@output.write @_prompt
-					@output.write @_lines[@_cursor.y]
-					@output.write '\n' if i < @_lines.length-1
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+				for i in [0...@cLines.length]
+					match = @cLines[i].match(/// ^ ([\t]*)([^\t]*) ///)
+					@cTabs[i] = match[1].split('\t').length-1
+					@cLines[i] = match[2]
+					@cy = i
+					@cx = @cLines[@cy].length
+					@redrawPrompt()
 					
 				if keytoken in ['down', 'C^n']
-					@_cursor.y = 0
-					@output.moveCursor 0, -1*(@_lines.length-1)
-					@_prompt = @PROMPT()
-					@_cursor.x = @_lines[0].length
-					@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+					@cy = 0
+					@redrawPrompt()
 
 					## Mouse stuff
 					#			when 'mousedownL' then
@@ -302,3 +235,16 @@ module.exports =
 					#			when 'scrolldown' then
 					#			when 'scrollup'
 					## Directly output char to terminal
+				
+			else
+				s = s.toString("utf-8") if Buffer.isBuffer(s)
+				beg = @cLines[@cy][0...@cx]
+				end = @cLines[@cy][@cx...@cLines[@cy].length]
+				@cLines[@cy] = beg + s + end
+				@cx += s.length
+				@redrawPrompt()
+				#				if s
+				#					lines = s.split /\r\n|\n|\r/
+				#					for i,line of lines
+				#						@runline() if i > 0
+				#						@insertString lines[i]

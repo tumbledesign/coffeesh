@@ -45,9 +45,6 @@ class CoffeeShell
 		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
 		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
 		@history.shift()
-		@resetInternals()
-		process.on "SIGWINCH", => 
-			[@_columns, @_rows] = @output.getWindowSize()
 		
 		#Load binaries and built-in shell commands
 		@binaries = {}
@@ -94,40 +91,28 @@ class CoffeeShell
 		Fiber(=> @cwd = @run("/bin/pwd -L"); @builtin.cd(@cwd)).run()
 
 		@ttymgr()
-		
-		@cLines = ['a =', 'b:3']
-		@cTabs = [0,1]
-		@cx = @cy = 1
-		@redrawPrompt()
 	
 		# connect to tty
 		@resume()
-		@_prompt = @PROMPT()
-		@output.cursorTo 0
-		@output.clearLine 0
-		@output.write @_prompt
-		@output.cursorTo @_prompt.stripColors.length + @_cursor.x
+		
+		@cx = @cy = 0
+		@cTabs = [0]
+		@cLines = ['']
+		
+		@redrawPrompt()
+		
 	
 	resetInternals: () ->
 		# internal variables
 		@_historyIndex = -1
-		@_cursor = x:0, y:0
 		@_mouse = x:0, y:0
-		
-		@_lines = []
-		@_tabs = []
 		@_completions = []
-		@_lines[@_cursor.y] = ''
-		@_tabs[@_cursor.y] = 0
-		@PROMPT = => 
-			return ("#{@HOSTNAME.white}:#{@cwd.blue.bold} #{if @user is 'root' then "➜".red else "➜".green}  ") if @_cursor.y is 0 and @_lines.length is 1 and @_tabs[0] is 0
-			p = "➜ ".green
-			for i in [0...@_tabs[@_cursor.y]]
-				p+='|'.grey
-				p+='·'.grey for j in [0...@TABSTOP]
-			(p)
 		
-		@_prompt = @PROMPT()
+#		@cx = @cy = 0
+#		@cTabs = [0]
+#		@cLines = ['']
+#		@redrawPrompt()
+
 		@_consecutive_tabs = 0
 		[@_columns, @_rows] = @output.getWindowSize()
 
@@ -178,9 +163,7 @@ class CoffeeShell
 			
 		if @_lines.length is 1 and @_lines[0] is ''
 			@resetInternals()
-			@_prompt =  @PROMPT()
-			@output.write @_prompt
-			@output.cursorTo @_prompt.stripColors.length
+			@redrawPrompt()
 			return
 		
 		lines = []
