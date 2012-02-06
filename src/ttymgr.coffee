@@ -111,44 +111,39 @@ module.exports =
 		@scrollOffset += n
 		@reDraw()
 
-	newLine: ->
-		return if @row isnt @buffer.length
-
-		newrow = ""
-		newrow += " " for i in [0...@numcols]
-		@buffer.push newrow
-
-		if @row is @promptRow() - 1
-			@scrollDown()
-		else @row++
-		@col = 1
-		@output.write "\r\n"
-
 	displayError: (err) ->
-		
-		@displayOutput err.toString().red.bold
-
-	displayOutput: (output) ->
-		@output.cursorTo @col, @row
+		@output.cursorTo 0, @row
 		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-		for c in output
-			@buffer[@row][@col] = c
-			if @col is @numcols - 1
-				@col = 0
-				@newLine()
-			else @col++
-			@output.write c
-		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+		@output.write colors.red
 
-	displayInput: (input) ->
-		@output.cursorTo @col, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-		for c in input
-			@buffer[@row][@col] = c
-			if @col is @numcols - 1
-				@col = 0
-				@newLine()
-			else @col++
-			@output.write c
+		@displayBuffer data
 
 		@redrawPrompt()
+
+	displayOutput: (data) ->
+		@output.cursorTo 0, @row
+		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
+
+		@displayBuffer data
+
+		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+
+	displayInput: (data) ->
+		@output.cursorTo 0, @row
+		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
+		@output.write colors.bold
+
+		@displayBuffer data
+
+		@redrawPrompt()
+
+	displayBuffer: (str) ->
+		lines = str.split(/\r\n|\n|\r/)
+		for line in lines
+			while line.length > 0
+				@buffer.push = line[...@numrows]
+				line = line[@numrows...]
+				if @row is @promptRow() - 1
+					@scrollDown()
+				else @row++
+				@output.write "#{line}\r\n"
