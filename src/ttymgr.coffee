@@ -132,6 +132,7 @@ module.exports =
 				@newLine()
 			else @col++
 			@output.write c
+		#fs.write  @outlog, output
 
 	displayInput: (input) ->
 		for c in input

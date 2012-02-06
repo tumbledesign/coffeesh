@@ -22,6 +22,8 @@ class CoffeeShell
 		@cwd = ''
 		process.on 'uncaughtException', -> @error
 		
+		@outlog = fs.openSync '/home/cobells/coffeesh.outlog', 'a+', '644'
+		
 		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
