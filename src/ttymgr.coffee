@@ -58,19 +58,22 @@ module.exports =
 
 	redrawStatus: ->
 		if @STATUSBAR is off then return
-		
-		if @STATUSBAR?()? and @STATUSBAR?().removeStyle.length <= @numcols
+
+		if typeof @STATUSBAR is 'function'
 			s = @STATUSBAR()
-		else if @STATUSBAR?
-			s = "custom status invalid"
 		else
 			d = new Date()
-			time = "#{(d.getHours() % 12)}:#{d.getMinutes()}:#{d.getSeconds()}"
+			time = "#{(d.getHours()%12)}:" + "0#{d.getMinutes()}"[..1] + ":" + "0#{d.getSeconds()}"[..1]
 			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
 
+		s+=" " for i in [0...@newcols]
+		s = s.truncStyle @numcols
+
+
 		@output.cursorTo 0, @numrows
-		@output.write colors.reset
+		
 		@output.write s
+		@output.write colors.reset
 
 
 	redrawPrompt: ->
@@ -93,6 +96,7 @@ module.exports =
 			
 			@output.write p + l
 		@output.cursorTo(@PROMPT().removeStyle.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow() + @cy)
+		@output.write colors.reset
 		
 	redrawOutput: ->
 		@output.cursorTo 0, 0
@@ -185,7 +189,7 @@ module.exports =
 
 		@row += numbuffered
 
-		if @row + numbuffered > @promptRow() - 1
+		if @row + numbuffered > @promptRow()
 			@scrollDown()
 		else
 			@redrawOutput()

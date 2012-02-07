@@ -17,5 +17,14 @@ for prop, func of styles
 	do (prop, func) =>
 		#module.exports[prop] = (str) -> func(str)
 		String::__defineGetter__ prop, -> func(@)
+		
 
 module.exports.reset = "\033[0m"
+String::truncStyle = (i) ->
+	realchar = 
+		///
+			(?:  \u001b\[\d+m  )+ [\s\S]
+			| [\s\S] 
+		///g
+	("#{this.match(realchar)[...i].join('')}\033[0m")
+	
