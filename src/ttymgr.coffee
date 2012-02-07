@@ -5,19 +5,19 @@ inspect = require('util').inspect
 module.exports =
 	'ttymgr': ->
 
-		@PROMPT = "»"
+		@PROMPT = "» "
 		@TABSTOP = 2
 		@MINPROMPTHEIGHT = 6
-		@CMD_BACKGROUND = 'white'
-		@OUTPUT_BACKGROUND = 'default'
-		@STATUS_BACKGROUND = 'black'
+		@CMD_BACKGROUND = 'magenta'
+		@OUTPUT_BACKGROUND = 'black'
+		@CMD_TEXT = 'blue'
+		@OUTPUT_TEXT = 'green'
 		
 		@cx = @cy = 0
 		@cTabs = [0]
 		@cLines = ['']
 
 		[@numcols, @numrows] = @output.getWindowSize()
-		@numrows-- # Exclude line for statusbar
 		@buffer = []
 		@__defineGetter__ "promptRow", => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
 		@scrollOffset = 0
@@ -25,7 +25,6 @@ module.exports =
 
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
-			@numrows-- unless @STATUSBAR is off
 			@drawShell()
 
 	mouseTracking: (e = on) ->
@@ -35,40 +34,17 @@ module.exports =
 	drawShell: ->
 		@output.cursorTo 0, 0
 		@output.write colors.reset
+		@output.write colors["bg"+@OUTPUT_BACKGROUND]
 		for r in [0..@promptRow]
 			@output.cursorTo 0, r
 			@output.clearLine(0)
 		@redrawOutput()
-		@redrawStatus() unless @STATUSBAR is off
 		@redrawPrompt()
 
 
-	redrawStatus: ->
-		if @STATUSBAR is off then return
-
-		if typeof @STATUSBAR is 'function'
-			s = @STATUSBAR()
-		else
-			d = new Date()
-			time = "#{(d.getHours()%12)}:" + "0#{d.getMinutes()}"[..1] + ":" + "0#{d.getSeconds()}"[..1]
-			s = "--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
-
-		#s+=" " for i in [0...@newcols]
-		s = s.truncStyle @numcols
-
-
-		@output.cursorTo 0, @numrows
-		@output.write colors["bg"+@STATUS_BACKGROUND]
-		@output.clearLine(0)
-		
-		@output.write s
-		@output.write colors.reset
-
-
 	redrawPrompt: ->
-
 		@output.cursorTo 0, @promptRow
-		@output.write colors["bg"+@CMD_BACKGROUND] or colors.bgdefault
+		@output.write colors["bg"+@CMD_BACKGROUND]
 		#clear all of console
 		for i in [@promptRow...@numrows]
 			@output.cursorTo 0, i
@@ -82,14 +58,14 @@ module.exports =
 			for t in [0...@cTabs[y]]
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
-			
-			@output.write p + l
+			@output.write p + l[@CMD_TEXT]
 		@output.cursorTo(@PROMPT.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow + @cy)
+
 		@output.write colors.reset
+		
 		
 	redrawOutput: ->
 		@output.cursorTo 0, 0
-		@output.write colors.reset
 		for r in [0...@promptRow]
 			@output.cursorTo 0, r
 			@output.clearLine(0)
@@ -149,9 +125,8 @@ module.exports =
 		if typeof data isnt 'string'
 			data = inspect(data, true, 2, true)
 		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 
-		@displayBuffer data
+		@displayBuffer data + colors["bg"+@OUTPUT_BACKGROUND] + colors[@OUTPUT_TEXT]
 
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 		fs.write @outlog, data+"\n\n---------------------------------------\n\n"
