@@ -14,7 +14,7 @@ exports.Recode = (code) ->
 	output = []
 	for i in [0...tokens.length]
 		[lex,val] = tokens[i]
-		root.shl.displayDebug tokens[i].join("\r\n")
+		#
 		#echo tokens[i]
 		
 		if tokens[i-1]?[0] in ['TERMINATOR', 'INDENT', 'OUTDENT']
@@ -65,7 +65,9 @@ exports.Recode = (code) ->
 			
 		if tokens[i].newLine?
 			output.push '\n'  
-			
+	
+	root.shl.displayDebug require('util').inspect tokens
+	
 	(output.join(''))
 
 

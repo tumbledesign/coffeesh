@@ -141,7 +141,7 @@ module.exports =
 		@redrawOutput()
 
 	displayDebug: (debug) ->
-		fs.write  @debuglog, debug
+		fs.write  @debuglog, debug+"\n\n---------------------------------------\n\n"
 
 	displayError: (err) ->
 		if typeof err isnt 'string'
@@ -152,7 +152,7 @@ module.exports =
 		@displayBuffer "ERROR"
 
 		@redrawPrompt()
-		fs.write @errlog, err
+		fs.write @errlog, err+"\n\n---------------------------------------\n\n"
 
 	displayOutput: (data) ->
 		if typeof data isnt 'string'
@@ -163,7 +163,7 @@ module.exports =
 		@displayBuffer data
 
 		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
-		fs.write @outlog, data
+		fs.write @outlog, data+"\n\n---------------------------------------\n\n"
 
 	displayInput: (data) ->
 		@output.cursorTo 0, @row
@@ -174,7 +174,7 @@ module.exports =
 
 		@redrawPrompt()
 
-		fs.write @inlog, data
+		fs.write @inlog, data+"\n\n---------------------------------------\n\n"
 
 	displayBuffer: (str) ->
 		numbuffered = 0

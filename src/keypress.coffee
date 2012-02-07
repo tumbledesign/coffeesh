@@ -51,7 +51,7 @@ module.exports =
 			return
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""		
-	
+	 
 		switch keytoken
 				
 			# SIGINT
@@ -121,14 +121,34 @@ module.exports =
 				else if @cy is 0 and @cx is 0  and @cLines[0].length is 0
 					@cLines = ['']
 					
+			when "delete", "C^d"
+				if @cx < @cLines[@cy].length
+					@cLines[@cy] = @cLines[@cy][0...@cx] + @cLines[@cy][@cx+1...]
+					@redrawPrompt()
+					
+			# Word left
+			when "C^w", "C^backspace", "M^backspace"
+				if @cx > 0
+					leading = @cLines[@cy][0...@cx]
+					match = leading.match(/// \S*\s* $ ///)
+					leading = leading[0...(leading.length - match[0].length)]
+					@cLines[@cy] = leading + @cLines[@cy][@cx...@cLines[@cy].length]
+					@cx = leading.length
+					@redrawPrompt()
+					
+				else if @cy is 0 and @cx is 0 and @cLines[0].length is 0
+					@cLines = ['']
+					@cTabs = [0]
+					@redrawPrompt()
+					
+					
 			# Word right
 			when "C^delete", "M^d", "M^delete"
 				if @cx < @cLines[@cy].length
 					trailing = @cLines[@cy][@cx...]
 					match = trailing.match(/// ^ \s*\S+ ///)
 					@cx = @cLines[@cy].length - trailing.length
-
-					@cLines[@cy] = @cLines[@cy][0...@cx] + trailing[match[0].length...]
+					@cLines[@cy] = trailing + @cLines[0..@cx][@cx+1...].length
 					@redrawPrompt()
 					
 					#if @cy is 0 and @cx is 0 and @cLines is []
