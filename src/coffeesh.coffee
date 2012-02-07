@@ -170,7 +170,7 @@ class CoffeeShell
 			tabs += "\t" for j in [0...@cTabs[i]]
 			
 			lines[i] = tabs + @cLines[i]
-			console.log @cTabs[i], tabs, lines[i]
+			#console.log @cTabs[i], tabs, lines[i]
 		
 		code = lines.join("\n")
 		@resetInternals()

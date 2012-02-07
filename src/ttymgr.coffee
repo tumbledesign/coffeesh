@@ -59,32 +59,37 @@ module.exports =
 				p +='|'
 				p += '·' for i in [0...@TABSTOP]
 			@output.write p + l[@CMD_TEXT]
+
 		@output.cursorTo(@PROMPT.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow + @cy)
 
-		@output.write colors.reset
+		#@output.write colors.reset
 		
 		
 	redrawOutput: ->
 		@output.cursorTo 0, 0
+		@output.write colors["bg"+@OUTPUT_BACKGROUND]
 		for r in [0...@promptRow]
 			@output.cursorTo 0, r
 			@output.clearLine(0)
 			if r + @scrollOffset < @buffer.length
-				@output.write @buffer[r + @scrollOffset][..@numcols]
+				@output.cursorTo 0, r
+				@output.write @buffer[r + @scrollOffset][...@numcols].replace(/\u001b\[39m/g,colors[@OUTPUT_TEXT]).replace(/\u001b\[49m/g,colors[@OUTPUT_BACKGROUND])
 				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
 
+
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
+
 
 			
 	scrollDown: (n) ->
 		return if n? and n < 1
 
 		# Can't scroll down if not enough lines have been output
-		return if @buffer.length < @numrows
+		return if @buffer.length < @promptRow
 
 		# Scroll to bottom
-		if not n? or @buffer.length - (@scrollOffset + n) <= @numrows
-			@scrollOffset = @buffer.length - @numrows
+		if not n? or @buffer.length - (@scrollOffset + n) <= @promptRow
+			@scrollOffset = Math.max(0, @buffer.length - @promptRow)
 
 		# Scroll n lines
 		else
@@ -96,7 +101,7 @@ module.exports =
 		return if n? and n < 1
 
 		# Can't scroll up if not enough lines have been output
-		return if @buffer.length < @numrows
+		return if @buffer.length < @promptRow
 
 		#Scroll to top
 		if not n? or @scrollOffset - n <= 0
@@ -126,19 +131,22 @@ module.exports =
 			data = inspect(data, true, 2, true)
 		@output.cursorTo 0, @row
 
-		@displayBuffer data + colors["bg"+@OUTPUT_BACKGROUND] + colors[@OUTPUT_TEXT]
+		@displayBuffer data["bg"+@OUTPUT_BACKGROUND][@OUTPUT_TEXT]
+		
+		
+		#@output.write colors.reset
 
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 		fs.write @outlog, data+"\n\n---------------------------------------\n\n"
 
 	displayInput: (data) ->
 		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
+		
+		@redrawPrompt()
 
 		@displayDebug data
-		@displayBuffer data
-
-		@redrawPrompt()
+		@displayBuffer data["bg"+@OUTPUT_BACKGROUND][@OUTPUT_TEXT].bold
+		#@output.write colors.reset
 
 		fs.write @inlog, data+"\n\n---------------------------------------\n\n"
 
@@ -153,7 +161,7 @@ module.exports =
 
 		@row += numbuffered
 
-		if @row + numbuffered > @promptRow
+		if @row > @promptRow
 			@scrollDown()
 		else
 			@redrawOutput()
