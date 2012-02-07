@@ -12,8 +12,9 @@ module.exports =
 		@PROMPT = => "#{if @user is 'root' then '➜'.red else '➜'.green} "
 		@TABSTOP = 2
 		@MINPROMPTHEIGHT = 6
-		@CMD_BACKGROUND = 'gray'
+		@CMD_BACKGROUND = 'white'
 		@OUTPUT_BACKGROUND = 'default'
+		@STATUS_BACKGROUND = 'black'
 		
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -64,13 +65,15 @@ module.exports =
 		else
 			d = new Date()
 			time = "#{(d.getHours()%12)}:" + "0#{d.getMinutes()}"[..1] + ":" + "0#{d.getSeconds()}"[..1]
-			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
+			s = "--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
 
-		s+=" " for i in [0...@newcols]
+		#s+=" " for i in [0...@newcols]
 		s = s.truncStyle @numcols
 
 
 		@output.cursorTo 0, @numrows
+		@output.write colors["bg"+@STATUS_BACKGROUND]
+		@output.clearLine(0)
 		
 		@output.write s
 		@output.write colors.reset
