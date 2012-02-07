@@ -41,7 +41,10 @@ class CoffeeShell
 			egrep: 'egrep --color=auto'
 			fgrep: 'fgrep --color=auto'
 		
-		
+	displaylogs: ->
+		for log in ['coffeesh.outlog', 'coffeesh.inlog', 'coffeesh.errlog', 'coffeesh.debuglog']
+			shl.execute("gnome-terminal -t #{log} -e 'tail -f #{process.env.HOME}/#{log}'")
+		(null)
 
 	init: ->
 		# load history
@@ -91,6 +94,7 @@ class CoffeeShell
 		root.binaries = @binaries
 		root.builtin = @builtin
 		root.echo = @builtin.echo
+		root.displaylogs = shl.displaylogs
 		
 		Fiber(=> @cwd = @execute("/bin/pwd -L > /dev/null")).run()#@builtin.cd(@cwd)).run()
 
@@ -223,9 +227,9 @@ class CoffeeShell
 		proc.on 'exit', (exitcode, signal) =>
 			@input.removeAllListeners 'keypress'
 			@input.removeListener 'data', @_data_listener
-			@mouseTranking off
-			fiber.run()
+			@mouseTracking off
 			@resume()
+			fiber.run()
 		yield()
 		return
 

@@ -93,6 +93,7 @@ module.exports =
 			
 			@output.write p + l
 		@output.cursorTo(@PROMPT().removeStyle.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow() + @cy)
+		@output.write colors.reset
 		
 	redrawOutput: ->
 		@output.cursorTo 0, 0

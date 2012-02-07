@@ -36,3 +36,7 @@ for i in [1..3]
 echo /home a/2
 echo /home a
 echo /home a (a)
+
+
+for log in ['coffeesh.outlog', 'coffeesh.inlog', 'coffeesh.errlog', 'coffeesh.debuglog']
+	shl.execute("gnome-terminal -t #{log} -e 'tail -f #{log}'")
