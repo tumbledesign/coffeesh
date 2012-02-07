@@ -25,7 +25,6 @@ module.exports =
 
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
-			
 			@numrows-- unless @STATUSBAR is off
 			@drawShell()
 
@@ -95,7 +94,6 @@ module.exports =
 			@output.write p + l
 		@output.cursorTo(@PROMPT().removeStyle.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow() + @cy)
 		
-
 	redrawOutput: ->
 		@output.cursorTo 0, 0
 		@output.write colors.reset
