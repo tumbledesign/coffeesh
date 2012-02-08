@@ -9,9 +9,10 @@ module.exports =
 		@TABSTOP = 2
 		@MINPROMPTHEIGHT = 6
 		@CMD_BACKGROUND = 'magenta'
-		@OUTPUT_BACKGROUND = 'black'
 		@CMD_TEXT = 'blue'
+		@OUTPUT_BACKGROUND = 'black'
 		@OUTPUT_TEXT = 'green'
+		
 		
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -73,7 +74,7 @@ module.exports =
 			@output.clearLine(0)
 			if r + @scrollOffset < @buffer.length
 				@output.cursorTo 0, r
-				@output.write @buffer[r + @scrollOffset][...@numcols].replace(/\u001b\[39m/g,colors[@OUTPUT_TEXT]).replace(/\u001b\[49m/g,colors[@OUTPUT_BACKGROUND])
+				@output.write @buffer[r + @scrollOffset][...@numcols].replace(/\u001b\[39m/g,colors[@OUTPUT_TEXT]).replace(/\u001b\[49m/g,colors["bg"+@OUTPUT_BACKGROUND])
 				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
 
 
@@ -153,6 +154,7 @@ module.exports =
 	displayBuffer: (str) ->
 		numbuffered = 0
 		lines = str.split(/\r\n|\n|\r/)
+
 		for line in lines
 			while line.length > 0
 				@buffer.push line[...@numcols]
