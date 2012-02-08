@@ -1,0 +1,1598 @@
+commit d1104cd9977aad1667851fd2671b9b0b01748c0f
+Author: mark <mark@doob-un4.(none)>
+Date:   Tue Feb 7 14:01:15 2012 -0500
+
+    output is fixed. colors are also fixed
+
+commit 09a6de5169dceb976477772a73b1291938320e05
+Author: mark <mark@doob-un4.(none)>
+Date:   Tue Feb 7 12:34:41 2012 -0500
+
+    colors and things
+
+commit 8d70e8b6ea1108fe1bae0cbbc19ac1c03678c007
+Author: mark <mark@doob-un4.(none)>
+Date:   Tue Feb 7 00:37:48 2012 -0500
+
+    renamed variables
+
+commit f353221a9c81c7d8702ebce6bd560fab6b69104b
+Author: mark <mark@doob-un4.(none)>
+Date:   Tue Feb 7 00:05:45 2012 -0500
+
+    colored statusbar
+
+commit dd9a6651fd8da6711331d10e25589e0253a3773f
+Merge: 0b0b3d8 aab824d
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 23:18:37 2012 -0500
+
+    Merge branch 'outputfix' into testPromptbarOutputfix
+
+commit aab824d65108e9eec6d0ab67d7ec745a392f35ee
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 23:14:26 2012 -0500
+
+    padded 0's and added truncStyle
+
+commit 0b0b3d81f6c22f0269d3b7128970399c9bbabd09
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 23:13:48 2012 -0500
+
+    Added killer fn displaylogs which tails all for debug logs
+
+commit fa43ca690f3524aae8a9f517a00f13bb6148c22f
+Merge: 560022f 02ed76a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 19:56:16 2012 -0500
+
+    MERGED
+
+commit 560022fc0d86830835f04b421467b9d26355e35b
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 19:28:53 2012 -0500
+
+    lets manage branches better
+
+commit 3f424dbba689b54370c78f4268d86562d2fd6f32
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 07:50:07 2012 -0500
+
+    Fixed a few keypresses.... backspace, delete, backtab
+
+commit 63b97a2b46b563e5ea71169b8baddc6a340187d3
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 07:30:04 2012 -0500
+
+    Fixed a few keypresses.... backspace, delete, backtab
+
+commit 02ed76a792ea6f15c0956b9ad6a6640d1adaf248
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 06:53:28 2012 -0500
+
+    Fixed a few keypresses.... backspace, delete, backtab
+
+commit 2783aa8d7f113c7fd64d4d5767aaffbf27e2e2e6
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 04:32:58 2012 -0500
+
+    the good one
+
+commit d5a53291ae56574d59e96a6ca70254293e9f43c2
+Merge: 7684b53 9d2ed0f
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 04:16:47 2012 -0500
+
+    outta merge hell
+
+commit 7684b537ce6b8ec86897ca939cca1ebd9020703a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 04:13:01 2012 -0500
+
+    refixing
+
+commit 9d2ed0ff75d90693f62d5c9c411c575c425ee2dd
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 04:11:30 2012 -0500
+
+    good fixes
+
+commit 7451ab214cca7bdd9dd31c6e6ad308e9c597191a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 03:38:01 2012 -0500
+
+    the good one
+
+commit 115391d9da6fb822165689bf4709db32bfca01e1
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 03:29:46 2012 -0500
+
+    ARG
+
+commit 4928815af63faeed297581353053a3643f02b435
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 03:00:47 2012 -0500
+
+    small bugs
+
+commit 12deac3ed99526ceab2130035bed8b3ab7fed789
+Merge: 135fff5 c2b6b7d
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 02:57:58 2012 -0500
+
+    ls
+
+commit 135fff505d5aad6b7d5582090b19685e0a4e334a
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 02:56:03 2012 -0500
+
+    ls
+
+commit c2b6b7d7366b34c754e9bedcf2752d07ee72de50
+Merge: 255ff07 947040c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 02:27:54 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 255ff0724e8c06a5c68d0585ab8775cc63f34722
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 02:27:45 2012 -0500
+
+    small changes
+
+commit 947040cba1de6766d88aa5f664020724835d70af
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 02:25:23 2012 -0500
+
+    merge
+
+commit 2ded6efda1324dbcb15d161429518e65dc5b7db7
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 02:21:25 2012 -0500
+
+    scroll stuff
+
+commit e30e009af12c8dac3756a1950b0fc2e748571b90
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 00:34:57 2012 -0500
+
+    a
+
+commit 9b7d63e39c15fe71efe6272b10fd4f90a0e3d620
+Merge: b4c4db8 1384eaa
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 00:26:25 2012 -0500
+
+    merge
+
+commit b4c4db86bf6e7039fc444b1b5abab4d49e03a1cb
+Author: mark <mark@doob-un4.(none)>
+Date:   Mon Feb 6 00:21:46 2012 -0500
+
+    nicely still broked
+
+commit 1384eaa5826e47f605827d29ac5248c19c56d5cd
+Merge: 1f7a393 bfd03a9
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Mon Feb 6 00:20:50 2012 -0500
+
+    added loggin to the display funcs
+
+commit 1f7a3935afc7742ef8dc708f749ce5b599319a85
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 23:56:03 2012 -0500
+
+    trying to add file logs
+
+commit bfd03a9c9ead8799835e5affebd587942941e15a
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 23:55:01 2012 -0500
+
+    nicely still broked
+
+commit 82fda29a7ff02ffc74fd61a634f47a0521affa29
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 23:40:46 2012 -0500
+
+    some changed
+
+commit 6a986f64b8303f32fa1e4a201af225224da1296b
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 23:04:32 2012 -0500
+
+    cleanup
+
+commit 7a89e9f1e24b0833958d24ae0bad6f2471e56ba9
+Merge: 9f02845 0282398
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 23:02:00 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 9f02845b7182519e80961d23e42af5bf7cac0f5e
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 23:01:53 2012 -0500
+
+    fix
+
+commit 028239808502208efc16e78f65d35f8e72904e9d
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 23:01:43 2012 -0500
+
+    turned off debug
+
+commit d5392ca20e0884da68f08acb59851d1ab8b66691
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 22:59:13 2012 -0500
+
+    send input and output to display handlers
+
+commit 21a31b8a169593e303dd3ab636fa26516c357417
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:51:42 2012 -0500
+
+    cleanup
+
+commit 82a03b34c4b785d05dca01cbb70432faf5707d86
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:48:39 2012 -0500
+
+    cleanup
+
+commit 140835a11828e9a528cf02a901b8fe6c605598a6
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:43:12 2012 -0500
+
+    io
+
+commit 9712a69b7ae2a979b1aa21dd0547804af783340b
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:23:16 2012 -0500
+
+    dog
+
+commit d7902612bdc6337f74c3193732993f9f5188ac0f
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:16:54 2012 -0500
+
+    fix weridness
+
+commit ea025d41209f8f49d80e1ad1f82b1dbeaac97e9e
+Merge: 6489685 32a5d47
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 22:08:17 2012 -0500
+
+    merge
+
+commit 6489685cb11c3e015452a65be33cfb82820e1285
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 22:01:26 2012 -0500
+
+    melding of the minds
+
+commit 32a5d474c4c2963be8971a6c99da1beab7ab445f
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 22:00:14 2012 -0500
+
+    pretty
+
+commit 47630ba349f37f0145cc0e0d59c31b34dddc3756
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 20:08:12 2012 -0500
+
+    draws prompt
+
+commit 0b6fb35d11ec56589bb4fb179ebe8f6adacecf27
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 19:36:43 2012 -0500
+
+    Merging of the minds
+
+commit 482012fca9fdc09ccb1db6ebd0c47c73f7d55243
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 18:58:46 2012 -0500
+
+    Merging of the minds
+
+commit 4fd2364f100b1f8ddeeaa2348ca9aa280332af4a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 18:58:01 2012 -0500
+
+    Merging of the minds
+
+commit a06cedd71a3a42d9d825bd6beb586d044ccc10b5
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 17:51:34 2012 -0500
+
+    attemting a remerrge
+
+commit 26b4b981cd3ff3f832bb6fdf77300c8a83a10330
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 09:59:58 2012 -0500
+
+    Added double backtick for inline coffee execution
+
+commit e81054321b995db24dbac35c557a1ddb1fad0c61
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 06:56:34 2012 -0500
+
+    dunno
+
+commit fafc7ec94005be653281c5deacc43bd3aa16c0bf
+Merge: c1587cb 3f1bbc2
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 03:34:17 2012 -0500
+
+    merge
+
+commit c1587cb5325054c56064b214fd8d4dcfaac7f69d
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 03:29:47 2012 -0500
+
+    breaking things probably
+
+commit 3f1bbc28798e7891e82c288f90242306ff1f7c80
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 03:28:34 2012 -0500
+
+    tabs mostly working
+
+commit 178f137199e20f0911450b0701d045c27a83194f
+Merge: 5026704 c6dec60
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 00:41:46 2012 -0500
+
+    sweet sweet tabs
+
+commit 5026704ebb7163ccaa544284cec941cb57518741
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sun Feb 5 00:40:08 2012 -0500
+
+    sweet sweet tabs
+
+commit c6dec60a9bd83ff883c369afc088506b03a4f61b
+Author: mark <mark@doob-un4.(none)>
+Date:   Sun Feb 5 00:37:49 2012 -0500
+
+    :(
+
+commit 39e4a9297754e0de343733aaf63e145cb00c81a3
+Merge: 464bd9d c80dd23
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 23:12:38 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 464bd9dd68267440d9c28b8402425b012180c3a4
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 23:12:32 2012 -0500
+
+    filter out dotfiles
+
+commit c80dd238dd69a0cf646da0c274f178834b8ad941
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 23:11:56 2012 -0500
+
+    fix for ; character
+
+commit 59f25abe67507c42c217e4f08b92404cb4cbb2aa
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 22:43:31 2012 -0500
+
+    ctrl c and d
+
+commit 66e2d2af9cea51e21401bf984d58f257a2e502a4
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 22:38:28 2012 -0500
+
+    more betterrer
+
+commit 5f6067cb3c2742077d35522849ddbad696b9bfd2
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 22:36:52 2012 -0500
+
+    more betterrer
+
+commit b16f28abb79851e430445e1d3c1d8fe44dc48602
+Merge: afe317a d8ee673
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 22:16:22 2012 -0500
+
+    hells ya
+
+commit afe317a8c1082bf107be6d7e2b7e82bfb9e448a0
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 22:07:50 2012 -0500
+
+    killed refreshline!
+
+commit d8ee6737344be8b8a0922f6cf0058aa09086b756
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 19:34:26 2012 -0500
+
+    ?
+
+commit a2fa89b820af60c3cb8b5cfb7155f1719b494970
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 18:40:07 2012 -0500
+
+    more line fixes
+
+commit a1f65810523185a5ffb36d740256e9d54f941be2
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 18:33:34 2012 -0500
+
+    syntax error
+
+commit 0b4022c379a33de1c7b186f111af5957cd8b647f
+Merge: 5481e02 4915fe3
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 18:32:35 2012 -0500
+
+    merge
+
+commit 5481e02e1d2eb956403969b16912ea1bf315fc87
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 18:29:17 2012 -0500
+
+    started work on tabcomplete
+
+commit 4915fe3b9f9ba5117676ef8ae076a922bc8a526e
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 18:20:32 2012 -0500
+
+    getting rid of all these line functions
+
+commit 7eaa22246bb873444e5654810c5266e5e912d1f4
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 17:37:16 2012 -0500
+
+    refixed pipe
+
+commit 3948dba0df5c6563acb9d507d5ad4fc2949ccb9a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 17:06:34 2012 -0500
+
+    partially broke history
+
+commit 4e2c4cde9b505d188fac12e8e8f7dffafa5d556a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 16:23:29 2012 -0500
+
+    broke numlines again
+
+commit a5fcc4fdee406b0f6722dbd4c7e3aa611f3fe35d
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 13:36:00 2012 -0500
+
+    Whole bunch more awesome
+
+commit 0ebcabf7dc3a8ef943852baec02cfc83fd038765
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 11:37:23 2012 -0500
+
+    aliases now properly handled in recode. cwd/pwd builtins improved. setprompt/prompt removed
+
+commit 6401d9850ccb45bc3ff261d38796cdbb33cfc76c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 09:38:55 2012 -0500
+
+    Super sexy multiline
+
+commit e9a0c70980e02aee039ee94eb713ed1448cbab15
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 09:35:59 2012 -0500
+
+    Super sexy multiline
+
+commit f6a145c5e82cc3f1819a0cc3610bb1dc5394ff68
+Merge: a49d223 c873012
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 06:55:32 2012 -0500
+
+    ugg
+
+commit a49d22357c7326be6dc87d38358deb7e9b7f1276
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 06:42:44 2012 -0500
+
+    kinda broken
+
+commit c87301242ff6638f7c9a00008e656d19a02f3027
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 06:23:50 2012 -0500
+
+    got the mouse stuff in there, but im not happy
+
+commit a42bb276cc178e32217767cadaf1aa0340645563
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 04:02:28 2012 -0500
+
+    more cleaning
+
+commit 99785029545da38814f9edc5446ac024a55cd23f
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 03:08:22 2012 -0500
+
+    cleanup
+
+commit 6fe438cff8a7566de0a38d30c22762a743a88d39
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 02:33:46 2012 -0500
+
+    changed variable names
+
+commit d47b6e24ff2da5c682a318ed252b96ff65a07440
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 01:46:07 2012 -0500
+
+    0.13.5
+
+commit a5ba8edbe0c7ef89d171fe7a4b0cd674d5c0c9e8
+Author: mark <mark@doob-un4.(none)>
+Date:   Sat Feb 4 01:45:57 2012 -0500
+
+    version
+
+commit b3b55979cef3dd06b8945f3fb252d49b955522ec
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 01:44:57 2012 -0500
+
+    MouseTrack
+
+commit 90b201b3f172aeaf5a37fe1c38f8ac106c9e87c6
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Sat Feb 4 01:39:09 2012 -0500
+
+    MouseTrack
+
+commit 4e6a0e8a03379ccee440299ea49b9ede064f03ec
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 19:40:35 2012 -0500
+
+    HOT
+
+commit a5b185c3baafab52c0ce53691df3cc3ca17e9f9c
+Merge: bb5f495 4fb3215
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 18:30:21 2012 -0500
+
+    multiline
+
+commit bb5f4952a40433d09e6e766d74bdfb78cf432f15
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 17:06:19 2012 -0500
+
+    multiline
+
+commit 4fb32151f072a4ef456010f927e86a769218ac96
+Merge: 0e195b1 ba9c4b2
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 17:02:49 2012 -0500
+
+    merged
+
+commit 0e195b11ae8de7ff64a074c27a2f251e2057a873
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:58:28 2012 -0500
+
+    prettyified prompt
+
+commit ba9c4b2c4d8640b8e9033d1ae164ff32ecaffae2
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 16:36:09 2012 -0500
+
+    aliases file
+
+commit 2d30d2f746b16e6e24716329df6dceb283d93f45
+Merge: 837b719 4782872
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:18:26 2012 -0500
+
+    merge
+
+commit 837b7198ccccba9a58c1304dc55908ddf8600660
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:16:59 2012 -0500
+
+    coffeeshrc
+
+commit 47828726a1d689b150882e285a440ef1483e43cb
+Merge: 837ea64 fa6acec
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 16:16:44 2012 -0500
+
+    merge
+
+commit 837ea64bf22ffebd10fe3120b9b6bb79f3892bdf
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 16:14:56 2012 -0500
+
+    coffeesh
+
+commit 14c4a191aed4ebfff3785edf28c78a1a143be221
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 16:11:03 2012 -0500
+
+    tweaks
+
+commit ad63be12a449ab3f8f986c462aa8d6f2e09fa317
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 16:10:07 2012 -0500
+
+    tweaks
+
+commit 995809afd1f5768afb314c6f42c5ac1fd8efb832
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:09:37 2012 -0500
+
+    0.12.0-1
+
+commit fa6acec830960a50a9cd2c06d67a39a61f61b2e7
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:09:08 2012 -0500
+
+    coffeeshrc
+
+commit d47ab65f0d478fa00acc9b74875d912d3e13e7a6
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:07:33 2012 -0500
+
+    coffeeshrc
+
+commit 759b9f9f410d8cc4d10d220114222a46d91c1ae9
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:07:04 2012 -0500
+
+    coffeeshrc
+
+commit 20043e64990bf3c8412e6623ab7048b558309949
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 16:06:57 2012 -0500
+
+    coffeeshrc
+
+commit 99d39031f6d789c600b49dfb2951fe33f501ac8e
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 15:54:28 2012 -0500
+
+    0.12.0
+
+commit cbefb10d84e786aca8d9334ea79be80204416ef5
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 15:53:21 2012 -0500
+
+    coffeeshrc
+
+commit d86965d31c8c8996adcdae22d584958a55e7b6a9
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 15:53:16 2012 -0500
+
+    coffeeshrc
+
+commit f794dbbf6b9f028d426c9bcfcf2798e03118c5a5
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 14:18:39 2012 -0500
+
+    0.13.0
+
+commit f096587d03f889f0b24ebd7280b4179cb9a547c9
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 14:18:35 2012 -0500
+
+    npm config
+
+commit 37cd355e85d49a12d010b3533c0269f5804505ad
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 14:15:45 2012 -0500
+
+    0.12.0
+
+commit c05e13bf736d2ba4a5678071c53f0a5417fd8c66
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 14:15:41 2012 -0500
+
+    npm config
+
+commit c7d085eb5f2888d6a4d0dfe1813eb0a4d98316d8
+Merge: 47e99a7 1910525
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 13:22:49 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 47e99a78c0f22284a337ce965d75abf47f7a4d42
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 13:22:40 2012 -0500
+
+    tabcounting
+
+commit 191052554ad1e60969102fa48430bbb63f5ca454
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 13:22:25 2012 -0500
+
+    fixed . in filenames
+
+commit 724db9ca9cfc1ff2493e3b87061e59e6cad23dcb
+Merge: f3d822f bcddea3
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 13:18:01 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit f3d822fb381312fc09f83bfd7072589ded616835
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 13:17:52 2012 -0500
+
+    fixed . accessor
+
+commit bcddea3f759671cf5cbcf75879630edf9ba3408b
+Merge: a1bcf4a 70bca78
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 13:12:28 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit a1bcf4ad0c2f5d94aaa7ac8dc950213f520db5a7
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 13:12:22 2012 -0500
+
+    ref file
+
+commit 70bca78956b6dc0c816fb76abbf3873e5f7b4b85
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 13:06:59 2012 -0500
+
+    tweaks
+
+commit 41f55b1c50c514f08a7abb95537c1e0ed7006c41
+Merge: a829a9e 63153f9
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 12:38:19 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit a829a9e98f4111186f964341a7f8c2a7c75804f7
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 12:38:11 2012 -0500
+
+    require fibers and fix autocomplete a bit
+
+commit 63153f9f00f9db55ff1eabe05240c16dccd9c6c8
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 12:34:51 2012 -0500
+
+    fiber fix
+
+commit f64150a0b8529f66b6f75999d5b449005b41b0b7
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 12:04:06 2012 -0500
+
+    0.11.0
+
+commit b8b655db993055491f708cf20543ce77ff693de0
+Merge: 1df77ac c55ae4b
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 12:03:14 2012 -0500
+
+    Added fibers to execute to provide simulated sync
+
+commit 1df77ac9bb58c00713898395bad17c2dfbd088ab
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:55:41 2012 -0500
+
+    0.10.0
+
+commit b595e62091ef2119830a3ea6c2137e600984fc90
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:55:28 2012 -0500
+
+    Possibly fixed execute
+
+commit 0d8059be71a3d69058b5f7ad494afbc370a38b70
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:34:12 2012 -0500
+
+    gaa damn
+
+commit a624b1fd96e70dc4d0c41b97f38992676a45f245
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:05:01 2012 -0500
+
+    god damn
+
+commit 122c7f3c88ec8883677716ce6e150c2d47606333
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:04:41 2012 -0500
+
+    god damn
+
+commit 904acca1fcabb191c68953a896009e19c8323a49
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 10:04:07 2012 -0500
+
+    god damn
+
+commit cd45320db0394e82a317d3ce8a92b0ddcd6d3a7a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:38:45 2012 -0500
+
+    god damn
+
+commit 5ba6e1f7bf3f64b4895b2ea2f8c1ca0d0dcdd151
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:36:20 2012 -0500
+
+    god damn
+
+commit c353025281953450a95c0b604d53aae0b322688b
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:36:08 2012 -0500
+
+    god damn
+
+commit b0fb02c9f5870575b2c2aa3baf48bfba93ce652f
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:32:35 2012 -0500
+
+    god damn
+
+commit c55ae4bd015f00fdd77690ccef433d86f46066a5
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 09:17:25 2012 -0500
+
+    added aliases
+
+commit 68946047965d7e7401a46b8da18cffa736d2b64c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:05:01 2012 -0500
+
+    Major overhaul of execute... now properly blocks
+
+commit 2224451f7c92357d7bbdddfd40e8c277db1085db
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 09:00:07 2012 -0500
+
+    Major overhaul of execute... now properly blocks
+
+commit 59f56493ea548bd4535cb58a0e544d7894b2fcd5
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 08:42:18 2012 -0500
+
+    Major overhaul of execute... now properly blocks
+
+commit 452604d978e23a923230791cc98a24fc44c8e975
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 08:40:31 2012 -0500
+
+    Major overhaul of execute... now properly blocks
+
+commit 84139fb3fb2d7e38360f28152a22e10609d57b1d
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 08:35:25 2012 -0500
+
+    autocomplete paths (broken exec though)
+
+commit 00d13d9e9ae45d140a6ee0863867d99bde4e464c
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 04:15:27 2012 -0500
+
+    second shot
+
+commit 791fca03eadcfdae12b5556e9a7e29cda3a2f923
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 03:31:50 2012 -0500
+
+    semicolon support
+
+commit 623581c096a30a758a83c85831e7576d3ea7a99d
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:52:19 2012 -0500
+
+    fix history writes for binaries
+
+commit 3e2930176b62f9240930012ab7a9ff36ae3d59c1
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:34:30 2012 -0500
+
+    0.9.0-1
+
+commit 02ef5b225da04df9c1242ece3ba50704dbc7df8d
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:34:14 2012 -0500
+
+    package.json fixes
+
+commit 1dead4e3055a3aac2370b1d7b92c13183481b09b
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 02:26:18 2012 -0500
+
+    0.9.0
+
+commit dc0fa4894f7d944b0cbc5f22a243b21544506294
+Merge: ecf1d92 75f9d6d
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 02:25:24 2012 -0500
+
+    version mixup
+
+commit ecf1d925d09cb9b0fa3457669d20cb9ae21146cc
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 02:17:53 2012 -0500
+
+    0.7.0
+
+commit 75f9d6ddc7b0182bdfe64595b091548b718a4b26
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:16:42 2012 -0500
+
+    0.8.0
+
+commit f1f6651a3dc9d22cb27ec45dcaecd8dc3cec8ec1
+Merge: 72773bf 05b7839
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:11:13 2012 -0500
+
+    merged
+
+commit 72773bf7440aba8ee911bb6b8de22153a50a2059
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 02:03:03 2012 -0500
+
+    tabcomplete betterness
+
+commit 05b783926ea5bac9e5307b5ae5633bcb28089be3
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 01:55:19 2012 -0500
+
+    more reorganization
+
+commit 025d7895c370fa22385eb24c9c322feabf865c5d
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 01:52:04 2012 -0500
+
+    0.6.0
+
+commit ff57fc0afc7002e96d4ed48f98903338ff21b9bf
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 01:52:03 2012 -0500
+
+    Major movement... combined lexer, rewriter, and tokenparse into recode.coffee
+
+commit 25867a7666c1cc18753471513dac6fa73eae7cd1
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 01:51:06 2012 -0500
+
+    Major movement... combined lexer, rewriter, and tokenparse into recode.coffee
+
+commit dc0652a24775cafec10623d75dc578e1a7955590
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 01:12:13 2012 -0500
+
+    Kickin lexer ass
+
+commit b1188e3c41b6529d2caef49e7f35024bfc4c348f
+Merge: d2de5b9 711e2fc
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 00:34:56 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit d2de5b997140c2659ac95d7f4b352d70931cbff6
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Fri Feb 3 00:34:48 2012 -0500
+
+    Kickin lexer ass... gettin so nice
+
+commit 711e2fc85f70a4336f3e43377246581ebb7ab125
+Author: mark <mark@doob-un4.(none)>
+Date:   Fri Feb 3 00:08:25 2012 -0500
+
+    more cleaning
+
+commit e7f2cc7fb2b3734cd1181c5eea149394c65a26e6
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 23:53:05 2012 -0500
+
+    more cleaning
+
+commit e68c8c7b2e1cda08957c845a1b023f4a01193817
+Merge: a9d5264 51a6bef
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 23:19:26 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit a9d5264f30da0072c1caaa0e167e24a5dfc8a438
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 23:19:19 2012 -0500
+
+    smaller tweaks
+
+commit 51a6bef88fc830b1940712c32642870094b1ccee
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 23:17:29 2012 -0500
+
+    Kickin lexer ass
+
+commit 647cd62ac62b1c706abc6933fb7aa53909dc93c6
+Merge: aa56829 631a7dd
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 23:16:32 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit aa56829e042a662ddd305ea525040afb961e83eb
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 23:16:24 2012 -0500
+
+    Kickin lexer ass
+
+commit 631a7dd392ee957a49d1b18c714de74bc50e8c7a
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 23:15:05 2012 -0500
+
+    made key presses code pretty
+
+commit e9ad3ee238408ba3cb289a4d8e7a1d1d98cc4d80
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:37:00 2012 -0500
+
+    Kickin ass on the lexer
+
+commit 789bae22d0085b0b8d3ca98a876c39ef916c51b6
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:36:32 2012 -0500
+
+    Kickin ass on the lexer
+
+commit a8c09b0b559b6d29f85d8c6c7b4ba0728d693954
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:24:06 2012 -0500
+
+    tweaks and fixes
+
+commit 20e660716b6d4f5cd87688932319b49efc751f58
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:23:42 2012 -0500
+
+    tweaks and fixes
+
+commit afe897cb3229237762b1f2e55355decf700463f5
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:22:18 2012 -0500
+
+    tweaks and fixes
+
+commit c66ffcde49fcb32d3e86ef24337c67406daa83c1
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:21:56 2012 -0500
+
+    tweaks and fixes
+
+commit 534861d8d2845789b7b87ae0225058886d7b494c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 22:19:45 2012 -0500
+
+    tweaks and fixes
+
+commit 9858478d85a1e73e1dfba9e15f7ea8a222874f78
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:57:59 2012 -0500
+
+    tweaks and fixes
+
+commit af21cc3c4a5becb35259d5f094d9466110a261fe
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:52:13 2012 -0500
+
+    tweaks and fixes
+
+commit 76d0404ee179892552ce783241834410ca652c48
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:47:06 2012 -0500
+
+    tweaks and fixes
+
+commit 17743887e1bce40d4a52459489f640a3243a4115
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:46:29 2012 -0500
+
+    tweaks and fixes
+
+commit 4fdbd070352bfbcd2a269d409a9c49d46f6bed15
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:44:36 2012 -0500
+
+    improving filepath regex
+
+commit 6bc32d74715b7838b3ce9295b368f080743c4bb8
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:44:16 2012 -0500
+
+    improving filepath regex
+
+commit 1720458e5de0d8c08dc487abb64338b5c6ddf58f
+Merge: 619dfe4 9b2a403
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 21:26:32 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 619dfe49d31974f505a6d6dcd78fe28e784bfe7e
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 21:25:42 2012 -0500
+
+    spacing
+
+commit 9b2a40326adeeba2053a8b99d81c4988a4c83537
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:24:55 2012 -0500
+
+    more filepath tweaks
+
+commit fa8154cd56f13285311b661a25cc7056fc284392
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:10:29 2012 -0500
+
+    improving filepath regex
+
+commit dc194d06b904646878fb3a198417562ff0dbfee4
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:06:24 2012 -0500
+
+    improving filepath regex
+
+commit fbc0fb91d7bdb8241c063b4134eda14e185f4542
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:04:39 2012 -0500
+
+    improving filepath regex
+
+commit bf4520c900c22f4f387023d19211a8a7c65323bd
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 21:02:46 2012 -0500
+
+    improving filepath regex
+
+commit ee4ae2ff1b74f1c113842df621f04990d9fbdf6c
+Merge: 30ba3da 8b6a229
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 20:37:12 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit 30ba3da2bea43185bd816cb0d9aa54eb05b156e3
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 20:37:05 2012 -0500
+
+    working on lexer regex
+
+commit 8b6a2292f6a2f9e74da47a0ca2019b1b557354b7
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 20:26:37 2012 -0500
+
+    took + and - out of MATH tokens
+
+commit 3eecee2be49f3e13e12d0ee0871b8b90f9779929
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 20:19:26 2012 -0500
+
+    correct number regex
+
+commit 9a90084bb5da62b48053873449d005b4118c48f9
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:58:49 2012 -0500
+
+    tweaks
+
+commit c4cde48ef0f8ca588cf2c475ba24af2da2ab9c47
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:43:01 2012 -0500
+
+    tweaks
+
+commit d6fb9c683e12b6ec52f1d2d2a2f2a1f09ab491ff
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:34:16 2012 -0500
+
+    tweaks and partial math fix
+
+commit d3a7ee0a8eb4b80123da8a24c4cab2c26c7f28cd
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:22:26 2012 -0500
+
+    0.5.0
+
+commit e601b43ecdb1b5368980b316803f4e3cc62c8bfd
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:17:01 2012 -0500
+
+    cleanup
+
+commit eb4122ce2018080482afba344ecc1d258b5038c7
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 19:00:05 2012 -0500
+
+    added back in some debug
+
+commit f7fae37fd414b0c7f4af50b6c7651a1836852765
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:54:24 2012 -0500
+
+    prepping for login shell
+
+commit e102da40a52362597e6acac3da3793401041647a
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:52:23 2012 -0500
+
+    prepping for login shell
+
+commit e41a40129b243c4dbe1ef1195b90263d16022ff0
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:40:48 2012 -0500
+
+    less debug output
+
+commit 682b9261857deccde6f583775c969d5ff3439c54
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:40:20 2012 -0500
+
+    less debug output
+
+commit 86ae89f3da77172650f95a1ac57a1c1406cd97bd
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:40:01 2012 -0500
+
+    less debug output
+
+commit 182950d2a7f2d672e5c97eaac7959c67627e4a7a
+Merge: b1ef183 e391020
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:37:26 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit b1ef183edbc7d074187471614ff7ab65692b9674
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 18:36:58 2012 -0500
+
+    Committing from inside coffeeshell!
+    
+    	modified:   coffee-shell.coffee
+    	modified:   lexer.coffee
+    	modified:   rewriter.coffee
+
+commit e3910202e5badc1118f308ed43bbaece0842bba7
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 16:00:05 2012 -0500
+
+    history_fd before reading from file. else errors when history file doesnt exist
+
+commit 3bed279973b32fc2c27fc3400150e8dc08a6ec27
+Merge: a55ae81 c44d193
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 15:29:31 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit c44d1931d6e5200a00eafa7a80e874c5bda32b24
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 15:29:26 2012 -0500
+
+    Everything inside the Shell class
+
+commit a55ae815540115ec43d769ede36aa9ca7bbbf9e1
+Merge: 90f07b7 b338042
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 15:29:15 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit b3380421be61b68e0bda8042ca7334767569f344
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 15:29:10 2012 -0500
+
+    Everything inside the Shell class
+
+commit 90f07b7c92ee8e976b265737d57b6e59bad22a7b
+Merge: 7a039f4 f271735
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 15:26:55 2012 -0500
+
+    Merge branch 'master' of tnrepo.tmbl.us:coffeeshell
+
+commit f27173510a56c520b62cf52b0957c1ffba64aa84
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 15:26:30 2012 -0500
+
+    Everything inside the Shell class
+
+commit 7a039f40270f68099e9fe53a1205fcd9f014f531
+Author: mark <mark@doob-un4.(none)>
+Date:   Thu Feb 2 15:24:19 2012 -0500
+
+    new month
+
+commit 73b62ecece6c66da11e3ecbad41adffbb508ed0c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Thu Feb 2 12:36:52 2012 -0500
+
+    Commit from 2 weeks ago
+
+commit 4b518e3ed89f856865d1221a89cc0fef90997fa0
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Wed Jan 18 18:32:43 2012 -0500
+
+    ahhhhhhrgr
+
+commit 1b448bf9e085cd9a9396b512a66368091494e968
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Wed Jan 18 18:09:05 2012 -0500
+
+    ahhhhhhrgr
+
+commit a4bad07e36abf7fe603b66f512eb7a560f3cdc87
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Wed Jan 18 15:35:18 2012 -0500
+
+    cleanup
+
+commit 109f6599e140559e88696b3b75041f742c1cb224
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Wed Jan 18 15:27:29 2012 -0500
+
+    Recreated readline
+
+commit 628f05d681735f61e5182101e15c8fdc26978394
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Wed Jan 18 13:33:35 2012 -0500
+
+    add readline.coffee
+
+commit def323806c2c0a29809dc372bb1ec5d1271d9389
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Wed Jan 18 13:33:16 2012 -0500
+
+    All sortsa things changed... nothing fully working
+
+commit c6a81be536d2d8bdfac93b102dc908a2edc8a455
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Tue Jan 17 15:25:22 2012 -0500
+
+    ''
+
+commit c0f6d6a02f5c62d741f8443d7b515f9eec2624d7
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Tue Jan 17 15:01:39 2012 -0500
+
+    0.4.0
+
+commit ef1dc459470fd43b70654e823446dfb6acd9df88
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Tue Jan 17 15:01:35 2012 -0500
+
+    package tweaks
+
+commit b3f5fd2eb7709373cd460d6b6b9124527d3f222c
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Tue Jan 17 14:55:25 2012 -0500
+
+    1.0.0
+
+commit 70771fbe562b8ec05dbba2c6372fc4f8d1feff76
+Author: Mike Cobelli <cobells@gmail.com>
+Date:   Tue Jan 17 14:51:55 2012 -0500
+
+    Redisigned coffeeshells syntax parser to use a modified version of coffee-scripts parser
+
+commit 1a6380406132d666c263282e2f77c8bec02910b3
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:55:07 2012 -0500
+
+    coffee-shell, not coffeescript-shell
+
+commit 98512a05bf386657c67e68f0a19697e2d26f338f
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:31:02 2012 -0500
+
+    0.3.4
+
+commit 774fb9fff5aa9bbfcaef58d90beefa289f4775c0
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:30:21 2012 -0500
+
+    work
+
+commit 5b4e6ad7731f25c7bd10cbb01961ab38affd4f43
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:27:58 2012 -0500
+
+    removed require colors
+
+commit 8293607ceffb65c5a31a1c18cc354ee2ddc304e4
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:24:49 2012 -0500
+
+    website
+
+commit 4579144f5f3d021513be30921ed8ae91e18d8353
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:23:44 2012 -0500
+
+    0.3.3-1
+
+commit 02558c6daa191efeca1a33f9711c6a1cfb9b6d1e
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:23:31 2012 -0500
+
+    updated git repo to github in package.json
+
+commit 5934aca97da7b54131a7330f8ae3ec357969eeab
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:16:39 2012 -0500
+
+    readme
+
+commit 0ef133020540b9f1e51a1abfccf3212a1a553be5
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:09:14 2012 -0500
+
+    package.json update
+
+commit 79440f01f44c4a0ba280d9ada71818704a4029a5
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:09:06 2012 -0500
+
+    package.json update
+
+commit 754b532b6dca7a9dca09fba1ae23ba6bb943afa1
+Author: Mark Dube <markisdee@gmail.com>
+Date:   Tue Jan 17 01:08:55 2012 -0500
+
+    package.json update
+
+commit d0ead4519c00179753dc198e51fdb5f9723d8e81
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 21:23:39 2012 -0500
+
+    0.3.3
+
+commit 2dc813618d5258c3e93bc66bbdd1a0f1b5b0b259
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 21:22:28 2012 -0500
+
+    took away features to make it more useable
+
+commit 9cf8192094ede6772fc123f54616a022fa30debc
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 20:04:42 2012 -0500
+
+    colors
+
+commit 7912179da6749e9ccaaa8946ccb1e05287e96aac
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 19:24:24 2012 -0500
+
+    0.3.2
+
+commit 2aec2a5a16bba27cf325bf2400df79944a8ccca3
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 19:23:42 2012 -0500
+
+    fix cursor
+
+commit 4bf80ca1b18cc28d5f357f4867679e8ec72597f5
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 19:14:57 2012 -0500
+
+    0.3.1
+
+commit cc2ece271c7a1542210fd48804aeaff1d246a978
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 19:14:36 2012 -0500
+
+    colors
+
+commit 05d32b77c3b7431ced3cb7c80694e00d55c6ed5c
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 17:09:36 2012 -0500
+
+    0.3.0
+
+commit 2980abfd937b831b225a5560d989bfccc6058aee
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 17:08:27 2012 -0500
+
+    fixed c[0] is this commits
+
+commit b7da8c52cfb12f20ebc30acc83402861b0137e2c
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 17:04:39 2012 -0500
+
+    "yaaaaaaaa 1"
+
+commit 67ad381d0240651ab085fb13c9d87ea56dbaa634
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 15:43:15 2012 -0500
+
+    0.2.3
+
+commit 706bcd6190a405b2f85ea8309593df4fb4ba1536
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 15:42:31 2012 -0500
+
+    "coffeeshell"
+
+commit 074dd4b04983581ac77217e3d27973c6a5b8ac55
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 13:46:56 2012 -0500
+
+    0.2.2
+
+commit 654aa376d6b91d41948435d04ca6a16e1ca17300
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 13:45:31 2012 -0500
+
+    test
+
+commit d196ccdc2f190c733518edd0bdf00241abd28458
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 13:12:05 2012 -0500
+
+    0.2.1
+
+commit 4778a4e79bb5979d980b2c4e9cd59844e57a4a72
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 13:11:49 2012 -0500
+
+    bug fix
+
+commit 2e19b3eaa1de16b6ded3a670a6624c867219cad6
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 12:55:18 2012 -0500
+
+    0.2.0
+
+commit 62b4032a0d3ca9e0227c014e80587e9ead380890
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 12:55:05 2012 -0500
+
+    binaries in sync with coffee
+
+commit b93f464b874c382c3e6c56d766fa3863c4ff7765
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 10:42:00 2012 -0500
+
+    find/replace REPL with shell
+
+commit 9484133675956571b528f980e8ba5fa04cd90065
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 09:41:01 2012 -0500
+
+    0.1.1
+
+commit ee85898e40d16a15ca5a75c9b70d78d7debb8292
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 09:40:47 2012 -0500
+
+    gitignore
+
+commit 04ba7c32f0eccb37f78a78bef2e94f4383d90953
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 09:40:01 2012 -0500
+
+    fixed non-existent PATH issue
+
+commit af7df0d5f9813c9d9ff6e6f7f3950f78e0aa903d
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 09:24:56 2012 -0500
+
+    fixed package.json and added command line bin
+
+commit 01b93730f8ddfc46e5b6d0174f0f5827854dcee2
+Author: Mark Dube <mark@doob-un4.(none)>
+Date:   Mon Jan 16 09:08:20 2012 -0500
+
+    first checkin
