@@ -53,14 +53,11 @@ class CoffeeShell
 
 	init: ->
 		# load history
-		# TODO: make loading history async so no hang on big files
-
 		fs.open @HISTORY_FILE, 'a+', '664', (err, fd) =>
 			return @displayError ["Cannot open history file '#{@HISTORY_FILE}' for writing", err] if err
 			@history_fd = fd
 
 		fs.readFile @HISTORY_FILE, 'utf-8', (err, data) =>
-			@displayDebug data
 			lines = data.split("\r\n")
 
 			lines = lines[..@HISTORY_SIZE]
@@ -75,7 +72,7 @@ class CoffeeShell
 			@binaries[file] = pathname for file in fs.readdirSync(pathname)
 			
 		@builtin = 
-			pwd: () =>
+			pwd: =>
 				@cwd
 			cd: (to) => 
 				if to.indexOf('~') is 0
@@ -91,8 +88,8 @@ class CoffeeShell
 					@cwd = '~'+newcwd.substr(@home.length)
 				else @cwd = newcwd
 				#@displayOutput "new directory: #{@cwd}"
-			log: (val) ->
-				@displayOutput 
+			log: (val) =>
+				@displayOutput val
 			kill: (pid, signal = "SIGTERM") -> 
 				process.kill pid, signal
 			which: (val) =>
@@ -112,19 +109,19 @@ class CoffeeShell
 		@resume()
 		
 		@ttymgr()
+
+		Fiber(=> 
+			@cwd = @execute("/bin/pwd -L")
+			@builtin.cd(@cwd)
+		).run()
 	
 		@drawShell()
 
-		Fiber(=> 
-			@cwd = @execute("/bin/pwd -L > /dev/null")
-		).run()
-		@builtin.cd(@cwd)
-
-		
+				
 	
 	resetInternals: ->
 		# internal variables
-		@_historyIndex = -1
+		@historyIndex = -1
 		[@mousex, @mousey] = [0,0]
 		@cx = @cy = 0
 		@cTabs = [0]
@@ -171,13 +168,11 @@ class CoffeeShell
 			
 			lines[i] = tabs + @cLines[i]
 			#console.log @cTabs[i], tabs, lines[i]
-
-		
 		
 		code = lines.join("\n")
 		
 		@resetInternals()
-		@displayDebug code + "asd"
+
 		@displayInput code
 		
 		
@@ -205,15 +200,13 @@ class CoffeeShell
 	# Run command non interactively
 	execute: (cmd) ->
 		fiber = Fiber.current
-		@resetInternals()
-		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
 		
 		proc.stdout.on 'data', (data) =>
 			lastcmd = data.toString().trim()
 			@displayOutput data.toString().trim()
-			
+						
 		proc.stderr.on 'data', (data) =>
 			@displayError data.toString().trim()
 			

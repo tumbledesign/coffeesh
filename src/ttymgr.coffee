@@ -15,7 +15,7 @@ module.exports =
 		@INPUT_TEXT = 'grey20'
 		@INPUT_BACKGROUND = 'grey2'
 		@ERROR_TEXT = 'grey20'
-		@ERROR_BACKGROUND = 'terraRosa'
+		@ERROR_BACKGROUND = 'darkRed'
 		
 		
 		@cx = @cy = 0
@@ -53,7 +53,8 @@ module.exports =
 			if r is @promptRow
 				line = "#{if @user is 'root' then colors.red else colors.green}#{@PROMPT + colors['bg'+ @CMD_BACKGROUND] + colors[@CMD_TEXT]}" 
 			else
-				line = " " for i in [0..@PROMPT.length]
+				@output.cursorTo @PROMPT.length, r
+				line = ""
 			if r - @promptRow < @cLines.length
 				for t in [0...@cTabs[r - @promptRow]]
 					line +='|'
@@ -145,7 +146,6 @@ module.exports =
 		@output.cursorTo 0, @row
 		@redrawPrompt()
 		@displayBuffer data, 'INPUT'
-		@displayDebug data + " after displaybuffer"
 
 		fs.write @inlog, data+"\n\n---------------------------------------\n\n"
 
@@ -160,8 +160,6 @@ module.exports =
 				numbuffered++
 
 		@row += numbuffered
-
-		@displayDebug [@row, @promptRow, @buffer]
 
 		if @row > @promptRow
 			@scrollDown()

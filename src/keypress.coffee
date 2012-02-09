@@ -201,33 +201,35 @@ module.exports =
 				
 				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
 					@cy--
-					
-					@cx = @cLines[@cy].length
+					@cx = Math.min @cx, @cLines[@cy].length
 					@redrawPrompt()
 					return
 					
 				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
 					@cy++
-					@cx = @cLines[@cy].length
+					@cx = Math.min @cx, @cLines[@cy].length
 					@redrawPrompt()
+					return				
 					
-					return
-				
-				if @_historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
-					@_historyIndex++
-					@redrawPrompt()
-					
-				else if @_historyIndex > 0 and keytoken in ['down', 'C^n']
-					@_historyIndex--
-					@redrawPrompt()
-					
-				else if @_historyIndex is 0
-					@_historyIndex = -1
+				if @historyIndex is -1 and keytoken in ['up', 'C^p']
+					@historyIndex = 0
+					@tmp_history = [@cLines, @cTabs, @cLines[0].length, @cy]
+
+				else if @historyIndex is 0 and keytoken in ['down', 'C^n']
+					@historyIndex = -1
+					[@cLines, @cTabs, @cx, @cy] = @tmp_history 
 					@redrawPrompt()
 					return
+
+				else if @historyIndex + 1 < @history.length and keytoken in ['up', 'C^p']
+					@historyIndex++
+					
+				else if @historyIndex > 0 and keytoken in ['down', 'C^n']
+					@historyIndex--
+
 				else return
 				
-				@cLines = (@history[@_historyIndex]).split('\n')
+				@cLines = (@history[@historyIndex]).split('\n')
 				@cy = @cLines.length
 				@redrawPrompt()
 				

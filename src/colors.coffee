@@ -11,7 +11,7 @@ colormap =
 	caperBerry : 22
 	rainforest : 23 #, 29, 30, 36, 37]
 	darkeningSky : 25 #, 31, 32]
-	ladybug : 52 # 88, 124, 160]
+	ladybug : 52 # 124, 160]
 	beet : 53
 	mossyRock : 58 # , 64, 100
 	magnetite : 59
@@ -28,6 +28,7 @@ colormap =
 	grapeJellyBean : 96 #, 133]
 	dill : 101
 	zinc : 102
+	darkRed: 88
 	tempest : 103
 	bayLeaf : 107
 	wintergreen : 108
