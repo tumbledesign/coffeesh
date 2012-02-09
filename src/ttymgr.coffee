@@ -8,10 +8,14 @@ module.exports =
 		@PROMPT = "» "
 		@TABSTOP = 2
 		@MINPROMPTHEIGHT = 6
-		@CMD_BACKGROUND = 'magenta'
-		@CMD_TEXT = 'blue'
-		@OUTPUT_BACKGROUND = 'black'
-		@OUTPUT_TEXT = 'green'
+		@CMD_TEXT = 'grey20'
+		@CMD_BACKGROUND = 'grey5'
+		@OUTPUT_TEXT = 'tempest'
+		@OUTPUT_BACKGROUND = 'grey1'
+		@INPUT_TEXT = 'grey20'
+		@INPUT_BACKGROUND = 'grey2'
+		@ERROR_TEXT = 'grey20'
+		@ERROR_BACKGROUND = 'terraRosa'
 		
 		
 		@cx = @cy = 0
@@ -19,6 +23,9 @@ module.exports =
 		@cLines = ['']
 
 		[@numcols, @numrows] = @output.getWindowSize()
+
+		# buffer holds an array of lines of type [text, type]
+		# for example, a buffer be [["a = 3","input"],["3","output"],["ls", "input"],[<output of ls>, "output"]]
 		@buffer = []
 		@__defineGetter__ "promptRow", => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
 		@scrollOffset = 0
@@ -33,53 +40,49 @@ module.exports =
 		else @output.write "\x1b[?1003l\x1b[?1005l"
 
 	drawShell: ->
-		@output.cursorTo 0, 0
-		@output.write colors.reset
-		@output.write colors["bg"+@OUTPUT_BACKGROUND]
-		for r in [0..@promptRow]
-			@output.cursorTo 0, r
-			@output.clearLine(0)
 		@redrawOutput()
 		@redrawPrompt()
 
 
 	redrawPrompt: ->
-		@output.cursorTo 0, @promptRow
-		@output.write colors["bg"+@CMD_BACKGROUND]
-		#clear all of console
-		for i in [@promptRow...@numrows]
-			@output.cursorTo 0, i
-			@output.clearLine 0
 
-		for y,l of @cLines
-			y = +y
-			@output.cursorTo 0, @promptRow + y
+		for r in [@promptRow...@numrows]
+			@output.cursorTo 0, r
+			@output.write colors["bg"+ @CMD_BACKGROUND] + colors[@CMD_TEXT]
 			@output.clearLine 0
-			p = "#{if @user is 'root' then @PROMPT.red else @PROMPT.green}"
-			for t in [0...@cTabs[y]]
-				p +='|'
-				p += '·' for i in [0...@TABSTOP]
-			@output.write p + l[@CMD_TEXT]
-
+			if r is @promptRow
+				line = "#{if @user is 'root' then colors.red else colors.green}#{@PROMPT + colors['bg'+ @CMD_BACKGROUND] + colors[@CMD_TEXT]}" 
+			else
+				line = " " for i in [0..@PROMPT.length]
+			if r - @promptRow < @cLines.length
+				for t in [0...@cTabs[r - @promptRow]]
+					line +='|'
+					line += '·' for i in [0...@TABSTOP]
+				line += @cLines[r - @promptRow]
+			@output.write line
 		@output.cursorTo(@PROMPT.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow + @cy)
 
-		#@output.write colors.reset
-		
 		
 	redrawOutput: ->
-		@output.cursorTo 0, 0
-		@output.write colors["bg"+@OUTPUT_BACKGROUND]
 		for r in [0...@promptRow]
 			@output.cursorTo 0, r
-			@output.clearLine(0)
-			if r + @scrollOffset < @buffer.length
-				@output.cursorTo 0, r
-				@output.write @buffer[r + @scrollOffset][...@numcols].replace(/\u001b\[39m/g,colors[@OUTPUT_TEXT]).replace(/\u001b\[49m/g,colors["bg"+@OUTPUT_BACKGROUND])
-				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
-
+			if r + @scrollOffset >= @buffer.length
+				@output.write colors["bg"+@OUTPUT_BACKGROUND] + colors[@OUTPUT_TEXT]
+				@output.clearLine 0
+			else
+				type = @buffer[r + @scrollOffset][1]
+				bgcol = @["#{type}_BACKGROUND"]
+				fgcol = @["#{type}_TEXT"]
+				@output.write colors["bg#{bgcol}"] + colors[fgcol]
+				@output.clearLine 0
+				line = ""
+				line += @buffer[r + @scrollOffset][0][...@numcols]
+				line.replace(/\u001b\[39m/g,colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol])
+				line += "…" if line.removeStyle.length >= @numcols - 1
+				line = line.bold if type is 'INPUT'
+				@output.write line
 
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
-
 
 			
 	scrollDown: (n) ->
@@ -114,54 +117,51 @@ module.exports =
 		@redrawOutput()
 
 	displayDebug: (debug) ->
+		if typeof debug isnt 'string'
+			debug = inspect(debug, true, null, true)
 		fs.write  @debuglog, debug+"\n\n---------------------------------------\n\n"
 
 	displayError: (err) ->
 		if typeof err isnt 'string'
 			err = inspect(err, true, 2, true)
-		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-		@output.write colors.red
-		@displayBuffer "ERROR"
+
+		@displayBuffer err, 'ERROR'
 
 		@redrawPrompt()
 		fs.write @errlog, err+"\n\n---------------------------------------\n\n"
 
 	displayOutput: (data) ->
 		if typeof data isnt 'string'
-			data = inspect(data, true, 2, true)
+			data = inspect(data, true, 3, true)
 		@output.cursorTo 0, @row
 
-		@displayBuffer data["bg"+@OUTPUT_BACKGROUND][@OUTPUT_TEXT]
+		@displayBuffer data, 'OUTPUT'
 		
-		
-		#@output.write colors.reset
-
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 		fs.write @outlog, data+"\n\n---------------------------------------\n\n"
 
 	displayInput: (data) ->
-		@output.cursorTo 0, @row
 		
+		@output.cursorTo 0, @row
 		@redrawPrompt()
-
-		@displayDebug data
-		@displayBuffer data["bg"+@OUTPUT_BACKGROUND][@OUTPUT_TEXT].bold
-		#@output.write colors.reset
+		@displayBuffer data, 'INPUT'
+		@displayDebug data + " after displaybuffer"
 
 		fs.write @inlog, data+"\n\n---------------------------------------\n\n"
 
-	displayBuffer: (str) ->
+	displayBuffer: (str, type = 'OUTPUT') ->
 		numbuffered = 0
 		lines = str.split(/\r\n|\n|\r/)
 
 		for line in lines
 			while line.length > 0
-				@buffer.push line[...@numcols]
+				@buffer.push [line[...@numcols], type]
 				line = line[@numcols...]
 				numbuffered++
 
 		@row += numbuffered
+
+		@displayDebug [@row, @promptRow, @buffer]
 
 		if @row > @promptRow
 			@scrollDown()

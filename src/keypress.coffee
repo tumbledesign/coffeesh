@@ -11,7 +11,7 @@ module.exports =
 			
 			modifier = s.charCodeAt(3)
 			key ?= shift: !!(modifier & 4), meta: !!(modifier & 8), ctrl: !!(modifier & 16)
-			[@_mouse.x, @_mouse.y] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
+			[@mousex, @mousey] = [s.charCodeAt(4) - 33, s.charCodeAt(5) - 33]
 			if ((modifier & 96) is 96)
 				key.name ?= if modifier & 1 then 'scrolldown' else 'scrollup'
 			else if modifier & 64 then key.name ?= 'mousemove'
@@ -51,6 +51,7 @@ module.exports =
 			return
 			
 		keytoken = [if key.ctrl then "C^"] + [if key.meta then "M^"] + [if key.shift then "S^"] + [if key.name then key.name] + ""		
+
 	 
 		switch keytoken
 				
@@ -266,6 +267,7 @@ module.exports =
 			# when 'scrolldown' then
 			# when 'scrollup'
 				
+
 
 			else
 				return if keytoken.indexOf('scroll') isnt -1 or keytoken.indexOf('mouse') isnt -1
