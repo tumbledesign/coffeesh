@@ -197,7 +197,6 @@ class CoffeeShell
 		
 		proc.stdout.on 'data', (data) =>
 			lastcmd = data.toString().trim()
-			@displayOutput data.toString().trim()
 						
 		proc.stderr.on 'data', (data) =>
 			@displayError data.toString().trim()
