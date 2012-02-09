@@ -161,15 +161,7 @@ class CoffeeShell
 
 	runline: ->		
 		
-		lines = []
-		for i in [0...@cLines.length]
-			tabs = ''
-			tabs += "\t" for j in [0...@cTabs[i]]
-			
-			lines[i] = tabs + @cLines[i]
-			#console.log @cTabs[i], tabs, lines[i]
-		
-		code = lines.join("\n")
+		code = @cLines.join("\n")
 		
 		@resetInternals()
 
@@ -237,7 +229,9 @@ root.shl = new CoffeeShell()
 extend root.shl, require('./ttymgr')
 extend root.shl, require('./tabcomplete')
 extend root.shl, require('./keypress')
-
+#
+# Need to add asserts before requiring
+# For example, if TAB is set to a length of 0, do not allow
 extend root.shl, require("./coffeeshrc")
 extend root.shl.ALIASES, require('./coffeesh_aliases')
 

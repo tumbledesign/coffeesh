@@ -6,7 +6,8 @@ module.exports =
 	'ttymgr': ->
 
 		@PROMPT = "» "
-		@TABSTOP = 2
+		@TAB = "|··"
+		@TAB_COLOR = 'grey7'
 		@MINPROMPTHEIGHT = 6
 		@CMD_TEXT = 'grey20'
 		@CMD_BACKGROUND = 'grey5'
@@ -16,11 +17,6 @@ module.exports =
 		@INPUT_BACKGROUND = 'grey2'
 		@ERROR_TEXT = 'grey20'
 		@ERROR_BACKGROUND = 'darkRed'
-		
-		
-		@cx = @cy = 0
-		@cTabs = [0]
-		@cLines = ['']
 
 		[@numcols, @numrows] = @output.getWindowSize()
 
@@ -56,12 +52,13 @@ module.exports =
 				@output.cursorTo @PROMPT.length, r
 				line = ""
 			if r - @promptRow < @cLines.length
-				for t in [0...@cTabs[r - @promptRow]]
-					line +='|'
-					line += '·' for i in [0...@TABSTOP]
-				line += @cLines[r - @promptRow]
+				#(/// ^ ([\t]*)([^\t]*) ///)
+				tab_adj = 0
+				line += @cLines[r - @promptRow].replace /\t/g, (str, offset) =>
+					tab_adj += @TAB.length - 1 if offset < @cx
+					@TAB[@TAB_COLOR]
 			@output.write line
-		@output.cursorTo(@PROMPT.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow + @cy)
+		@output.cursorTo(@PROMPT.length + @cx + tab_adj, @promptRow + @cy)
 
 		
 	redrawOutput: ->

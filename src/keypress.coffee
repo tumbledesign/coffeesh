@@ -37,11 +37,12 @@ module.exports =
 			
 			#if @cx 0 and @cy is 0 and @cLines[0].length is 0
 			#	return
-				
-			@cy++
-			@cx = 0
-			@cLines[@cy] = ''
-			@cTabs[@cy] = 0
+			
+			@cLines[++@cy] = ''
+			for char in @cLines[@cy-1]
+				unless char is "\t" then break
+				@cLines[@cy] += "\t"
+			@cx = @cLines[@cy].length
 			@redrawPrompt()
 			return
 			
@@ -72,18 +73,17 @@ module.exports =
 
 			when "tab" 
 					
-				if @cx is 0
-					@cTabs[@cy] ?= 0
-					@cTabs[@cy]++
+				if @cx is 0 or @cLines[@cy][@cx-1] is "\t"
+					@cLines[@cy] =  "\t" + @cLines[@cy][0...@cLines[@cy].length]
+					@cx++
 					@redrawPrompt()
 				else
 					@tabcomplete()
 			
 			when "S^tab"
-				if @cx is 0
-					if @cTabs[@cy] > 0
-						@cTabs[@cy]--
-					
+				if @cx > 0 and @cLines[@cy][@cx-1] is "\t"
+					@cx--
+					@cLines[@cy] = @cLines[@cy][0...@cx] + @cLines[@cy][@cx+1..]
 					@redrawPrompt()
 				else
 					@tabcomplete()
@@ -98,29 +98,20 @@ module.exports =
 		## Deletions
 
 			when "backspace", "C^h"
-				#console.log @cx, @cy, @cLines.length, (@cy < @cLines.length)
 				if @cx > 0 and @cLines[@cy].length > 0
 					@cx--
 					@cLines[@cy] = @cLines[@cy][0...@cx] + @cLines[@cy][@cx+1..]
 					
 					@redrawPrompt()
 					
-				else if @cTabs[@cy] isnt 0 and @cx is 0
-						@cTabs[@cy]--
-						@redrawPrompt()
-					
 				else if @cy isnt 0 and @cy is (+@cLines.length-1) and @cLines[@cy].length is 0
-				
 					@cy--
-					@cLines.pop() unless @cy is 0
-					@redrawPrompt()
-					
-					#console.log @cx, @cy, @cLines
+					@cLines.pop()
 					@cx = @cLines[@cy].length
-								
 					@redrawPrompt()
-				else if @cy is 0 and @cx is 0  and @cLines[0].length is 0
-					@cLines = ['']
+
+				# else if @cy is 0 and @cx is 0  and @cLines[0].length is 0
+				# 	@cLines = ['']
 					
 			when "delete", "C^d"
 				if @cx < @cLines[@cy].length
@@ -137,10 +128,9 @@ module.exports =
 					@cx = leading.length
 					@redrawPrompt()
 					
-				else if @cy is 0 and @cx is 0 and @cLines[0].length is 0
-					@cLines = ['']
-					@cTabs = [0]
-					@redrawPrompt()
+				# else if @cy is 0 and @cx is 0 and @cLines[0].length is 0
+				# 	@cLines = ['']
+				# 	@redrawPrompt()
 					
 					
 			# Word right
@@ -199,25 +189,26 @@ module.exports =
 			## History
 			when "up", "C^p", "down", "C^n"
 				
-				if keytoken in ['up', 'C^p'] and @cy > 0 and @cy <= @cLines.length and @cLines.length > 0
+				if keytoken in ['up', 'C^p'] and @cy > 0
 					@cy--
 					@cx = Math.min @cx, @cLines[@cy].length
 					@redrawPrompt()
 					return
 					
-				else if keytoken in ['down', 'C^n'] and @cy < @cLines.length-1 and @cy >= 0 and @cLines.length > 0
+				else if keytoken in ['down', 'C^n'] and 0 <= @cy < @cLines.length-1
 					@cy++
 					@cx = Math.min @cx, @cLines[@cy].length
 					@redrawPrompt()
 					return				
 					
 				if @historyIndex is -1 and keytoken in ['up', 'C^p']
+					@displayDebug @cLines
 					@historyIndex = 0
-					@tmp_history = [@cLines, @cTabs, @cLines[0].length, @cy]
+					@tmp_history = @cLines
 
 				else if @historyIndex is 0 and keytoken in ['down', 'C^n']
 					@historyIndex = -1
-					[@cLines, @cTabs, @cx, @cy] = @tmp_history 
+					[@cLines, @cx, @cy] = [@tmp_history, @tmp_history[0].length, 0]
 					@redrawPrompt()
 					return
 
@@ -229,21 +220,14 @@ module.exports =
 
 				else return
 				
+
 				@cLines = (@history[@historyIndex]).split('\n')
-				@cy = @cLines.length
+				@displayDebug [@historyIndex, (@history[@historyIndex]), (@history[@historyIndex]).split('\n')]
+				@cy = @cLines.length - 1
+				@cy = 0 if keytoken in ['down', 'C^n']
+				@cx = @cLines[@cy].length
+				@displayDebug [@cLines, @cy, @cx]
 				@redrawPrompt()
-				
-				for i in [0...@cLines.length]
-					match = @cLines[i].match(/// ^ ([\t]*)([^\t]*) ///)
-					@cTabs[i] = match[1].split('\t').length-1
-					@cLines[i] = match[2]
-					@cy = i
-					@cx = @cLines[@cy].length
-					@redrawPrompt()
-					
-				if keytoken in ['down', 'C^n']
-					@cy = 0
-					@redrawPrompt()
 
 				
 		# Scrolling
@@ -279,8 +263,3 @@ module.exports =
 				@cLines[@cy] = beg + s + end
 				@cx += s.length
 				@redrawPrompt()
-				#				if s
-				#					lines = s.split /\r\n|\n|\r/
-				#					for i,line of lines
-				#						@runline() if i > 0
-				#						@insertString lines[i]
