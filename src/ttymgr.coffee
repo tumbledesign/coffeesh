@@ -16,7 +16,9 @@ module.exports =
 		@INPUT_TEXT = 'grey20'
 		@INPUT_BACKGROUND = 'grey2'
 		@ERROR_TEXT = 'grey20'
-		@ERROR_BACKGROUND = 'darkRed'
+		@ERROR_BACKGROUND = 'bloodRed'
+		@STATUS_TEXT = 'grey1'
+		@STATUS_BACKGROUND = 'dill'
 
 		[@numcols, @numrows] = @output.getWindowSize()
 
@@ -41,7 +43,11 @@ module.exports =
 
 
 	redrawPrompt: ->
-
+		@output.cursorTo 0, @promptRow - 1
+		@output.write colors["bg"+ @STATUS_BACKGROUND] + colors[@STATUS_TEXT]
+		@output.clearLine 0
+		@output.cursorTo @numcols - (@cwd.length + 3)
+		@output.write "(" + @cwd + ")"
 		for r in [@promptRow...@numrows]
 			@output.cursorTo 0, r
 			@output.write colors["bg"+ @CMD_BACKGROUND] + colors[@CMD_TEXT]
@@ -52,7 +58,6 @@ module.exports =
 				@output.cursorTo @PROMPT.length, r
 				line = ""
 			if r - @promptRow < @cLines.length
-				#(/// ^ ([\t]*)([^\t]*) ///)
 				tab_adj = 0
 				line += @cLines[r - @promptRow].replace /\t/g, (str, offset) =>
 					tab_adj += @TAB.length - 1 if offset < @cx
@@ -62,7 +67,7 @@ module.exports =
 
 		
 	redrawOutput: ->
-		for r in [0...@promptRow]
+		for r in [0...@promptRow-1]
 			@output.cursorTo 0, r
 			if r + @scrollOffset >= @buffer.length
 				@output.write colors["bg"+@OUTPUT_BACKGROUND] + colors[@OUTPUT_TEXT]
@@ -75,9 +80,9 @@ module.exports =
 				@output.clearLine 0
 				line = ""
 				line += @buffer[r + @scrollOffset][0][...@numcols]
-				line.replace(/\u001b\[39m/g,colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol])
-				line += "…" if line.removeStyle.length >= @numcols - 1
-				line = line.bold if type is 'INPUT'
+				line = line.replace(/\u001b\[39m/g,colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol]).replace(/\u001b\[0m/g,'')
+				line = line[...line.length-1] + "…".white.bold if @buffer[r + @scrollOffset][0].removeStyle.length > @numcols
+				line = "> #{line}".bold if type is 'INPUT'
 				@output.write line
 
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
@@ -90,8 +95,8 @@ module.exports =
 		return if @buffer.length < @promptRow
 
 		# Scroll to bottom
-		if not n? or @buffer.length - (@scrollOffset + n) <= @promptRow
-			@scrollOffset = Math.max(0, @buffer.length - @promptRow)
+		if not n? or @buffer.length - (@scrollOffset + n) <= @promptRow - 1
+			@scrollOffset = Math.max(0, @buffer.length - (@promptRow - 1))
 
 		# Scroll n lines
 		else
@@ -103,7 +108,7 @@ module.exports =
 		return if n? and n < 1
 
 		# Can't scroll up if not enough lines have been output
-		return if @buffer.length < @promptRow
+		return if @buffer.length < @promptRow - 1
 
 		#Scroll to top
 		if not n? or @scrollOffset - n <= 0
@@ -158,7 +163,7 @@ module.exports =
 
 		@row += numbuffered
 
-		if @row > @promptRow
+		if @row > @promptRow - 1
 			@scrollDown()
 		else
 			@redrawOutput()

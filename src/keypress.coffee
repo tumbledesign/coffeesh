@@ -232,10 +232,10 @@ module.exports =
 				
 		# Scrolling
 			when "pageup"
-				@scrollUp(@promptRow - 2)
+				@scrollUp(@promptRow - 3)
 
 			when "pagedown"
-				@scrollDown(@promptRow - 2)
+				@scrollDown(@promptRow - 3)
 
 			when "scrollup"
 				@scrollUp(1)

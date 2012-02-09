@@ -29,6 +29,7 @@ colormap =
 	dill : 101
 	zinc : 102
 	darkRed: 88
+	bloodRed : 52
 	tempest : 103
 	bayLeaf : 107
 	wintergreen : 108

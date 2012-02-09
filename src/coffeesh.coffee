@@ -87,7 +87,7 @@ class CoffeeShell
 				if newcwd.indexOf(@home) is 0
 					@cwd = '~'+newcwd.substr(@home.length)
 				else @cwd = newcwd
-				#@displayOutput "new directory: #{@cwd}"
+				@drawShell()
 			log: (val) =>
 				@displayOutput val
 			kill: (pid, signal = "SIGTERM") -> 
@@ -113,10 +113,8 @@ class CoffeeShell
 		Fiber(=> 
 			@cwd = @execute("/bin/pwd -L")
 			@builtin.cd(@cwd)
+			@drawShell()
 		).run()
-	
-		@drawShell()
-
 				
 	
 	resetInternals: ->
