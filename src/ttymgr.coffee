@@ -78,12 +78,15 @@ module.exports =
 				fgcol = @["#{type}_TEXT"]
 				@output.write colors["bg#{bgcol}"] + colors[fgcol]
 				@output.clearLine 0
-				line = ""
-				line += @buffer[r + @scrollOffset][0][...@numcols]
-				line = line.replace(/\u001b\[39m/g,colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol]).replace(/\u001b\[0m/g,'')
+				line = @buffer[r + @scrollOffset][0]
+				line = line.replace(/\u001b\[39m/g, colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol])
+				line = line.replace(/\u001b\[0m/g, "\033[22m\033[23m\033[24m\033[27m#{colors["bg#{bgcol}"] + colors[fgcol]}")
+				#@displayDebug line
+				#line = line.truncStyle(@numcols)
 				line = line[...line.length-1] + "…".white.bold if @buffer[r + @scrollOffset][0].removeStyle.length > @numcols
 				line = "> #{line}".bold if type is 'INPUT'
 				@output.write line
+				#@displayDebug line
 
 		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 
@@ -154,15 +157,25 @@ module.exports =
 	displayBuffer: (str, type = 'OUTPUT') ->
 		numbuffered = 0
 		lines = str.split(/\r\n|\n|\r/)
+		realchar = ///
+			(?:  \u001b\[(?: \d+;?)+m )+ [\s\S]
+			| [\s\S]
+		///g
 
+		newlines = []
 		for line in lines
-			while line.length > 0
-				@buffer.push [line[...@numcols], type]
-				line = line[@numcols...]
-				numbuffered++
-
+		 	matches = line.match(realchar)
+		 	if matches.length > @numcols
+		 	else
+				while matches.length > 0
+					newlines.push matches[...@numcols].join('')
+					matches = matches[@numcols...]
+		
+		for nl in newlines
+			@buffer.push [nl, type]
+			numbuffered++
+		
 		@row += numbuffered
-
 		if @row > @promptRow - 1
 			@scrollDown()
 		else

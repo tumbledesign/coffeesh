@@ -125,14 +125,18 @@ module.exports.color = (c) -> "\033[38;5;#{c}m"
 module.exports.bgcolor = (c) -> "\033[48;5;#{c}m"
 		
 
-module.exports.reset = "\033[0m"
+module.exports.reset = "\033[22m\033[23m\033[24m\033[27m"
 String::truncStyle = (i) ->
 	realchar = 
 		///
-			(?:  \u001b\[\d+;?m  )+ [\s\S]
+			(?:  \u001b\[\d+;?)+m [\s\S]
 			| [\s\S]
 		///g
-	("#{this.match(realchar)[...i].join('')}\033[0m")
+	(this.match(realchar)[...i].join(''))
+	# while matches.length > 0
+	# 	lines.push matches
+	# 	matches[...i] = []
+	# (lines)
 
 # hexes = [
 #    '000000', '800000', '008000', '808000', '000080', '800080', '008080', 'c0c0c0', 
