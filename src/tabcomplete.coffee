@@ -6,6 +6,9 @@ require 'fibers'
 module.exports = 
 
 	tabcomplete: ->
+		# pieces = @cLines[@cy][0...@cx].match /(\\\s|\S)+/g # split on spaces unless escaped 
+		# separator, piece for separator in [' ','(','[','{',"'",'"','>','<','&','|',':'] for piece in pieces
+		# 	pieces
 		@autocomplete (@_lines[@_cursor.y][0...@_cursor.x]).split(' ').pop(), (completions, completeOn) =>
 			if completions and completions.length
 				if completions.length is 1
@@ -21,7 +24,6 @@ module.exports =
 			rows = Math.ceil(completions.length / maxColumns)
 
 			completions.sort()
-
 			if rows > @_rows
 				@output.write "Do you wish to see all #{completions.length} possibilities? "
 				return
