@@ -1,3 +1,4 @@
+
 			blank  A space or tab.
       word   A sequence of characters considered as a single unit by the shell.  Also known as a token.
       name   A  word  consisting  only of alphanumeric characters and underscores, and beginning with an
