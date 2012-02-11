@@ -1,0 +1,623 @@
+			blank  A space or tab.
+      word   A sequence of characters considered as a single unit by the shell.  Also known as a token.
+      name   A  word  consisting  only of alphanumeric characters and underscores, and beginning with an
+              alphabetic character or an underscore.  Also referred to as an identifier.
+      metacharacter
+              A character that, when unquoted, separates words.  One of the following:
+              |  & ; ( ) < > space tab
+      control operator
+              A token that performs a control function.  It is one of the following symbols:
+              || & && ; ;; ( ) | |& <newline>
+
+bash grammar ! case  do done elif else esac fi for function if in select then until while { } time [[ ]]
+
+Simple Commands
+       A simple command is a sequence of optional variable assignments followed by blank-separated  words
+       and  redirections,  and terminated by a control operator.  The first word specifies the command to
+       be executed, and is passed as argument zero.  The remaining words are passed as arguments  to  the
+       invoked command.
+
+       The  return value of a simple command is its exit status, or 128+n if the command is terminated by
+       signal n.
+
+ Pipelines
+       A pipeline is a sequence of one or more commands separated by one of the control  operators  |  or
+       |&.  The format for a pipeline is:
+
+              [time [-p]] [ ! ] command [ [|⎪|&] command2 ... ]
+
+       The  standard  output  of command is connected via a pipe to the standard input of command2.  This
+       connection is performed before any redirections specified by the command (see REDIRECTION  below).
+       If |& is used, the standard error of command is connected to command2's standard input through the
+       pipe; it is shorthand for 2>&1 |.  This implicit redirection of the standard  error  is  performed
+       after any redirections specified by the command.
+
+       The return status of a pipeline is the exit status of the last command, unless the pipefail option
+       is enabled.  If pipefail is enabled, the pipeline's return status is the value of the last (right‐
+       most)  command  to exit with a non-zero status, or zero if all commands exit successfully.  If the
+       reserved word !  precedes a pipeline, the exit status of that pipeline is the logical negation  of
+       the exit status as described above.  The shell waits for all commands in the pipeline to terminate
+       before returning a value.
+
+       If the time reserved word precedes a pipeline, the elapsed as well as user and  system  time  con‐
+       sumed  by its execution are reported when the pipeline terminates.  The -p option changes the out‐
+       put format to that specified by POSIX.  When the shell is in posix mode,  it  does  not  recognize
+       time  as  a reserved word if the next token begins with a `-'.  The TIMEFORMAT variable may be set
+       to a format string that specifies how the timing information should be displayed; see the descrip‐
+       tion of TIMEFORMAT under Shell Variables below.
+
+       When  the shell is in posix mode, time may be followed by a newline.  In this case, the shell dis‐
+       plays the total user and system time consumed by the shell and its children.  The TIMEFORMAT vari‐
+       able may be used to specify the format of the time information.
+
+       Each command in a pipeline is executed as a separate process (i.e., in a subshell).
+
+
+   Lists
+       A  list  is a sequence of one or more pipelines separated by one of the operators ;, &, &&, or ||,
+       and optionally terminated by one of ;, &, or <newline>.
+
+       Of these list operators, && and || have equal precedence, followed by ; and &,  which  have  equal
+       precedence.
+
+       A  sequence  of  one  or more newlines may appear in a list instead of a semicolon to delimit com‐
+       mands.
+
+       If a command is terminated by the control operator &, the shell executes the command in the  back‐
+       ground in a subshell.  The shell does not wait for the command to finish, and the return status is
+       0.  Commands separated by a ; are executed sequentially; the shell waits for each command to  ter‐
+       minate in turn.  The return status is the exit status of the last command executed.
+
+       AND  and OR lists are sequences of one of more pipelines separated by the && and || control opera‐
+       tors, respectively.  AND and OR lists are executed with left associativity.  An AND list  has  the
+       form
+
+              command1 && command2
+
+       command2 is executed if, and only if, command1 returns an exit status of zero.
+
+       An OR list has the form
+
+              command1 || command2
+
+       command2 is executed if and only if command1 returns a non-zero exit status.  The return status of
+       AND and OR lists is the exit status of the last command executed in the list.
+
+   Special Parameters
+       The  shell  treats several parameters specially.  These parameters may only be referenced; assign‐
+       ment to them is not allowed.
+       *      Expands to the positional parameters, starting from one.  When the expansion occurs  within
+              double  quotes,  it  expands to a single word with the value of each parameter separated by
+              the first character  of  the  IFS  special  variable.   That  is,  "$*"  is  equivalent  to
+              "$1c$2c...",  where  c  is the first character of the value of the IFS variable.  If IFS is
+              unset, the parameters are separated by spaces.  If IFS is null, the parameters  are  joined
+              without intervening separators.
+       @      Expands  to the positional parameters, starting from one.  When the expansion occurs within
+              double quotes, each parameter expands to a separate word.  That is, "$@" is  equivalent  to
+              "$1"  "$2"  ...   If the double-quoted expansion occurs within a word, the expansion of the
+              first parameter is joined with the beginning part of the original word, and  the  expansion
+              of the last parameter is joined with the last part of the original word.  When there are no
+              positional parameters, "$@" and $@ expand to nothing (i.e., they are removed).
+       #      Expands to the number of positional parameters in decimal.
+       ?      Expands to the exit status of the most recently executed foreground pipeline.
+       -      Expands to the current option flags as specified upon invocation, by the set  builtin  com‐
+              mand, or those set by the shell itself (such as the -i option).
+       $      Expands  to the process ID of the shell.  In a () subshell, it expands to the process ID of
+              the current shell, not the subshell.
+       !      Expands to the process ID of the most recently executed background (asynchronous) command.
+       0      Expands to the name of the shell or shell script.  This is set at shell initialization.  If
+              bash  is  invoked  with a file of commands, $0 is set to the name of that file.  If bash is
+              started with the -c option, then $0 is set to the first argument after  the  string  to  be
+              executed, if one is present.  Otherwise, it is set to the file name used to invoke bash, as
+              given by argument zero.
+       _      At shell startup, set to the absolute pathname used to invoke the  shell  or  shell  script
+              being executed as passed in the environment or argument list.  Subsequently, expands to the
+              last argument to the previous command, after expansion.  Also set to the full pathname used
+              to  invoke  each  command  executed and placed in the environment exported to that command.
+              When checking mail, this parameter holds the name of the mail file currently being checked.
+
+
+ Tilde Expansion
+       If a word begins with an unquoted tilde character (`~'), all of the characters preceding the first
+       unquoted slash (or all characters, if there is no unquoted slash) are considered  a  tilde-prefix.
+       If  none of the characters in the tilde-prefix are quoted, the characters in the tilde-prefix fol‐
+       lowing the tilde are treated as a possible login name.  If this login name is the null string, the
+       tilde  is  replaced with the value of the shell parameter HOME.  If HOME is unset, the home direc‐
+       tory of the user executing the shell is  substituted  instead.   Otherwise,  the  tilde-prefix  is
+       replaced with the home directory associated with the specified login name.
+
+       If  the tilde-prefix is a `~+', the value of the shell variable PWD replaces the tilde-prefix.  If
+       the tilde-prefix is a `~-', the value of the shell variable OLDPWD, if it is set, is  substituted.
+       If  the  characters following the tilde in the tilde-prefix consist of a number N, optionally pre‐
+       fixed by a `+' or a `-', the tilde-prefix is replaced with  the  corresponding  element  from  the
+       directory  stack, as it would be displayed by the dirs builtin invoked with the tilde-prefix as an
+       argument.  If the characters following the tilde in the tilde-prefix consist of a number without a
+       leading `+' or `-', `+' is assumed.
+
+       If the login name is invalid, or the tilde expansion fails, the word is unchanged.
+
+       Each  variable  assignment is checked for unquoted tilde-prefixes immediately following a : or the
+       first =.  In these cases, tilde expansion is also performed.  Consequently, one may use file names
+       with  tildes  in  assignments  to  PATH,  MAILPATH, and CDPATH, and the shell assigns the expanded
+       value.
+
+
+
+  Pattern Matching
+
+       Any character that appears in a pattern, other  than  the  special  pattern  characters  described
+       below,  matches  itself.   The  NUL character may not occur in a pattern.  A backslash escapes the
+       following character; the escaping backslash is discarded when matching.  The special pattern char‐
+       acters must be quoted if they are to be matched literally.
+
+       The special pattern characters have the following meanings:
+
+              *      Matches  any  string,  including the null string.  When the globstar shell option is
+                     enabled, and * is used in a pathname expansion context, two adjacent *s  used  as  a
+                     single pattern will match all files and zero or more directories and subdirectories.
+                     If followed by a /, two adjacent *s will match only directories and subdirectories.
+              ?      Matches any single character.
+              [...]  Matches any one of the enclosed characters.  A pair of  characters  separated  by  a
+                     hyphen  denotes a range expression; any character that sorts between those two char‐
+                     acters, inclusive, using the current locale's collating sequence and character  set,
+                     is  matched.  If the first character following the [ is a !  or a ^ then any charac‐
+                     ter not enclosed is matched.  The sorting order of characters in  range  expressions
+                     is  determined by the current locale and the value of the LC_COLLATE shell variable,
+                     if set.  A - may be matched by including it as the first or last  character  in  the
+                     set.  A ] may be matched by including it as the first character in the set.
+
+                     Within [ and ], character classes can be specified using the syntax [:class:], where
+                     class is one of the following classes defined in the POSIX standard:
+                     alnum alpha ascii blank cntrl digit graph lower print punct space upper word xdigit
+                     A character class matches any character belonging to that class.  The word character
+                     class matches letters, digits, and the character _.
+
+                     Within  [ and ], an equivalence class can be specified using the syntax [=c=], which
+                     matches all characters with the same collation weight (as  defined  by  the  current
+                     locale) as the character c.
+
+                     Within [ and ], the syntax [.symbol.] matches the collating symbol symbol.
+
+
+If  the extglob shell option is enabled using the shopt builtin, several extended pattern matching
+       operators are recognized.  In the following description, a pattern-list is a list of one  or  more
+       patterns  separated  by  a |.  Composite patterns may be formed using one or more of the following
+       sub-patterns:
+
+              ?(pattern-list)
+                     Matches zero or one occurrence of the given patterns
+              *(pattern-list)
+                     Matches zero or more occurrences of the given patterns
+              +(pattern-list)
+                     Matches one or more occurrences of the given patterns
+              @(pattern-list)
+                     Matches one of the given patterns
+              !(pattern-list)
+                     Matches anything except one of the given patterns
+
+
+REDIRECTION
+       Before  a  command  is  executed,  its input and output may be redirected using a special notation
+       interpreted by the shell.  Redirection may also be used to open and close files  for  the  current
+       shell  execution  environment.  The following redirection operators may precede or appear anywhere
+       within a simple command or may follow a command.  Redirections are processed  in  the  order  they
+       appear, from left to right.
+
+       Each  redirection  that  may  be preceded by a file descriptor number may instead be preceded by a
+       word of the form {varname}.  In this case, for each redirection operator except >&- and  <&-,  the
+       shell  will allocate a file descriptor greater than 10 and assign it to varname.  If >&- or <&- is
+       preceded by {varname}, the value of varname defines the file descriptor to close.
+
+       In the following descriptions, if the file descriptor number is omitted, and the  first  character
+       of  the  redirection  operator is <, the redirection refers to the standard input (file descriptor
+       0).  If the first character of the redirection operator is >, the redirection refers to the  stan‐
+       dard output (file descriptor 1).
+
+       The word following the redirection operator in the following descriptions, unless otherwise noted,
+       is subjected to brace expansion,  tilde  expansion,  parameter  expansion,  command  substitution,
+       arithmetic  expansion,  quote  removal,  pathname expansion, and word splitting.  If it expands to
+       more than one word, bash reports an error.
+
+       Note that the order of redirections is significant.  For example, the command
+
+              ls > dirlist 2>&1
+
+       directs both standard output and standard error to the file dirlist, while the command
+
+              ls 2>&1 > dirlist
+
+       directs only the standard output to file dirlist, because the standard error was  duplicated  from
+       the standard output before the standard output was redirected to dirlist.
+
+       Bash  handles  several filenames specially when they are used in redirections, as described in the
+       following table:
+
+              /dev/fd/fd
+                     If fd is a valid integer, file descriptor fd is duplicated.
+              /dev/stdin
+                     File descriptor 0 is duplicated.
+              /dev/stdout
+                     File descriptor 1 is duplicated.
+              /dev/stderr
+                     File descriptor 2 is duplicated.
+              /dev/tcp/host/port
+
+ Redirecting Input
+       Redirection  of  input  causes the file whose name results from the expansion of word to be opened
+       for reading on file descriptor n, or the standard input (file descriptor 0) if n is not specified.
+
+       The general format for redirecting input is:
+
+              [n]<word
+
+   Redirecting Output
+       Redirection of output causes the file whose name results from the expansion of word to  be  opened
+       for  writing  on  file descriptor n, or the standard output (file descriptor 1) if n is not speci‐
+       fied.  If the file does not exist it is created; if it does exist it is truncated to zero size.
+
+       The general format for redirecting output is:
+
+              [n]>word
+
+       If the redirection operator is >, and the noclobber option to the set builtin  has  been  enabled,
+       the  redirection will fail if the file whose name results from the expansion of word exists and is
+       a regular file.  If the redirection operator is >|, or the  redirection  operator  is  >  and  the
+       noclobber  option  to the set builtin command is not enabled, the redirection is attempted even if
+       the file named by word exists.
+
+   Appending Redirected Output
+       Redirection of output in this fashion causes the file whose name results  from  the  expansion  of
+       word  to  be opened for appending on file descriptor n, or the standard output (file descriptor 1)
+       if n is not specified.  If the file does not exist it is created.
+
+       The general format for appending output is:
+
+              [n]>>word
+
+   Redirecting Standard Output and Standard Error
+       This construct allows both the standard output (file descriptor 1) and the standard  error  output
+       (file descriptor 2) to be redirected to the file whose name is the expansion of word.
+
+       There are two formats for redirecting standard output and standard error:
+
+              &>word
+       and
+              >&word
+
+       Of the two forms, the first is preferred.  This is semantically equivalent to
+
+              >word 2>&1
+
+   Appending Standard Output and Standard Error
+       This  construct  allows both the standard output (file descriptor 1) and the standard error output
+       (file descriptor 2) to be appended to the file whose name is the expansion of word.
+
+       The format for appending standard output and standard error is:
+
+              &>>word
+  Here Documents
+       This type of redirection instructs the shell to read input from the current source  until  a  line
+       containing  only  delimiter  (with  no trailing blanks) is seen.  All of the lines read up to that
+       point are then used as the standard input for a command.
+
+       The format of here-documents is:
+
+              <<[-]word
+                      here-document
+              delimiter
+
+       No parameter expansion, command substitution, arithmetic expansion, or pathname expansion is  per‐
+       formed  on  word.   If  any  characters  in  word are quoted, the delimiter is the result of quote
+       removal on word, and the lines in the here-document are not expanded.  If word  is  unquoted,  all
+       lines  of the here-document are subjected to parameter expansion, command substitution, and arith‐
+       metic expansion.  In the latter case, the character sequence \<newline> is ignored, and \ must  be
+       used to quote the characters \, $, and `.
+
+       If  the redirection operator is <<-, then all leading tab characters are stripped from input lines
+       and the line containing delimiter.  This allows here-documents within shell scripts to be indented
+       in a natural fashion.
+
+   Here Strings
+       A variant of here documents, the format is:
+
+              <<<word
+
+       The word is expanded and supplied to the command on its standard input.
+
+   Duplicating File Descriptors
+       The redirection operator
+
+              [n]<&word
+
+       is  used  to  duplicate  input  file descriptors.  If word expands to one or more digits, the file
+       descriptor denoted by n is made to be a copy of that file descriptor.  If the digits  in  word  do
+       not specify a file descriptor open for input, a redirection error occurs.  If word evaluates to -,
+       file descriptor n is closed.  If n is not specified, the standard input  (file  descriptor  0)  is
+       used.
+
+       The operator
+
+              [n]>&word
+
+       is  used similarly to duplicate output file descriptors.  If n is not specified, the standard out‐
+       put (file descriptor 1) is used.  If the digits in word do not specify a file descriptor open  for
+       output,  a redirection error occurs.  As a special case, if n is omitted, and word does not expand
+       to one or more digits, the standard output and standard error are redirected as  described  previ‐
+       ously.
+
+   Moving File Descriptors
+       The redirection operator
+
+              [n]<&digit-
+
+       moves the file descriptor digit to file descriptor n, or the standard input (file descriptor 0) if
+       n is not specified.  digit is closed after being duplicated to n.
+     Similarly, the redirection operator
+
+              [n]>&digit-
+
+       moves the file descriptor digit to file descriptor n, or the standard output (file  descriptor  1)
+       if n is not specified.
+
+   Opening File Descriptors for Reading and Writing
+       The redirection operator
+
+              [n]<>word
+
+       causes  the  file whose name is the expansion of word to be opened for both reading and writing on
+       file descriptor n, or on file descriptor 0 if n is not specified.  If the file does not exist,  it
+       is created.
+
+SIMPLE COMMAND EXPANSION
+       When  a  simple command is executed, the shell performs the following expansions, assignments, and
+       redirections, from left to right.
+
+       1.     The words that the parser has marked as variable assignments (those preceding  the  command
+              name) and redirections are saved for later processing.
+
+       2.     The  words  that  are  not variable assignments or redirections are expanded.  If any words
+              remain after expansion, the first word is taken to be the  name  of  the  command  and  the
+              remaining words are the arguments.
+
+       3.     Redirections are performed as described above under REDIRECTION.
+
+       4.     The  text  after  the  =  in  each variable assignment undergoes tilde expansion, parameter
+              expansion, command substitution, arithmetic  expansion,  and  quote  removal  before  being
+              assigned to the variable.
+
+       If no command name results, the variable assignments affect the current shell environment.  Other‐
+       wise, the variables are added to the environment of the executed command and  do  not  affect  the
+       current  shell  environment.   If  any of the assignments attempts to assign a value to a readonly
+       variable, an error occurs, and the command exits with a non-zero status.
+
+       If no command name results, redirections are performed, but do not affect the current shell  envi‐
+       ronment.  A redirection error causes the command to exit with a non-zero status.
+
+       If  there  is  a command name left after expansion, execution proceeds as described below.  Other‐
+       wise, the command exits.  If one of the expansions contained a command substitution, the exit sta‐
+       tus  of  the command is the exit status of the last command substitution performed.  If there were
+       no command substitutions, the command exits with a status of zero.
+COMMAND EXECUTION
+       After a command has been split into words, if it results in a simple command and an optional  list
+       of arguments, the following actions are taken.
+
+       If the command name contains no slashes, the shell attempts to locate it.  If there exists a shell
+       function by that name, that function is invoked as described above in FUNCTIONS.  If the name does
+       not  match  a  function,  the  shell searches for it in the list of shell builtins.  If a match is
+       found, that builtin is invoked.
+
+       If the name is neither a shell function nor a builtin, and contains no slashes, bash searches each
+       element  of the PATH for a directory containing an executable file by that name.  Bash uses a hash
+       table to remember the full pathnames of executable files (see hash under  SHELL  BUILTIN  COMMANDS
+       below).  A full search of the directories in PATH is performed only if the command is not found in
+       the hash table.  If the search is unsuccessful, the shell searches for a  defined  shell  function
+       named  command_not_found_handle.  If that function exists, it is invoked with the original command
+       and the original command's arguments as its arguments, and the function's exit status becomes  the
+       exit  status of the shell.  If that function is not defined, the shell prints an error message and
+       returns an exit status of 127.
+
+       If the search is successful, or if the command name contains one or more slashes, the  shell  exe‐
+       cutes the named program in a separate execution environment.  Argument 0 is set to the name given,
+       and the remaining arguments to the command are set to the arguments given, if any.
+
+       If this execution fails because the file is not in executable format, and the file is not a direc‐
+       tory, it is assumed to be a shell script, a file containing shell commands.  A subshell is spawned
+       to execute it.  This subshell reinitializes itself, so that the effect is as if a  new  shell  had
+       been invoked to handle the script, with the exception that the locations of commands remembered by
+       the parent (see hash below under SHELL BUILTIN COMMANDS) are retained by the child.
+
+       If the program is a file beginning with #!, the remainder of the first line  specifies  an  inter‐
+       preter for the program.  The shell executes the specified interpreter on operating systems that do
+       not handle this executable format themselves.  The arguments to the interpreter consist of a  sin‐
+       gle optional argument following the interpreter name on the first line of the program, followed by
+       the name of the program, followed by the command arguments, if any.
+
+COMMAND EXECUTION ENVIRONMENT
+       The shell has an execution environment, which consists of the following:
+
+       ·      open files inherited by the shell at invocation, as modified by  redirections  supplied  to
+              the exec builtin
+
+       ·      the  current  working  directory as set by cd, pushd, or popd, or inherited by the shell at
+              invocation
+
+       ·      the file creation mode mask as set by umask or inherited from the shell's parent
+
+       ·      current traps set by trap
+
+       ·      shell parameters that are set by variable assignment or with  set  or  inherited  from  the
+              shell's parent in the environment
+
+       ·      shell  functions defined during execution or inherited from the shell's parent in the envi‐
+              ronment
+
+       ·      options enabled at invocation (either by default or with command-line arguments) or by set
+
+       ·      options enabled by shopt
+
+       ·      shell aliases defined with alias
+
+       ·      various process IDs, including those of background jobs, the value of $$, and the value  of
+              PPID
+
+       When a simple command other than a builtin or shell function is to be executed, it is invoked in a
+       separate execution environment that consists of the following.  Unless otherwise noted, the values
+       are inherited from the shell.
+
+       ·      the  shell's  open files, plus any modifications and additions specified by redirections to
+              the command
+
+       ·      the current working directory
+
+       ·      the file creation mode mask
+
+       ·      shell variables and functions marked for export, along with variables exported for the com‐
+              mand, passed in the environment
+
+       ·      traps  caught  by  the shell are reset to the values inherited from the shell's parent, and
+              traps ignored by the shell are ignored
+
+       A command invoked in this separate environment cannot affect the shell's execution environment.
+
+       Command substitution, commands grouped with parentheses, and asynchronous commands are invoked  in
+       a  subshell  environment that is a duplicate of the shell environment, except that traps caught by
+       the shell are reset to the values that the shell inherited from its parent at invocation.  Builtin
+       commands  that  are  invoked  as  part  of a pipeline are also executed in a subshell environment.
+       Changes made to the subshell environment cannot affect the shell's execution environment.
+  Subshells spawned to execute command substitutions inherit the value of the  -e  option  from  the
+       parent shell.  When not in posix mode, bash clears the -e option in such subshells.
+
+       If  a command is followed by a & and job control is not active, the default standard input for the
+       command is the empty file /dev/null.  Otherwise, the invoked command inherits the file descriptors
+       of the calling shell as modified by redirections.
+
+ENVIRONMENT
+       When  a program is invoked it is given an array of strings called the environment.  This is a list
+       of name-value pairs, of the form name=value.
+
+       The shell provides several ways to manipulate the environment.  On invocation, the shell scans its
+       own  environment  and creates a parameter for each name found, automatically marking it for export
+       to child processes.  Executed commands inherit the environment.  The export and  declare  -x  com‐
+       mands  allow  parameters  and  functions  to be added to and deleted from the environment.  If the
+       value of a parameter in the environment is modified, the new value becomes part  of  the  environ‐
+       ment,  replacing  the  old.   The  environment  inherited  by any executed command consists of the
+       shell's initial environment, whose values may be modified in the shell, less any pairs removed  by
+       the unset command, plus any additions via the export and declare -x commands.
+
+       The  environment  for  any simple command or function may be augmented temporarily by prefixing it
+       with parameter assignments, as described above in PARAMETERS.  These assignment statements  affect
+       only the environment seen by that command.
+
+       If  the  -k  option is set (see the set builtin command below), then all parameter assignments are
+       placed in the environment for a command, not just those that precede the command name.
+
+       When bash invokes an external command, the variable _ is set to the full file name of the  command
+       and passed to that command in its environment.
+EXIT STATUS
+       The exit status of an executed command is the value returned by the waitpid system call or equiva‐
+       lent function.  Exit statuses fall between 0 and 255, though, as explained below,  the  shell  may
+       use  values above 125 specially.  Exit statuses from shell builtins and compound commands are also
+       limited to this range. Under certain circumstances, the shell will use special values to  indicate
+       specific failure modes.
+
+       For  the  shell's  purposes, a command which exits with a zero exit status has succeeded.  An exit
+       status of zero indicates success.  A non-zero exit status indicates failure.  When a command  ter‐
+       minates on a fatal signal N, bash uses the value of 128+N as the exit status.
+
+       If  a command is not found, the child process created to execute it returns a status of 127.  If a
+       command is found but is not executable, the return status is 126.
+
+       If a command fails because of an error during expansion or redirection, the exit status is greater
+       than zero.
+
+       Shell builtin commands return a status of 0 (true) if successful, and non-zero (false) if an error
+       occurs while they execute.  All builtins return an exit status of 2 to indicate incorrect usage.
+
+       Bash itself returns the exit status of the last command executed, unless a syntax error occurs, in
+       which case it exits with a non-zero value.  See also the exit builtin command below.
+
+SIGNALS
+       When bash is interactive, in the absence of any traps, it ignores SIGTERM (so that kill 0 does not
+       kill an interactive shell), and SIGINT is caught and handled (so that the wait builtin  is  inter‐
+       ruptible).   In  all cases, bash ignores SIGQUIT.  If job control is in effect, bash ignores SIGT‐
+       TIN, SIGTTOU, and SIGTSTP.
+
+       Non-builtin commands run by bash have signal handlers set to the values  inherited  by  the  shell
+       from  its  parent.   When  job  control  is not in effect, asynchronous commands ignore SIGINT and
+       SIGQUIT in addition to these inherited handlers.  Commands run as a result of command substitution
+       ignore the keyboard-generated job control signals SIGTTIN, SIGTTOU, and SIGTSTP.
+
+       The shell exits by default upon receipt of a SIGHUP.  Before exiting, an interactive shell resends
+       the SIGHUP to all jobs, running or stopped.  Stopped jobs are sent SIGCONT  to  ensure  that  they
+       receive  the  SIGHUP.  To prevent the shell from sending the signal to a particular job, it should
+       be removed from the jobs table with the disown builtin  (see  SHELL  BUILTIN  COMMANDS  below)  or
+       marked to not receive SIGHUP using disown -h.
+
+       If  the  huponexit  shell  option has been set with shopt, bash sends a SIGHUP to all jobs when an
+       interactive login shell exits.
+
+       If bash is waiting for a command to complete and receives a signal for which a trap has been  set,
+       the  trap will not be executed until the command completes.  When bash is waiting for an asynchro‐
+       nous command via the wait builtin, the reception of a signal for which a trap has  been  set  will
+       cause  the  wait  builtin  to return immediately with an exit status greater than 128, immediately
+       after which the trap is executed.
+       JOB CONTROL
+              Job control refers to the ability to selectively stop (suspend) the  execution  of  processes  and
+              continue (resume) their execution at a later point.  A user typically employs this facility via an
+              interactive interface supplied jointly by the operating system kernel's terminal driver and bash.
+
+              The shell associates a job with each pipeline.  It keeps a  table  of  currently  executing  jobs,
+              which  may  be  listed with the jobs command.  When bash starts a job asynchronously (in the back‐
+              ground), it prints a line that looks like:
+
+                     [1] 25647
+
+              indicating that this job is job number 1 and that the process ID of the last process in the  pipe‐
+              line  associated with this job is 25647.  All of the processes in a single pipeline are members of
+              the same job.  Bash uses the job abstraction as the basis for job control.
+
+              To facilitate the implementation of the user interface to job control, the operating system  main‐
+              tains the notion of a current terminal process group ID.  Members of this process group (processes
+              whose process group ID is equal to the current terminal process group ID) receive  keyboard-gener‐
+              ated  signals  such as SIGINT.  These processes are said to be in the foreground.  Background pro‐
+              cesses are those whose process group ID differs from the terminal's; such processes are immune  to
+              keyboard-generated signals.  Only foreground processes are allowed to read from or, if the user so
+              specifies with stty tostop, write to the terminal.  Background processes  which  attempt  to  read
+              from  (write to when stty tostop is in effect) the terminal are sent a SIGTTIN (SIGTTOU) signal by
+              the kernel's terminal driver, which, unless caught, suspends the process.
+
+              If the operating system on which bash is running supports job control, bash contains facilities to
+              use  it.  Typing the suspend character (typically ^Z, Control-Z) while a process is running causes
+              that process to be stopped and returns control to bash.   Typing  the  delayed  suspend  character
+              (typically ^Y, Control-Y) causes the process to be stopped when it attempts to read input from the
+              terminal, and control to be returned to bash.  The user may then manipulate the state of this job,
+              using  the bg command to continue it in the background, the fg command to continue it in the fore‐
+              ground, or the kill command to kill it.  A ^Z takes effect immediately,  and  has  the  additional
+              side effect of causing pending output and typeahead to be discarded.
+
+              There are a number of ways to refer to a job in the shell.  The character % introduces a job spec‐
+              ification (jobspec).  Job number n may be referred to as %n.  A job may also be referred to  using
+              a prefix of the name used to start it, or using a substring that appears in its command line.  For
+              example, %ce refers to a stopped ce job.  If a prefix matches more than one job, bash  reports  an
+              error.   Using  %?ce, on the other hand, refers to any job containing the string ce in its command
+              line.  If the substring matches more than one job, bash reports an error.  The symbols %%  and  %+
+              refer  to the shell's notion of the current job, which is the last job stopped while it was in the
+              foreground or started in the background.  The previous job may be referenced using %-.   If  there
+              is  only  a  single job, %+ and %- can both be used to refer to that job.  In output pertaining to
+              jobs (e.g., the output of the jobs command), the current job is always flagged with a +,  and  the
+              previous  job  with  a  -.  A single % (with no accompanying job specification) also refers to the
+              current job.
+
+              Simply naming a job can be used to bring it into the foreground: %1 is a synonym  for  ``fg  %1'',
+              bringing  job 1 from the background into the foreground.  Similarly, ``%1 &'' resumes job 1 in the
+              background, equivalent to ``bg %1''.
+              The shell learns immediately whenever a job changes state.  Normally, bash waits until it is about
+                   to print a prompt before reporting changes in a job's status so as to not interrupt any other out‐
+                   put.  If the -b option to the set builtin command is enabled, bash reports  such  changes  immedi‐
+                   ately.  Any trap on SIGCHLD is executed for each child that exits.
+
+                   If  an  attempt to exit bash is made while jobs are stopped (or, if the checkjobs shell option has
+                   been enabled using the shopt builtin, running), the shell prints a warning message,  and,  if  the
+                   checkjobs option is enabled, lists the jobs and their statuses.  The jobs command may then be used
+                   to inspect their status.  If a second attempt to exit is made without an intervening command,  the
+                   shell does not print another warning, and any stopped jobs are terminated.
