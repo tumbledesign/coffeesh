@@ -22,6 +22,7 @@ class CoffeeShell
 
 		@user = process.env.USER
 		@home = process.env.HOME
+		@hostname = os.hostname()
 		@cwd = ''
 		@history = []
 
@@ -33,11 +34,9 @@ class CoffeeShell
 		@errlog = fs.openSync process.env.HOME + "/coffeesh.errlog", 'a+', '644'
 		@debuglog = fs.openSync process.env.HOME + "/coffeesh.debuglog", 'a+', '644'
 		
-		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		
 		@TABSTOP = 2
 		@ALIASES = 
 			ls: 'ls -atr --color=auto'

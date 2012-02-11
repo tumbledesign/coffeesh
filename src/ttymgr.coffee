@@ -46,8 +46,7 @@ module.exports =
 		@output.cursorTo 0, @promptRow - 1
 		@output.write colors["bg"+ @STATUS_BACKGROUND] + colors[@STATUS_TEXT]
 		@output.clearLine 0
-		@output.cursorTo @numcols - (@cwd.length + 3)
-		@output.write "(" + @cwd + ")"
+		@output.write "#{@user}@#{@hostname}:#{@cwd}"
 		for r in [@promptRow...@numrows]
 			@output.cursorTo 0, r
 			@output.write colors["bg"+ @CMD_BACKGROUND] + colors[@CMD_TEXT]
