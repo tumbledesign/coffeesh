@@ -4,6 +4,7 @@
 # Load Dependencies
 {helpers:{starts,ends,compact,count,merge,extend,flatten,del,last}} = coffee = require 'coffee-script'
 {inspect,print,format,puts,debug,log,isArray,isRegExp,isDate,isError} = util = require 'util'
+
 {EventEmitter} = require('events')
 {dirname,basename,extname,exists,existsSync} = path = require('path')
 {spawn,fork,exec,execFile} = require('child_process')
@@ -17,22 +18,25 @@ class CoffeeShell
 		@input = process.stdin
 		@output = process.stdout
 		@stderr = process.stderr
+
+
 		@user = process.env.USER
 		@home = process.env.HOME
+		@hostname = os.hostname()
 		@cwd = ''
-		process.on 'uncaughtException', -> @error
+		@history = []
+
+
+		process.on 'uncaughtException', (err) -> @displayError err
 		
 		@outlog = fs.openSync process.env.HOME + "/coffeesh.outlog", 'a+', '644'
 		@inlog = fs.openSync process.env.HOME + "/coffeesh.inlog", 'a+', '644'
 		@errlog = fs.openSync process.env.HOME + "/coffeesh.errlog", 'a+', '644'
 		@debuglog = fs.openSync process.env.HOME + "/coffeesh.debuglog", 'a+', '644'
 		
-		
-		@HOSTNAME = os.hostname()
 		@HISTORY_FILE = process.env.HOME + '/.coffee_history'
 		@HISTORY_FILE_SIZE = 1000 # TODO: implement this
 		@HISTORY_SIZE = 300
-		
 		@TABSTOP = 2
 		@ALIASES = 
 			ls: 'ls -atr --color=auto'
@@ -41,14 +45,25 @@ class CoffeeShell
 			egrep: 'egrep --color=auto'
 			fgrep: 'fgrep --color=auto'
 		
-		
+	displaylogs: ->
+		for log in ['coffeesh.outlog', 'coffeesh.inlog', 'coffeesh.errlog', 'coffeesh.debuglog']
+			shl.execute("gnome-terminal -t #{log} -e 'tail -f #{process.env.HOME}/#{log}'")
+		(null)
 
 	init: ->
 		# load history
-		# TODO: make loading history async so no hang on big files
-		@history_fd = fs.openSync @HISTORY_FILE, 'a+', '644'
-		@history = fs.readFileSync(@HISTORY_FILE, 'utf-8').split("\r\n").reverse()
-		@history.shift()
+		fs.open @HISTORY_FILE, 'a+', '664', (err, fd) =>
+			return @displayError ["Cannot open history file '#{@HISTORY_FILE}' for writing", err] if err
+			@history_fd = fd
+
+		fs.readFile @HISTORY_FILE, 'utf-8', (err, data) =>
+			lines = data.split("\r\n")
+
+			lines = lines[..@HISTORY_SIZE]
+			lines.reverse().shift()
+			@displayDebug lines
+			@history = @history.concat lines
+			@displayDebug @history
 		
 		#Load binaries and built-in shell commands
 		@binaries = {}
@@ -56,7 +71,7 @@ class CoffeeShell
 			@binaries[file] = pathname for file in fs.readdirSync(pathname)
 			
 		@builtin = 
-			pwd: () =>
+			pwd: =>
 				@cwd
 			cd: (to) => 
 				if to.indexOf('~') is 0
@@ -69,17 +84,11 @@ class CoffeeShell
 				process.chdir newcwd
 				process.env.PWD = newcwd
 				if newcwd.indexOf(@home) is 0
-					@cwd =	'~'+newcwd.substr(@home.length)
+					@cwd = '~'+newcwd.substr(@home.length)
 				else @cwd = newcwd
-				@_prompt = @PROMPT()
-				@output.cursorTo 0
-				@output.clearLine 0
-				@output.write @_prompt
-				@output.cursorTo @_prompt.stripColors.length + @_cursor.x
-			echo: (vals...) ->
-				for v in vals
-					print inspect(v, true, 5, true) + "\n"
-				return
+				@drawShell()
+			log: (val) =>
+				@displayOutput val
 			kill: (pid, signal = "SIGTERM") -> 
 				process.kill pid, signal
 			which: (val) =>
@@ -90,40 +99,30 @@ class CoffeeShell
 		root.aliases = @ALIASES
 		root.binaries = @binaries
 		root.builtin = @builtin
-		root.echo = @builtin.echo
+		root.log = @builtin.log
+		root.displaylogs = shl.displaylogs
 		
-		Fiber(=> @cwd = @execute("/bin/pwd -L > /dev/null")).run()#@builtin.cd(@cwd)).run()
+		@resetInternals()
 
 		# connect to tty
 		@resume()
 		
-
 		@ttymgr()
+
+		Fiber(=> 
+			@cwd = @execute("/bin/pwd -L")
+			@builtin.cd(@cwd)
+			@drawShell()
+		).run()
+				
 	
-		
-		@cx = @cy = 0
-		@cTabs = [0]
-		@cLines = ['']
-		
-		@drawShell()
-		
-	
-	resetInternals: () ->
+	resetInternals: ->
 		# internal variables
-		@_historyIndex = -1
-		@_mouse = x:0, y:0
-		@_completions = []
-		
+		@historyIndex = -1
+		[@mousex, @mousey] = [0,0]
 		@cx = @cy = 0
 		@cTabs = [0]
 		@cLines = ['']
-
-
-		@_consecutive_tabs = 0
-		[@_columns, @_rows] = @output.getWindowSize()
-
-	error: (err) -> 
-		@displayError (err.stack or err.toString()).toString().trim()
 
 	resume: ->
 		@resetInternals()
@@ -159,22 +158,18 @@ class CoffeeShell
 
 	runline: ->		
 		
-		lines = []
-		for i in [0...@cLines.length]
-			tabs = ''
-			tabs += "\t" for j in [0...@cTabs[i]]
-			
-			lines[i] = tabs + @cLines[i]
-			console.log @cTabs[i], tabs, lines[i]
+		code = @cLines.join("\n")
 		
-		code = lines.join("\n")
 		@resetInternals()
+
 		@displayInput code
+		
 		
 		@history.unshift code
 		@history.pop() if @history.length > @HISTORY_SIZE
-		fs.write @history_fd, code+"\r\n"
-		
+		fs.write @history_fd, code+"\r\n" if @history_fd?
+
+				
 		rcode = Recode code
 		@displayDebug("Recoded: #{rcode}\n")
 		
@@ -188,21 +183,18 @@ class CoffeeShell
 					@displayOutput returnValue
 			).run()
 		catch err
-			@error err
+			@displayError err
 	
 	
 	# Run command non interactively
 	execute: (cmd) ->
 		fiber = Fiber.current
-		@resetInternals()
-		
 		lastcmd = ''
 		proc = spawn '/bin/sh', ["-c", "#{cmd}"]
 		
 		proc.stdout.on 'data', (data) =>
 			lastcmd = data.toString().trim()
-			@displayOutput data.toString().trim()
-			
+						
 		proc.stderr.on 'data', (data) =>
 			@displayError data.toString().trim()
 			
@@ -217,15 +209,14 @@ class CoffeeShell
 		@pause()
 		@output.clearLine 0
 		@output.cursorTo 0
-		@output.write("···\n")
 		cmdargs = ["-ic", "#{cmd}"]
 		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
 		proc.on 'exit', (exitcode, signal) =>
 			@input.removeAllListeners 'keypress'
 			@input.removeListener 'data', @_data_listener
-			@mouseTranking off
-			fiber.run()
+			@mouseTracking off
 			@resume()
+			fiber.run()
 		yield()
 		return
 
@@ -234,7 +225,9 @@ root.shl = new CoffeeShell()
 extend root.shl, require('./ttymgr')
 extend root.shl, require('./tabcomplete')
 extend root.shl, require('./keypress')
-
+#
+# Need to add asserts before requiring
+# For example, if TAB is set to a length of 0, do not allow
 extend root.shl, require("./coffeeshrc")
 extend root.shl.ALIASES, require('./coffeesh_aliases')
 

@@ -25,7 +25,7 @@ exports.Recode = (code) ->
 				output.push "#{val}#{if tokens[i+1]?[0] is 'TERMINATOR' then '(	)' else '('}"
 				
 			when 'PARAM'
-				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'OUTDENt', 'CALL_END', ')'] then ')' else ','}"
+				output.push "#{val}#{if tokens[i+1]?[0] in ['TERMINATOR', 'OUTDENT', 'CALL_END', ')'] then ')' else ','}"
 				
 			when 'BINARIES', 'FILEPATH'
 				exectmp += val

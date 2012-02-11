@@ -1,6 +1,6 @@
 module.exports = 
-	ls: 'ls -alh --color=auto'
-	l: 'ls --color=auto'
-	grep: 'grep --color=auto'
-	egrep: 'egrep --color=auto'
-	fgrep: 'fgrep --color=auto'
+	ls: 'ls --color=always'
+	l: 'ls -latr --color=always'
+	grep: 'grep --color=always'
+	egrep: 'egrep --color=always'
+	fgrep: 'fgrep --color=always'

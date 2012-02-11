@@ -4,118 +4,101 @@ inspect = require('util').inspect
 
 module.exports =
 	'ttymgr': ->
-	# Command Prompt Area
 
-
-		# user can override this with a function or set to "off" to disable
-		#@STATUSBAR = (width = 80) => "custom status ..."
-		@PROMPT = => "#{if @user is 'root' then '➜'.red else '➜'.green} "
-		@TABSTOP = 2
+		@PROMPT = "» "
+		@TAB = "|··"
+		@TAB_COLOR = 'grey7'
 		@MINPROMPTHEIGHT = 6
-		@CMD_BACKGROUND = 'gray'
-		@OUTPUT_BACKGROUND = 'default'
-		
-		@cx = @cy = 0
-		@cTabs = [0]
-		@cLines = ['']
-		
-		
+		@CMD_TEXT = 'grey20'
+		@CMD_BACKGROUND = 'grey5'
+		@OUTPUT_TEXT = 'tempest'
+		@OUTPUT_BACKGROUND = 'grey1'
+		@INPUT_TEXT = 'grey20'
+		@INPUT_BACKGROUND = 'grey2'
+		@ERROR_TEXT = 'grey20'
+		@ERROR_BACKGROUND = 'bloodRed'
+		@STATUS_TEXT = 'grey1'
+		@STATUS_BACKGROUND = 'dill'
+
 		[@numcols, @numrows] = @output.getWindowSize()
-		@numrows-- unless @STATUSBAR is off
+
+		# buffer holds an array of lines of type [text, type]
+		# for example, a buffer be [["a = 3","input"],["3","output"],["ls", "input"],[<output of ls>, "output"]]
+		@buffer = []
+		@__defineGetter__ "promptRow", => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
+		@scrollOffset = 0
+		[@col, @row] = [0, 0]
 
 		process.on "SIGWINCH", => 
 			[@numcols, @numrows] = @output.getWindowSize()
-			@numrows-- unless @STATUSBAR is off
 			@drawShell()
-
-		# TODO: likely don't need to fill buffer with blanks. try removing when get a chance
-		@buffer = []
-		# for r in [0...@numrows]
-		# 	line = ""
-		# 	line += " " for c in [0...@numcols]
-		# 	@buffer.push line
-
-		# TODO: change to definegetter
-		@promptRow = => (@numrows - Math.max(@MINPROMPTHEIGHT, @cLines.length)) 
-		
-		@scrollOffset = 0
-		[@col, @row] = [0, 0]
 
 	mouseTracking: (e = on) ->
 		if e then @output.write "\x1b[?1003h\x1b[?1005h"
 		else @output.write "\x1b[?1003l\x1b[?1005l"
 
 	drawShell: ->
-		@output.cursorTo 0, 0
-		@output.write colors.reset
-		for r in [0..@promptRow()]
-			@output.cursorTo 0, r
-			@output.clearLine(0)
 		@redrawOutput()
-		@redrawStatus() unless @STATUSBAR is off
 		@redrawPrompt()
 
 
-	redrawStatus: ->
-		if @STATUSBAR is off then return
-		
-		if @STATUSBAR?()? and @STATUSBAR?().removeStyle.length <= @numcols
-			s = @STATUSBAR()
-		else if @STATUSBAR?
-			s = "custom status invalid"
-		else
-			d = new Date()
-			time = "#{(d.getHours() % 12)}:#{d.getMinutes()}:#{d.getSeconds()}"
-			s = "#{colors.bgblack}--#{'Coffeeshell'.red}--#{@HOSTNAME.white}--(#{@cwd.blue.bold})--#{time}--"
-
-		@output.cursorTo 0, @numrows
-		@output.write colors.reset
-		@output.write s
-
-
 	redrawPrompt: ->
-
-		@output.cursorTo 0, @promptRow()
-		@output.write colors["bg"+@CMD_BACKGROUND] or colors.bgdefault
-		#clear all of console
-		for i in [@promptRow()...@numrows]
-			@output.cursorTo 0, i
+		@output.cursorTo 0, @promptRow - 1
+		@output.write colors["bg"+ @STATUS_BACKGROUND] + colors[@STATUS_TEXT]
+		@output.clearLine 0
+		@output.write "#{@user}@#{@hostname}:#{@cwd}"
+		for r in [@promptRow...@numrows]
+			@output.cursorTo 0, r
+			@output.write colors["bg"+ @CMD_BACKGROUND] + colors[@CMD_TEXT]
 			@output.clearLine 0
+			if r is @promptRow
+				line = "#{if @user is 'root' then colors.red else colors.green}#{@PROMPT + colors['bg'+ @CMD_BACKGROUND] + colors[@CMD_TEXT]}" 
+			else
+				@output.cursorTo @PROMPT.length, r
+				line = ""
+			if r - @promptRow < @cLines.length
+				tab_adj = 0
+				line += @cLines[r - @promptRow].replace /\t/g, (str, offset) =>
+					tab_adj += @TAB.length - 1 if offset < @cx
+					@TAB[@TAB_COLOR]
+			@output.write line
+		@output.cursorTo(@PROMPT.length + @cx + tab_adj, @promptRow + @cy)
 
-		for y,l of @cLines
-			y = +y
-			@output.cursorTo 0, @promptRow() + y
-			@output.clearLine 0
-			p = @PROMPT()
-			for t in [0...@cTabs[y]]
-				p +='|'
-				p += '·' for i in [0...@TABSTOP]
-			
-			@output.write p + l
-		@output.cursorTo(@PROMPT().removeStyle.length + @cTabs[@cy] * [@TABSTOP+1] +  @cx, @promptRow() + @cy)
 		
 	redrawOutput: ->
-		@output.cursorTo 0, 0
-		@output.write colors.reset
-		for r in [0...@promptRow()]
+		for r in [0...@promptRow-1]
 			@output.cursorTo 0, r
-			@output.clearLine(0)
-			if r + @scrollOffset < @buffer.length
-				@output.write @buffer[r + @scrollOffset][..@numcols]
-				@output.write "…" if @buffer[r + @scrollOffset].length > @numcols
+			if r + @scrollOffset >= @buffer.length
+				@output.write colors["bg"+@OUTPUT_BACKGROUND] + colors[@OUTPUT_TEXT]
+				@output.clearLine 0
+			else
+				type = @buffer[r + @scrollOffset][1]
+				bgcol = @["#{type}_BACKGROUND"]
+				fgcol = @["#{type}_TEXT"]
+				@output.write colors["bg#{bgcol}"] + colors[fgcol]
+				@output.clearLine 0
+				line = @buffer[r + @scrollOffset][0]
+				line = line.replace(/\u001b\[39m/g, colors[fgcol]).replace(/\u001b\[49m/g,colors[bgcol])
+				line = line.replace(/\u001b\[0m/g, "\033[22m\033[23m\033[24m\033[27m#{colors["bg#{bgcol}"] + colors[fgcol]}")
+				#@displayDebug line
+				#line = line.truncStyle(@numcols)
+				line = line[...line.length-1] + "…".white.bold if @buffer[r + @scrollOffset][0].removeStyle.length > @numcols
+				line = "> #{line}".bold if type is 'INPUT'
+				@output.write line
+				#@displayDebug line
 
-		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 
 			
 	scrollDown: (n) ->
 		return if n? and n < 1
 
 		# Can't scroll down if not enough lines have been output
-		return if @buffer.length < @numrows
+		return if @buffer.length < @promptRow
 
 		# Scroll to bottom
-		if not n? or @buffer.length - (@scrollOffset + n) <= @numrows
-			@scrollOffset = @buffer.length - @numrows
+		if not n? or @buffer.length - (@scrollOffset + n) <= @promptRow - 1
+			@scrollOffset = Math.max(0, @buffer.length - (@promptRow - 1))
 
 		# Scroll n lines
 		else
@@ -127,7 +110,7 @@ module.exports =
 		return if n? and n < 1
 
 		# Can't scroll up if not enough lines have been output
-		return if @buffer.length < @numrows
+		return if @buffer.length < @promptRow - 1
 
 		#Scroll to top
 		if not n? or @scrollOffset - n <= 0
@@ -139,53 +122,60 @@ module.exports =
 		@redrawOutput()
 
 	displayDebug: (debug) ->
+		if typeof debug isnt 'string'
+			debug = inspect(debug, true, null, true)
 		fs.write  @debuglog, debug+"\n\n---------------------------------------\n\n"
 
 	displayError: (err) ->
 		if typeof err isnt 'string'
 			err = inspect(err, true, 2, true)
-		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-		@output.write colors.red
-		@displayBuffer "ERROR"
+
+		@displayBuffer err, 'ERROR'
 
 		@redrawPrompt()
 		fs.write @errlog, err+"\n\n---------------------------------------\n\n"
 
 	displayOutput: (data) ->
 		if typeof data isnt 'string'
-			data = inspect(data, true, 2, true)
+			data = inspect(data, true, 3, true)
 		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
 
-		@displayBuffer data
-
-		@output.cursorTo((@PROMPT().removeStyle).length + @cx, @promptRow() + @cy)
+		@displayBuffer data, 'OUTPUT'
+		
+		@output.cursorTo(@PROMPT.length + @cx, @promptRow + @cy)
 		fs.write @outlog, data+"\n\n---------------------------------------\n\n"
 
 	displayInput: (data) ->
+		
 		@output.cursorTo 0, @row
-		@output.write colors["bg"+@OUTPUT_BACKGROUND] or colors.bgdefault
-
-		@displayDebug data
-		@displayBuffer data
-
 		@redrawPrompt()
+		@displayBuffer data, 'INPUT'
 
 		fs.write @inlog, data+"\n\n---------------------------------------\n\n"
 
-	displayBuffer: (str) ->
+	displayBuffer: (str, type = 'OUTPUT') ->
 		numbuffered = 0
 		lines = str.split(/\r\n|\n|\r/)
+		realchar = ///
+			(?:  \u001b\[(?: \d+;?)+m )+ [\s\S]
+			| [\s\S]
+		///g
+
+		newlines = []
 		for line in lines
-			while line.length > 0
-				@buffer.push line[...@numcols]
-				line = line[@numcols...]
-				numbuffered++
-
+		 	matches = line.match(realchar)
+		 	if matches.length > @numcols
+		 	else
+				while matches.length > 0
+					newlines.push matches[...@numcols].join('')
+					matches = matches[@numcols...]
+		
+		for nl in newlines
+			@buffer.push [nl, type]
+			numbuffered++
+		
 		@row += numbuffered
-
-		if @row + numbuffered > @promptRow() - 1
+		if @row > @promptRow - 1
 			@scrollDown()
 		else
 			@redrawOutput()
