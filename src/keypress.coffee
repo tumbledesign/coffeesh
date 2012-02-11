@@ -37,7 +37,7 @@ module.exports =
 			
 			#if @cx 0 and @cy is 0 and @cLines[0].length is 0
 			#	return
-			
+			@clearPrompt()
 			@cLines[++@cy] = ''
 			for char in @cLines[@cy-1]
 				unless char is "\t" then break

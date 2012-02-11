@@ -27,7 +27,25 @@ class CoffeeShell
 
 
 		process.on 'uncaughtException', (err) -> @displayError err
+		process.on "SIGINT", =>
+			@input.removeAllListeners 'keypress'
+			@input.removeListener 'data', @_data_listener
+			@resume()
+			@displayDebug "SIGINT"
+
+			
+		process.on "SIGTSTP", =>
+			@displayDebug "SIGTSTP"
 		
+		process.on "SIGSTOP", =>
+			@displayDebug "SIGSTOP"
+			
+		process.on "SIGCHLD", =>
+			@displayDebug "SIGCHLD"
+			
+		@output.on 'data', (data) =>
+			@displayDebug data
+
 		@outlog = fs.openSync process.env.HOME + "/coffeesh.outlog", 'a+', '644'
 		@inlog = fs.openSync process.env.HOME + "/coffeesh.inlog", 'a+', '644'
 		@errlog = fs.openSync process.env.HOME + "/coffeesh.errlog", 'a+', '644'
@@ -53,7 +71,7 @@ class CoffeeShell
 
 	init: ->
 		# load history
-		fs.open @HISTORY_FILE, 'a+', '664', (err, fd) =>
+		fs.openSync @HISTORY_FILE, 'a+', '664', (err, fd) =>
 			return @displayError ["Cannot open history file '#{@HISTORY_FILE}' for writing", err] if err
 			@history_fd = fd
 
@@ -109,13 +127,19 @@ class CoffeeShell
 		@resume()
 		
 		@ttymgr()
-
-		Fiber(=> 
-			@cwd = @execute("/bin/pwd -L")
-			@builtin.cd(@cwd)
-			@drawShell()
-		).run()
-				
+		
+		@cwd = "/home/cobells/Work/node/coffeesh"
+		process.chdir @cwd
+		process.env.PWD = @cwd
+		
+		@drawShell()
+		
+#		Fiber(=> 
+#			@cwd = @execute("/bin/pwd -L")
+#			@builtin.cd(@cwd)
+#			@drawShell()
+#		).run()
+#				
 	
 	resetInternals: ->
 		# internal variables
@@ -131,6 +155,7 @@ class CoffeeShell
 		
 		@_data_listener = (s) =>
 			if (s.indexOf("\u001b[M") is 0) then @keypress s
+		
 		@input.on("data", @_data_listener)
 		
 		@input.on("keypress", (s, key) =>
@@ -205,21 +230,38 @@ class CoffeeShell
 		return lastcmd
 	
 # Run command interactively	
-	run: (cmd) ->
+	run: (cmd, args...) ->
 		fiber = Fiber.current
-		@pause()
-		@output.clearLine 0
-		@output.cursorTo 0
-		cmdargs = ["-ic", "#{cmd}"]
-		proc = spawn '/bin/sh', cmdargs, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
+		lastcmd = ''
+		#@pause()
+		@clearPrompt()
+		#cmdargs = ["-ic", "#{cmd}"]
+		@input.removeAllListeners 'keypress'
+		@input.removeListener 'data', @_data_listener
+		@mouseTracking off
+		tty.setRawMode false
+		proc = spawn cmd, args, {cwd: process.cwd(), env: process.env, customFds: [0,1,2]}
+			
+#		proc.on "SIGTSTP", =>
+#			@displayDebug "SIGTSTP"
+#		
+#		proc.on "SIGSTOP", =>
+#			@displayDebug "SIGSTOP"
+#			
+#		proc.on "SIGCHLD", =>
+#			@displayDebug "SIGCHLD"
+			
 		proc.on 'exit', (exitcode, signal) =>
-			@input.removeAllListeners 'keypress'
-			@input.removeListener 'data', @_data_listener
-			@mouseTracking off
+		#	@input.removeAllListeners 'keypress'
+			#@input.removeListener 'data', @_data_listener
+			#@mouseTracking off
+			@spaceForPrompt()
 			@resume()
 			fiber.run()
 		yield()
-		return
+		
+		@displayDebug String(lastcmd.toString())
+		return lastcmd.toString().trim()
 
 root.shl = new CoffeeShell()
 

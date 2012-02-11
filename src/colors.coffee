@@ -133,6 +133,8 @@ String::truncStyle = (i) ->
 			| [\s\S]
 		///g
 	(this.match(realchar)[...i].join(''))
+	
+
 	# while matches.length > 0
 	# 	lines.push matches
 	# 	matches[...i] = []
