@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "coffee-script": ">=1.2.0",
-    "colors": "*",
     "fibers": ">=0.6.4"
   },
   "devDependencies": {},
